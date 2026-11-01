@@ -1,0 +1,9 @@
+{
+  "name": "Kalsara Client-Side",
+  "short_name": "Kalsara",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#101113",
+  "theme_color": "#101113",
+  "icons": []
+}

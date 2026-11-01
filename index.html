@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalsara | Harga tepat, untung terjaga (100% Client-Side Architecture)</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<header>
+  <div class="av">K</div>
+  <div>
+    <div class="brand">Kalsara <i>Client-Side</i></div>
+    <p>OPFS + SQLite Wasm + Web Workers + Signals</p>
+  </div>
+  <button class="thm" id="thm" type="button" aria-label="Ganti Tema">🌙</button>
+</header>
+<main>
+  <div class="hero">
+    <span>Perkiraan untung jika tiap produk laku 1 kali (Integer Math)</span>
+    <b id="hero-profit">Rp 0</b>
+    <div class="sync" id="sync-status">OPFS + SQLite Wasm Terhubung</div>
+  </div>
+
+  <div id="app-container"></div>
+
+  <section class="actions-panel">
+    <button class="btn" id="btn-add-product" type="button">+ Tambah Produk (Web Worker)</button>
+    <button class="btn gh" id="btn-backup-fs" type="button">Cadangkan ke File System (FSA API)</button>
+  </section>
+</main>
+
+<nav role="tablist">
+  <button role="tab" id="tab-etalase" aria-selected="true">Etalase</button>
+  <button role="tab" id="tab-hitung" aria-selected="false">Hitung</button>
+  <button role="tab" id="tab-promosi" aria-selected="false">Promosi</button>
+  <button role="tab" id="tab-laporan" aria-selected="false">Laporan</button>
+  <button role="tab" id="tab-setelan" aria-selected="false">Setelan</button>
+</nav>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
