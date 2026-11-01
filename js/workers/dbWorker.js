@@ -6,15 +6,7 @@ self.onmessage = async function(e) {
         if (action === 'init') {
             const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` });
             db = new SQL.Database();
-            db.run(`
-                CREATE TABLE IF NOT EXISTS products (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    sku TEXT UNIQUE,
-                    name TEXT,
-                    price INTEGER,
-                    created_at INTEGER
-                );
-            `);
+            db.run(`CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, sku TEXT UNIQUE, name TEXT, price INTEGER, created_at INTEGER);`);
             self.postMessage({ status: 'ready' });
         } 
         else if (action === 'add') {

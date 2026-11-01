@@ -3,10 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Kalsara | OPFS + SQLite Architecture</title>
+    <title>Kalsara | Micro-ERP</title>
     <link rel="stylesheet" href="css/style.css">
-    
-    <!-- ES6 Module Import Maps for Signals -->
     <script type="importmap">
       {
         "imports": {
@@ -14,32 +12,38 @@
         }
       }
     </script>
-    
-    <!-- Main Entry -->
     <script type="module" src="js/app.js"></script>
 </head>
 <body>
     <header>
-        <div class="brand-container">
+        <div class="header-content">
             <div class="av">K</div>
-            <div>
-                <h1 class="brand">Kalsara Core</h1>
-                <p class="pwa">100% Client-Side | OPFS SQLite | Native Web Components</p>
+            <div class="brand-text">
+                <div class="brand">Kalsara</div>
+                <p class="pwa">OPFS Engine Aktif</p>
             </div>
+            <button class="thm" id="thm" type="button" aria-label="Ubah Tema">🌙</button>
         </div>
     </header>
     
     <main id="app-root">
-        <section class="controls">
-            <button id="btn-init-db" type="button">1. Init OPFS Database</button>
-            <button id="btn-add-product" type="button" disabled>2. + Tambah Produk (Simulasi Pipeline)</button>
-        </section>
+        <!-- Floating Action Button for Adding Data -->
+        <button id="btn-add-product" class="fab" type="button" disabled>+</button>
         
-        <section>
+        <div class="section-title">
             <h2>Katalog Produk</h2>
-            <!-- Wadah list produk tanpa innerHTML -->
-            <div id="product-list" role="list"></div>
-        </section>
+            <span id="db-status" class="badge warning">DB Connecting...</span>
+        </div>
+        
+        <!-- Native Web Components Container -->
+        <div id="product-list" role="list"></div>
     </main>
+    
+    <!-- Kalsara v5.82 Bottom Navigation -->
+    <nav role="tablist" aria-label="Menu utama">
+        <button type="button" class="tab active" role="tab">Beranda</button>
+        <button type="button" class="tab" role="tab">Kalkulator</button>
+        <button type="button" class="tab" role="tab">Pengaturan</button>
+    </nav>
 </body>
 </html>
