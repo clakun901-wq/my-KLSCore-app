@@ -1,4 +1,3 @@
-// Modul Virtual Scroller untuk mencegah DOM freezing pada 1.000+ produk
 import { updateStock } from './db.js';
 
 export function createProductCard(product, onStockChange) {
@@ -59,13 +58,11 @@ export function createProductCard(product, onStockChange) {
 }
 
 export class VirtualScroller {
-    constructor(viewportId, spacerId, containerId, itemHeight) {
+    constructor(viewportId, spacerId, containerId) {
         this.viewport = document.getElementById(viewportId);
         this.spacer = document.getElementById(spacerId);
         this.container = document.getElementById(containerId);
-        this.itemHeight = itemHeight;
         this.items = [];
-        this.onRenderCallback = null;
         
         this.viewport.addEventListener('scroll', () => {
             this.render();
@@ -74,7 +71,7 @@ export class VirtualScroller {
     
     setItems(items) {
         this.items = items;
-        this.spacer.style.height = `${this.items.length * 150}px`; // Estimasi tinggi kartu
+        this.spacer.style.height = `${this.items.length * 150}px`;
         this.render();
     }
     

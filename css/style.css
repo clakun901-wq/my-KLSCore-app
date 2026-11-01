@@ -1,32 +1,18 @@
 :root {
-    --bg: #f4f5f7; 
-    --card: #ffffff; 
-    --ink: #111214; 
-    --navy: #111214;
-    --primary: #111214;
-    --accent: #10b981;
-    --badge-bg: #fef3c7;
-    --badge-text: #92400e;
-    --border: #e4e4e7;
-    --voucher-bg: #e1f5fe;
-    --voucher-text: #0277bd;
+    --bg: #f4f5f7; --card: #ffffff; --ink: #111214; --navy: #111214;
+    --primary: #111214; --accent: #10b981; --border: #e4e4e7;
 }
-
 body {
     margin: 0; background: var(--bg); color: var(--ink);
-    font: 14px/1.4 system-ui, -apple-system, sans-serif; 
-    padding-bottom: 90px;
+    font: 14px/1.4 system-ui, -apple-system, sans-serif; padding-bottom: 90px;
 }
-
-header { 
-    background: var(--navy); color: #fff; padding: 18px 16px 20px; 
-}
+header { background: var(--navy); color: #fff; padding: 18px 16px 20px; }
 .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .brand-group { display: flex; align-items: center; gap: 10px; }
 .av { background: #fff; color: #111; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; }
 .brand { margin: 0; font-size: 1.1rem; font-weight: 700; }
 .pwa { margin: 0; font-size: 0.7rem; color: #9ca3af; }
-.thm { background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; color: #fff; font-size: 1rem; }
+.thm { background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; color: #fff; }
 
 .header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 #etad-title { font-size: 1.4rem; font-weight: 800; }
@@ -36,16 +22,25 @@ header {
 .status-pill { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-weight: 600; font-size: 0.75rem; }
 
 main { max-width: 600px; margin: 0 auto; padding: 16px; }
+.app-view { display: none; }
+.app-view.active { display: block; }
 
 .keterangan-box { background: #fff; border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .keterangan-box summary { font-weight: 600; cursor: pointer; color: #374151; }
 .keterangan-box p { margin: 8px 0 0 0; color: #6b7280; }
 
-.section-header h3 { font-size: 0.85rem; font-weight: 700; color: #4b5563; margin: 0 0 10px 4px; letter-spacing: 0.5px; }
+.card-panel { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px; }
+.card-panel h3 { margin: 0 0 4px 0; font-size: 1.1rem; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.85rem; font-weight: 600; color: #4b5563; }
+.form-input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
+.btn-primary { background: #111214; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.btn-secondary { background: #f1f5f9; color: #1e293b; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; width: fit-content; }
+.calc-result-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 8px; color: #166534; }
 
+.section-header h3 { font-size: 0.85rem; font-weight: 700; color: #4b5563; margin: 0 0 10px 4px; letter-spacing: 0.5px; }
 .product-container { display: flex; flex-direction: column; gap: 12px; }
 
-/* Kartu Produk Khas v5.82 */
 .pc { 
     background: var(--card); border-radius: 16px; padding: 16px; 
     box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid var(--border);
@@ -74,11 +69,9 @@ main { max-width: 600px; margin: 0 auto; padding: 16px; }
 .stock-btn:active { background: #e2e8f0; }
 .stock-val { padding: 0 8px; font-weight: 700; font-size: 0.9rem; min-width: 24px; text-align: center; }
 
-/* Virtual Scrolling Viewport */
 .virtual-viewport { max-height: 600px; overflow-y: auto; position: relative; }
 #virtual-scroll-spacer { width: 100%; pointer-events: none; }
 
-/* FAB */
 .fab {
     position: fixed; bottom: 84px; right: 20px; width: 56px; height: 56px;
     background: #111214; color: white; border: none; border-radius: 50%;
@@ -86,7 +79,6 @@ main { max-width: 600px; margin: 0 auto; padding: 16px; }
 }
 .fab:active { transform: scale(0.95); }
 
-/* Bottom Nav */
 nav {
     position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
     display: flex; justify-content: space-around; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));

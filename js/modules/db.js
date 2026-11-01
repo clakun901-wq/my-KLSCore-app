@@ -1,4 +1,3 @@
-// Modul IndexedDB menggunakan Dexie.js untuk menangani 1.000+ produk tanpa QuotaExceededError
 export const db = new Dexie('KalsaraERPDB');
 
 db.version(1).stores({
@@ -7,7 +6,6 @@ db.version(1).stores({
     settings: 'key, value'
 });
 
-// Seed data awal jika database kosong agar langsung mirip v5.82
 export async function seedInitialData() {
     const count = await db.products.count();
     if (count === 0) {
@@ -19,12 +17,11 @@ export async function seedInitialData() {
                 price: 102500 * 100, // Integer Math (*100)
                 original_price: 151080 * 100,
                 stock: 5,
-                status: 'urgent', // Perlu isi ulang
+                status: 'urgent',
                 created_at: Date.now()
             }
         ];
         
-        // Generate dummy 1000 produk untuk uji performa skala spektakuler
         for (let i = 2; i <= 1000; i++) {
             initialProducts.push({
                 id: i,
@@ -39,15 +36,6 @@ export async function seedInitialData() {
         }
         await db.products.bulkPut(initialProducts);
     }
-}
-
-export async function getProductsPaged(offset, limit) {
-    return await db.products
-        .where('status')
-        .equals('safe')
-        .offset(offset)
-        .limit(limit)
-        .toArray();
 }
 
 export async function getUrgentProducts() {

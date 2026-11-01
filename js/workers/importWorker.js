@@ -1,11 +1,10 @@
-// Web Worker untuk memproses file CSV/Excel laporan Shopee besar di latar belakang
 self.onmessage = function(e) {
     const { fileData } = e.data;
     try {
-        // Simulasi parsing data berat ribuan baris pesanan tanpa membebani Main Thread
-        let parsedRows = [];
-        // Contoh proses...
-        self.postMessage({ success: true, count: parsedRows.length });
+        // Simulasi parsing data Shopee di background thread
+        setTimeout(() => {
+            self.postMessage({ success: true, count: 245 });
+        }, 1000);
     } catch (err) {
         self.postMessage({ success: false, error: err.message });
     }
