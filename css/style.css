@@ -1,0 +1,28 @@
+:root {
+    --bg: #f4f4f5; --card: #ffffff; --ink: #111214; --primary: #2563eb;
+    --border: #e4e4e7;
+}
+body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, sans-serif; padding-bottom: 80px;
+}
+header { 
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 16px; margin-bottom: 20px;
+}
+.brand-container { display: flex; align-items: center; gap: 12px; }
+.av { background: var(--primary); color: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; font-size: 1.2rem; }
+.brand { margin: 0; font-size: 1.2rem; font-weight: 700; }
+.pwa { margin: 0; font-size: 0.8rem; color: #71717a; }
+
+main { max-width: 600px; margin: 0 auto; padding: 0 16px; }
+.controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+button { 
+    background: var(--primary); color: white; border: none; 
+    padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.2s;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; background: #a1a1aa; }
+button:hover:not(:disabled) { opacity: 0.9; }
+
+#product-list { display: flex; flex-direction: column; gap: 12px; }
