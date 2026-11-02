@@ -1,4 +1,4 @@
-import { calculateProduct } from './calculator-engine.js';
+import { calculateProduct, calculateBatch } from './calculator-engine.js';
 /* Heavy-work boundary. Money is represented in minor units (Rupiah x 100). */
 const toMinor = v => {
   const raw = String(v ?? '0').trim();
@@ -109,6 +109,8 @@ self.onmessage = async ({data}) => {
     let result;
     if (type === 'calculate-product') {
       result = calculateProduct(payload);
+    } else if (type === 'calculate-batch') {
+      result = calculateBatch(payload);
     } else if (type === 'money-pipeline') {
       const handlers = (payload.stages || []).map(stage => (ctx, next) => {
         const fee = mulBps(ctx.gross, stage.basisPoints);

@@ -1,4 +1,4 @@
-# Status migrasi Kalsara v5.82 — paket v9.6
+# Status migrasi Kalsara v5.82 — paket v9.8
 
 Tanggal build: 2026-11-02
 
@@ -209,3 +209,28 @@ Mesin kalkulator sekarang tersedia di Worker dan diuji terhadap v5.82, tetapi UI
 - `npm test`: lulus; Worker 33, Worker client 5, migration safety 13, Storage 19 + audit SQLite 9, DOM 11, compatibility 271 fungsi + 7 tab, dan 2.627 differential assertions.
 - `node --check` untuk file JavaScript aplikasi, Worker, komponen, dan Service Worker: lulus.
 - Ini menutup satu risiko migrasi yang konkret, tetapi belum menggantikan verifikasi browser nyata atau migrasi salinan data pengguna. Konflik yang tercatat tetap perlu ditinjau secara eksplisit sebelum data lama dihapus.
+
+## Pembaruan v9.7 — perbaikan bug instalasi PWA (2 November 2026)
+
+- **Bug:** di Chrome Android muncul "Aplikasi ini tidak dapat diinstal" dan ikon pintasan hanya huruf "G". Penyebab: `manifest.webmanifest` berisi `"icons":[]`, dan `index.html` tidak menautkan ikon apa pun (v5.82 memakai `icon-192.png` dan `apple-touch-icon.png` terpisah yang tidak ikut dibawa ke paket migrasi).
+- **Perbaikan:** ditambahkan `icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, dan `apple-touch-icon.png`; manifest dilengkapi `id`, `scope`, `start_url: "./"`, `lang`, `description`, dan daftar ikon (any + maskable); `index.html` menautkan ikon; Service Worker meng-cache ikon (cache `kalsara-v5.82-client-v9.7`).
+- Ditambahkan `tests/pwa.test.mjs` (audit statis kelayakan instalasi). Ini bukan pengganti uji instalasi di Chrome nyata.
+
+## Pembaruan v9.8 — Tahap 1 (pipa kalkulator) dan Tahap 2 (kartu Etalase)
+
+**Tahap 1 — Chain of Responsibility di Worker (`workers/pricing-pipeline.js`)**
+- Rumus harga kini berupa dua rantai handler: evaluasi harga tayang (Voucher → Tarif platform → Potongan → Saldo masuk → Untung) dan pencarian harga awal (Validasi → Tarif → Estimasi impas → Voucher fixed-point → Gross-up diskon → Seed → Pencarian → Pengetatan).
+- Semua nominal di dalam pipa adalah bilangan bulat sen (Rupiah ×100); persen dihitung dengan BigInt lalu dibulatkan ke Rupiah penuh; konversi ke Rupiah hanya di batas keluar. Tanpa `parseFloat`/`toFixed` untuk uang.
+- Worker punya operasi baru `calculate-batch`. Terbukti identik dengan v5.82 pada 1.500 kasus acak tambahan (voucher otomatis/manual, kuota, min. belanja, tarif sebelum/sesudah 1 Des 2026); tes ikut gagal bila pembulatan sengaja dirusak.
+- Batch 1.000 produk dihitung ±160 ms di Worker (Node).
+
+**Tahap 2 — `<kalsara-product-card>` (Shadow DOM + Signals)**
+- Etalase tidak lagi merakit string HTML: `shop()` menyusun model data, komponen merender dengan DOM API. Elemen kartu dipakai ulang dan hanya kartu yang datanya berubah yang diperbarui.
+- `js/signals.js`: mesin Signals lokal sungguhan (signal/computed/effect/batch, melacak dependensi) sebagai cadangan CDN; CDN diberi batas tunggu 2,5 detik.
+- Bug ikut terperbaiki: `<s>` tidak ada di allowlist sanitizer sehingga harga coret Shopee hilang dari Etalase; ikon gembok tampil sebagai busur "∩" karena rect SVG tidak tergambar.
+- Tes: `tests/architecture.test.mjs`, `tests/signals.test.mjs`, dan E2E Chromium nyata `npm run test:e2e` (20 pengecekan, butuh Playwright).
+
+**Belum selesai / catatan jujur**
+- v5.82 membatasi 100 produk (`Maksimal 100 produk`, 4 tempat). Batas ini belum dicabut karena tab Hitung masih membangun satu formulir berat per produk. Mencabutnya adalah bagian Tahap 4 (pecah per tab + virtualisasi).
+- Tampilan masih memanggil `calc()` sinkron di utas utama untuk menyusun model Etalase; `calculate-batch` sudah siap tetapi belum dipasang ke tampilan.
+- Tahap 3 (SQLite sebagai sumber data utama + Wasm lokal) dan Tahap 4 belum dikerjakan.

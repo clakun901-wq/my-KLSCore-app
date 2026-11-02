@@ -12,10 +12,13 @@ const originalBlock = [...originalHTML.matchAll(/<script>([\s\S]*?)<\/script>/g)
 assert.ok(originalBlock, 'Skrip bisnis utama v5.82 harus tersedia');
 const migratedSource = fs.readFileSync(new URL('../js/legacy-app.js', import.meta.url), 'utf8');
 
-class FixedDate extends Date {
-  constructor(...args) { super(...(args.length ? args : ['2026-11-02T12:00:00+07:00'])); }
-  static now() { return new Date('2026-11-02T05:00:00Z').valueOf(); }
+function fixedDate(iso) {
+  return class FixedDate extends Date {
+    constructor(...args) { super(...(args.length ? args : [iso])); }
+    static now() { return new Date(iso).valueOf(); }
+  };
 }
+const FixedDate = fixedDate('2026-11-02T12:00:00+07:00');
 function executablePrefix(source) {
   const end = source.indexOf('/*END*/');
   assert.ok(end >= 0, 'Batas kalkulator kompatibilitas harus ditemukan');
@@ -26,8 +29,8 @@ function extractFunction(source, name) {
   assert.ok(match, `Fungsi ${name} harus ditemukan`);
   return match[0];
 }
-function createCalc(source, useIntegerMoney) {
-  const context = vm.createContext({ Date: FixedDate, console, KalsaraMoney, document: { addEventListener() {} } });
+function createCalc(source, useIntegerMoney, DateImpl = FixedDate) {
+  const context = vm.createContext({ Date: DateImpl, console, KalsaraMoney, document: { addEventListener() {} } });
   const promoStart = source.indexOf('var PRM=[],PSEL=');
   const promoEnd = source.indexOf('function vscT', promoStart);
   assert.ok(promoStart >= 0 && promoEnd > promoStart, 'Blok rule engine voucher harus ditemukan');
@@ -45,13 +48,14 @@ function createCalc(source, useIntegerMoney) {
     globalThis.__runPromoPrice=(promo,detail,marketPrice)=>ptp(promo,detail,marketPrice);
     globalThis.__runCombo=(settings,promos,products,combo,gift)=>{A=Object.assign({},DEF,settings);PRM=promos;rows=products;VCC=null;return {comboHtml:pkombo(combo),giftHtml:phm(gift)}};
     globalThis.__runCalc=(settings,product)=>{A=Object.assign({},DEF,settings);return calc(product)};
+    globalThis.__runCalcPromo=(settings,promos,product)=>{A=Object.assign({},DEF,settings);PRM=promos;VCC=null;VNO=0;return calc(product)};
     globalThis.__runVoucher=(settings,promos,product,price)=>{
       A=Object.assign({},DEF,settings);PRM=promos;VCC=null;VNO=0;
       const list=vcList().map(q=>({id:q.id,t:q.t,jt:q.jt||'toko',u:q.u,a:q.a,cp:q.cp||0,b:q.b||0,x:q.x||0,y:q.y||0,p:q.p||'',p2:q.p2||'',p3:q.p3||'',s:q.s||'',e:q.e||''}));
       const best=vcBest(price,product);
       return {list,best:best?{v:best.v,s:best.s,q:{id:best.q.id,t:best.q.t,jt:best.q.jt||'toko',u:best.q.u,a:best.q.a,b:best.q.b||0,x:best.q.x||0,y:best.q.y||0}}:null,thresholds:vcThr(product),invalid:vcBad(product)};
     };`, context);
-  return {calc:context.__runCalc,voucher:context.__runVoucher,promo:context.__runPromo,promoPrice:context.__runPromoPrice,combo:context.__runCombo};
+  return {calc:context.__runCalc,calcPromo:context.__runCalcPromo,voucher:context.__runVoucher,promo:context.__runPromo,promoPrice:context.__runPromoPrice,combo:context.__runCombo};
 }
 const legacy = createCalc(originalBlock, false);
 const migrated = createCalc(migratedSource, true);
@@ -70,7 +74,7 @@ let assertions = 0;
 for (const [settings, product] of curated) {
   const expected = legacyCalc(settings, product);
   assert.equal(stable(migratedCalc(settings, product)), stable(expected), 'Kasus kalkulator terpilih harus sama dengan v5.82');
-  const workerResult = workerCalculateProduct({settings, promos:[], product});
+  const workerResult = workerCalculateProduct({settings, promos:[], product, today:'2026-11-02'});
   if (workerResult && !workerResult.err) delete workerResult.forwardAtIdeal;
   assert.equal(stable(workerResult), stable(expected), 'Kalkulator Worker harus identik dengan v5.82 pada kasus terpilih');
   assertions += 2;
@@ -96,7 +100,7 @@ for (let i=0; i<1000; i++) {
   const expected = legacyCalc(settings, product);
   const actual = migratedCalc(settings, product);
   assert.equal(stable(actual), stable(expected), `Hasil kalkulator berbeda dari v5.82 pada fixture #${i}`);
-  const workerResult = workerCalculateProduct({settings, promos:[], product});
+  const workerResult = workerCalculateProduct({settings, promos:[], product, today:'2026-11-02'});
   if (workerResult && !workerResult.err) delete workerResult.forwardAtIdeal;
   assert.equal(stable(workerResult), stable(expected), `Kalkulator Worker berbeda dari v5.82 pada fixture #${i}`);
   assertions += 2;
@@ -187,3 +191,33 @@ for(let i=0;i<100;i++){
   comboAssertions++;
 }
 console.log(`Golden-master Kombo Hemat/Hadiah Minimum Belanja: ${comboAssertions} differential assertions passed against embedded Kalsara v5.82.`);
+
+// Pipa Chain of Responsibility (sen) vs v5.82: voucher otomatis/manual, kuota, min. belanja, dan tarif sebelum/sesudah 1 Des 2026.
+{
+  const legacyDec = createCalc(originalBlock, false, fixedDate('2026-12-05T12:00:00+07:00'));
+  const types = ['toko', 'produk', 'live', 'video'], kinds = ['pct', 'rp', 'cb'];
+  let pipeAssertions = 0;
+  for (let i = 0; i < 1500; i++) {
+    const dec = i % 3 === 0, oracle = dec ? legacyDec : legacy, today = dec ? '2026-12-05' : '2026-11-02';
+    const settings = {
+      tp: rnd(2) ? 'ns' : 'ml', fb: rnd(2) ? 'yes' : 'no', fl: rnd(5000), pb: rnd(4), pbc: rnd(100000),
+      ad: [2.5, 5, 6.5, 8.25, 10][rnd(5)], ac: 'ABCDEFGHI'[rnd(9)], gc: 'ABCDEFGH'[rnd(8)], sz: rnd(2) ? 'b' : 'k',
+      gf: 80 + rnd(41), gad: rnd(100) / 100, gm: rnd(1000) / 100, px: rnd(1000) / 100, vx: rnd(1000) / 100,
+      lv: rnd(1000) / 100, pm: rnd(300) / 100, pj: rnd(100) / 100, og: rnd(1000), ads: rnd(500) / 100, rt: rnd(300) / 100,
+      pa: rnd(2) ? 'yes' : 'no', dm: rnd(2) ? 'pct' : 'nom', dv: rnd(40),
+      vm: rnd(3) === 0 ? 'pct' : (rnd(2) ? 'nom' : 'none'), vv: rnd(2000), vc: rnd(50000),
+      re: rnd(2) ? 0 : 1000, rd: [1, 10, 100, 500][rnd(4)]
+    };
+    const product = {id: 'sku-' + rnd(4), m: 1000 + rnd(1000000), q: 1 + rnd(5), d: rnd(1000), p: rnd(1000), t: rnd(50000), o: {gc: 'ABCDEFGH'[rnd(8)], sz: rnd(2) ? 'b' : 'k'}};
+    const promos = Array.from({length: rnd(4)}, (_, j) => ({
+      id: `v-${i}-${j}`, t: 'vc', jt: types[rnd(types.length)], u: kinds[rnd(kinds.length)], a: 1 + rnd(40), cp: rnd(15000), b: rnd(80000),
+      x: rnd(20), y: rnd(25), p: 'sku-' + rnd(4), s: ['', '2026-11-01', '2026-12-01'][rnd(3)], e: ['', '2026-11-10', '2026-12-31'][rnd(3)]
+    }));
+    const expected = oracle.calcPromo(settings, promos, product);
+    const actual = workerCalculateProduct({settings, promos, product, today});
+    if (actual && !actual.err) delete actual.forwardAtIdeal;
+    assert.deepStrictEqual(JSON.parse(stable(actual)), JSON.parse(stable(expected)), `Pipa kalkulator berbeda dari v5.82 pada fixture voucher #${i}`);
+    pipeAssertions++;
+  }
+  console.log(`Golden-master pipa Chain of Responsibility (sen): ${pipeAssertions} differential assertions passed against embedded Kalsara v5.82.`);
+}
