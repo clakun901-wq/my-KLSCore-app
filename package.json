@@ -1,0 +1,9 @@
+{
+  "name": "kalsara-client-migration",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/worker.test.cjs && node tests/worker-client.test.mjs && node tests/migration.test.mjs && node tests/money.test.mjs && node tests/storage.test.mjs && node tests/dom-static.test.mjs && node tests/compatibility.test.mjs && node tests/golden-master.test.mjs"
+  },
+  "version": "0.9.6"
+}
