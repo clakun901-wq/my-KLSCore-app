@@ -1,6 +1,23 @@
-# Status migrasi Kalsara v5.82 — paket v9.14
+# Status migrasi Kalsara v5.82 — paket v9.15
 
 Tanggal build: 2026-11-04
+
+## CARA MELANJUTKAN (baca ini dulu di percakapan baru)
+Unggah zip paket terbaru + berkas ini. Posisi saat ini: **tahap 2 dari 4 SELESAI (v9.15)**. Perintah berikutnya: **"lanjut tahap 3"**.
+- Tahap 3 (belum dikerjakan): pindahkan bagian relatif mandiri menjadi modul ES di `js/`: `70-xlsx-reader.js`, `80-cadangan-tema.js`, `99-pwa.js`. Pola yang dipakai sama dengan ERP: modul mengekspor fungsi pembuat (`createXxx({deps})`), loader `js/legacy-app.js` menyisipkan `import` (URL absolut) di awal gabungan Blob, bagian legacy tinggal satu baris pemasangan. Setiap modul baru: daftarkan di `sw.js` CORE, naikkan versi cache, perbarui `tests/legacy-split.test.mjs`.
+- Tahap 4 (belum): bagian inti (calc, hitung-etalase, promosi, dst.), lalu loader dihapus.
+- Wajib tiap tahap: `npm test`, `npm run test:e2e` (harus 20/13/9 assertion), uji offline dengan service worker, dan uji ERP (HPP, OpEx) di Chromium.
+- Jebakan yang sudah terjadi di tahap 2: (1) `js/legacy-app.js` ada di `js/`, jadi URL modul memakai `./erp.js`, BUKAN `../erp.js`; (2) saat memindah kode lewat skrip ganti-teks, cek spasi di `return(...)` yang berubah jadi `returnX`.
+
+## Perubahan v9.15 (tahap 2 dari 4: modul ERP jadi modul ES)
+- `js/erp.js` (baru): modul ES yang mengekspor `createERP({$, today, toast, getRows})`. Isinya = isi lama `js/legacy/90-erp.js` tanpa perubahan logika. Dependensi kini eksplisit: `KStore` (storage.js), `compute` (worker-client.js), `Money` (money.js), `KDOM` (dom.js) diimpor; `$`, `today`, `toast`, dan `getRows` (membaca `rows` legacy segar setiap dipanggil, karena `rows` bisa diganti `applyState`) diberikan pemanggil. Pembacaan `window.rows||rows` dan `globalThis.Kalsara*` dihapus dari ERP.
+- `js/legacy/90-erp.js` kini 2 baris: `var ERP=createERP({...})`. Pemakai `ERP` (`80-cadangan-tema`, `95-boot`) tidak berubah.
+- `js/legacy-app.js` menyisipkan `import {createERP} from "<URL absolut erp.js>"` di awal gabungan Blob (import relatif tidak bisa dipakai di dalam Blob).
+- `sw.js`: `./js/erp.js` masuk CORE; cache `client-v9.15`. `package.json` 0.9.15.
+- Test: `readLegacySource()` kini = bagian legacy + `js/erp.js` (audit statis tetap berlaku); `legacy-split.test.mjs` diperluas (55 assertion: ekspor, impor eksplisit, tanpa global tersembunyi, loader, cache).
+- Diuji: semua test unit; 3 e2e Chromium 20/13/9 (sama dengan baseline); ERP di Chromium (HPP dari modal produk x qty, OpEx tersimpan dan bertahan setelah muat ulang); offline dengan service worker (erp.js di cache, tab ERP terbuka tanpa error). Belum diuji di Chrome Android.
+- Catatan temuan (TIDAK diubah, karena tahap ini murni pemindahan): di `restore()` cabang `if(!d)` (penyimpanan cadangan) memeriksa `fbSave(s)` yang mengembalikan Promise sehingga `bad` tidak pernah true; `open()` selalu `null` sehingga cabang IndexedDB di `restore()` tidak pernah jalan; `MODE` selalu kosong. Layak dibereskan di tahap tersendiri setelah pemecahan selesai.
+
 
 ## Perubahan v9.14 (tahap 1 dari 4: pemecahan legacy-app.js)
 - `js/legacy-app.js` (1.299 baris) dipecah menjadi 12 bagian berurutan di `js/legacy/` (daftar dan urutan eksekusi: `js/legacy/parts.json`). `js/legacy-app.js` kini loader kecil yang menggabungkan bagian-bagian itu dan menjalankannya sebagai SATU modul, jadi lingkup variabel (`A`, `rows`, `$`, ...) dan urutan eksekusi sama persis. Hasil gabungan terbukti identik byte per byte dengan v9.13.
