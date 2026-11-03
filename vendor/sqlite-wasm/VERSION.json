@@ -1,0 +1,9 @@
+{
+  "package": "@sqlite.org/sqlite-wasm",
+  "version": "3.46.1-build1",
+  "files": {
+    "sqlite3.mjs": "197cc0c845e7c987001e1007ebc35c2c4d76720bc027349496f3f1fdb981c6e7",
+    "sqlite3.wasm": "65004f8df62100e359a23db76cf879e48232d20d852649e303c953f6818aa2fd"
+  },
+  "installedAt": "2026-11-03T04:03:57.000Z"
+}
