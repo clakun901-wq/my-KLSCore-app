@@ -1,6 +1,11 @@
-# Status migrasi Kalsara v5.82 — paket v9.12
+# Status migrasi Kalsara v5.82 — paket v9.13
 
 Tanggal build: 2026-11-02
+
+## Perubahan v9.13
+- Cetak / PDF laporan ERP diperbaiki: cetak kini memakai salinan laporan (#erpp) di luar tata letak aplikasi, bukan posisi absolut + visibility:hidden yang memotong halaman. Diuji di Chromium: PDF lama kosong, PDF baru memuat seluruh baris sampai akhir (3 halaman pada data uji 60 baris). Belum diuji di Chrome Android/iOS Safari nyata.
+- Tidak ada perubahan pada hitungan, penyimpanan, atau skema data.
+- Cache service worker dinaikkan ke client-v9.13 agar HP mengambil pembaruan.
 
 ## Ringkasan v8
 

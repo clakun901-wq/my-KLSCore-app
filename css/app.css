@@ -372,7 +372,9 @@ header p.pwa{font-style:italic;letter-spacing:.2px}
 .tt [data-ft]{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease}.tt [data-ft]:active{transform:scale(.97)}.tt [data-ft].on{outline:2px solid var(--ink);outline-offset:-2px}.tt [data-ft]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .tth{margin:6px 4px 0;font-size:12.5px;color:var(--mute)}
 nav{grid-template-columns:repeat(7,minmax(0,1fr))!important}#v6 select{margin-bottom:0}#erpr .nt{font-size:13px}
-@media print{body *{visibility:hidden}#erpr,#erpr *{visibility:visible}#erpr{position:absolute;left:0;top:0;width:100%}}
+#erpp{display:none}#erpp .nt{font-size:13px}
+/* v9.13: cetak memakai salinan laporan di luar tata letak aplikasi (sebelumnya posisi absolut + visibility memotong halaman ke-2 dst.) */
+@media print{body.pe>*:not(#erpp){display:none!important}body.pe{--bg:#fff;--card:#fff;--ink:#111214;--mute:#555;--line:#ccc;--soft:#f2f2f4;--ok:#10795a;--bad:#d03a3a;background:#fff!important;min-height:0!important;padding:0!important;color:#111214;-webkit-print-color-adjust:exact;print-color-adjust:exact}body.pe #erpp{display:block!important;position:static!important;width:auto;padding:10mm;background:#fff;color:#111214}body.pe #erpp h2{margin:0 0 10px;font-size:16px}body.pe #erpp,body.pe #erpp *{content-visibility:visible!important;overflow:visible!important;contain:none!important;animation:none!important}body.pe #erpp>div>div{break-inside:avoid}}
 
 .vfc{width:100%;min-width:0}
 .vfc input{width:100%;box-sizing:border-box;height:48px;border-radius:14px;border:1px solid var(--inpl);background:var(--inp);color:var(--ink);font:inherit;font-size:16px;font-weight:600;padding:0 14px;text-align:left}
