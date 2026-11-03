@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node tests/worker.test.cjs && node tests/worker-client.test.mjs && node tests/migration.test.mjs && node tests/money.test.mjs && node tests/signals.test.mjs && node tests/architecture.test.mjs && node tests/pwa.test.mjs && node tests/storage.test.mjs && node tests/dom-static.test.mjs && node tests/compatibility.test.mjs && node tests/golden-master.test.mjs",
-    "test:e2e": "python3 tests/e2e/shelf.e2e.py"
+    "test:e2e": "python3 tests/e2e/shelf.e2e.py && python3 tests/e2e/hitung.e2e.py"
   },
-  "version": "0.9.8"
+  "version": "0.9.10"
 }

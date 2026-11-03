@@ -387,3 +387,10 @@ nav{grid-template-columns:repeat(7,minmax(0,1fr))!important}#v6 select{margin-bo
 .vfxr .vb input.vq{width:84px;box-sizing:border-box;height:44px;text-align:center;font-size:16px;font-weight:700;border-radius:12px;border:1px solid var(--inpl);background:var(--inp);color:var(--ink)}
 .vfxr .vb .btn{margin:0 0 0 auto;width:auto;min-width:96px;height:44px;padding:0 18px}
 #vfxa{width:100%}
+
+/* v9.8: cangkang kartu Hitung (hidrasi malas). Tinggi diukur dari kartu asli: terbuka 895px, ciut 347px,
+   supaya posisi gulir tidak melompat saat kartu dibangun. */
+.pc{content-visibility:auto;contain-intrinsic-size:auto 895px}
+.pc.cl{contain-intrinsic-size:auto 347px}
+.pc.lz{height:895px;overflow:hidden}
+.pc.lz.cl{height:347px}

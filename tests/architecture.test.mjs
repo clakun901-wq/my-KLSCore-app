@@ -30,4 +30,12 @@ ok(/pricing-pipeline\.js/.test(read('sw.js')) && /product-card\.js/.test(read('s
 // Regresi: setiap tag yang dipakai template dinamis harus lolos sanitizer (<s> harga coret pernah hilang diam-diam)
 const allowed = new Set(read('js/dom.js').match(/ALLOWED_TAGS = new Set\(\('([^']+)'/)[1].split(/\s+/));
 for (const t of ['s', 'b', 'em', 'button', 'label', 'input', 'svg', 'path', 'rect', 'details', 'summary']) ok(allowed.has(t), 'sanitizer harus mengizinkan <' + t + '>');
+// Tahap 4: hidrasi malas + batas produk 1.000 + jalur cepat satu produk
+ok(/var ROW_MAX=1000/.test(legacy), 'batas produk harus 1.000');
+ok(!/rows\.length>=100|slice\(0,100\)|100-rows\.length/.test(legacy), 'tidak boleh ada sisa batas 100 produk');
+ok(/function hyd\(r\)/.test(legacy) && /IntersectionObserver/.test(legacy) && /function cardBody\(r,e\)/.test(legacy), 'kartu Hitung harus dibangun malas (hyd + IntersectionObserver)');
+ok(/function updRow\(r\)/.test(legacy) && /function upd\(save,only\)/.test(legacy) && /r\._ag/.test(legacy), 'upd harus punya jalur cepat satu produk (updRow + cache agregat)');
+const cb = legacy.slice(legacy.indexOf('function cardBody(r,e){'), legacy.indexOf('/*v9.8: hidrasi malas.'));
+ok(!/upd\(true\)/.test(cb) && /upd\(true,r\)/.test(cb), 'edit di kartu harus memakai upd(true,r)');
+ok(/pc\.lz\{height:895px/.test(read('css/app.css')), 'cangkang kartu harus punya tinggi mendekati kartu asli');
 console.log(`Architecture audit: ${n} assertions passed`);

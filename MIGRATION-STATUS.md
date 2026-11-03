@@ -1,4 +1,4 @@
-# Status migrasi Kalsara v5.82 — paket v9.8
+# Status migrasi Kalsara v5.82 — paket v9.10
 
 Tanggal build: 2026-11-02
 
@@ -234,3 +234,26 @@ Mesin kalkulator sekarang tersedia di Worker dan diuji terhadap v5.82, tetapi UI
 - v5.82 membatasi 100 produk (`Maksimal 100 produk`, 4 tempat). Batas ini belum dicabut karena tab Hitung masih membangun satu formulir berat per produk. Mencabutnya adalah bagian Tahap 4 (pecah per tab + virtualisasi).
 - Tampilan masih memanggil `calc()` sinkron di utas utama untuk menyusun model Etalase; `calculate-batch` sudah siap tetapi belum dipasang ke tampilan.
 - Tahap 3 (SQLite sebagai sumber data utama + Wasm lokal) dan Tahap 4 belum dikerjakan.
+
+## Pembaruan v9.9 — Tahap 4a: batas 1.000 produk dengan hidrasi malas
+
+- **Batas produk 100 → 1.000** (`ROW_MAX`) di semua jalur: tambah, FAB, duplikat, impor, dan muat data.
+- **Hidrasi malas tab Hitung:** `card()` hanya membuat cangkang ringan (tinggi mengikuti kartu asli: 895px terbuka, 347px ciut); isi formulir (`cardBody`) dibangun oleh `hyd(r)` saat kartu mendekati layar (IntersectionObserver, margin 900px). Produk ≤ 40 langsung dibangun seperti sebelumnya. Cari, urut, buka dari Etalase, duplikat, dan Ciutkan semua tetap berfungsi pada kartu yang belum terbangun.
+- **`upd(save, only)` + `updRow(r)`:** perhitungan per produk dipisah dari penggambaran. Edit di kartu hanya menghitung ulang produk itu; agregat dijumlahkan dari cache `r._ag`. Terukur di Chromium dengan 1.000 produk: **satu ketikan 1.114 ms → ±50 ms**; hanya 40 dari 1.000 kartu terbangun saat boot; hasil agregat jalur cepat identik dengan hitung penuh.
+- Tes: `tests/e2e/hitung.e2e.py` (`npm run test:e2e`) dan tambahan di `tests/architecture.test.mjs`.
+
+**Masih terbuka**
+- Boot dengan 1.000 produk ±3,7 detik di Chromium headless (satu hitung penuh `updRow` ±1,1 detik masih di utas utama). `calculate-batch` di Worker siap tetapi belum dipasang ke tampilan.
+- Perubahan pengaturan global (tarif, voucher, promo) masih menghitung ulang semua produk di utas utama (±1 detik pada 1.000 produk).
+- Belum diuji di HP sungguhan; angka di atas dari Chromium desktop headless.
+- Tahap 3 (SQLite sebagai sumber data) dan pemecahan `legacy-app.js` per modul belum dikerjakan.
+
+## Pembaruan v9.10 — Tahap 4b: hitungan batch di Worker untuk boot dan perubahan setelan
+
+- **Cache kalkulator baru** (`rkey`/`gver`/`CC`): berkunci isi (versi global = tanggal + setelan + promo, dihitung sekali per tugas; ditambah field `id,m,d,p,t,q,o` produk). Menggantikan cache lama yang (1) men-stringify seluruh setelan/promo pada setiap panggilan, (2) mengirim seluruh daftar produk ke Worker untuk tiap produk (O(n²)), dan (3) dibatasi 600 entri sehingga pada >600 produk cache berputar dan memicu `upd` berulang.
+- **`prewarm()`:** produk yang usang dihitung SEKALIGUS lewat `calculate-batch` (satu kiriman, mode `slim`). Selama Worker bekerja, `upd()` berjalan ringan (hanya kartu terbangun); begitu hasil tiba, `upd` penuh berjalan dari cache. Balasan usang (setelan berubah saat menunggu) dibuang; ada pengaman anti-loop dan jalur cadangan sinkron bila Worker gagal.
+- **Terukur (Chromium desktop headless, 1.000 produk):** DOM siap 3,7 dtk → 0,63 dtk; ringkasan lengkap 1,39 dtk; satu ketikan di kartu 1.114 → 12 ms; ubah setelan global memblokir utas utama ±75 ms (sebelumnya ±1,1 dtk). Hasil identik dengan hitung penuh saat boot, termasuk ketikan beruntun cepat.
+- Satu produk yang diedit tetap dihitung sinkron (±0,2 ms) karena tidak tergolong berat.
+- Tes: `tests/e2e/hitung.e2e.py` (13 pengecekan) dan penyesuaian `tests/compatibility.test.mjs`.
+
+**Masih terbuka:** Tahap 3 (SQLite sebagai sumber data utama + Wasm lokal), pemecahan `legacy-app.js` per modul, dan uji di HP sungguhan (angka di atas dari desktop).

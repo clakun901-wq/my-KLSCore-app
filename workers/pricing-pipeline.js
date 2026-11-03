@@ -343,12 +343,12 @@ export function calculateProduct(payload = {}) {
 export function calculateBatch(payload = {}) {
   const engine = new PricingEngine({settings: payload.settings, promos: payload.promos, today: payload.today});
   return (payload.products || []).map(p => {
-    try { return calculateWith(engine, p); } catch (e) { return {err: e.message}; }
+    try { return calculateWith(engine, p, payload.slim); } catch (e) { return {err: e.message}; }
   });
 }
-function calculateWith(engine, product) {
+function calculateWith(engine, product, slim) {
   const result = engine.calculate(product);
-  if (!result || result.err) return result;
+  if (!result || result.err || slim) return result;
   const L = toSen(result.L);
   const f = engine.evaluateListing(L, product, result.__sen.R, result.__sen.cost);
   const b = f.b;

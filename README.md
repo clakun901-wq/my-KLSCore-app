@@ -1,6 +1,6 @@
 # Kalsara — migrasi client-side (basis Kalsara-v5.82)
 
-**Versi paket: v9.8 — pengembangan, belum disertifikasi untuk produksi.**
+**Versi paket: v9.9 — pengembangan, belum disertifikasi untuk produksi.**
 
 - **Dashboard progres:** buka [`progress.html`](./progress.html) untuk melihat estimasi, hasil tes yang sudah terbukti, dan gerbang yang masih terbuka.
 - **Status teknis rinci:** lihat [`MIGRATION-STATUS.md`](./MIGRATION-STATUS.md).

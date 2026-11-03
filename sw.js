@@ -1,4 +1,4 @@
-const CACHE='kalsara-v5.82-client-v9.8';
+const CACHE='kalsara-v5.82-client-v9.10';
 const CORE=['./','./index.html','./css/app.css','./js/main.js','./js/money.js','./js/dom.js','./js/legacy-app.js','./js/storage.js','./js/worker-client.js','./js/migration.js','./js/signals.js','./components/product-card.js','./workers/compute.worker.js','./workers/calculator-engine.js','./workers/pricing-pipeline.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png','./progress.html'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
