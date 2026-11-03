@@ -1,4 +1,4 @@
-# Status migrasi Kalsara v5.82 — paket v9.10
+# Status migrasi Kalsara v5.82 — paket v9.11
 
 Tanggal build: 2026-11-02
 
@@ -257,3 +257,32 @@ Mesin kalkulator sekarang tersedia di Worker dan diuji terhadap v5.82, tetapi UI
 - Tes: `tests/e2e/hitung.e2e.py` (13 pengecekan) dan penyesuaian `tests/compatibility.test.mjs`.
 
 **Masih terbuka:** Tahap 3 (SQLite sebagai sumber data utama + Wasm lokal), pemecahan `legacy-app.js` per modul, dan uji di HP sungguhan (angka di atas dari desktop).
+
+
+## Pembaruan v9.11 — Tahap 3: SQLite sebagai sumber data utama (kode siap, Wasm belum disertakan)
+
+**Temuan yang mengubah rancangan.** Jalur SQLite lama (`oo1.OpfsDb` dipanggil dari main thread, Wasm dari CDN) tidak pernah dapat berfungsi sebagai persistensi nyata: VFS "opfs" hanya tersedia di Worker dan membutuhkan header COOP/COEP yang tidak disediakan GitHub Pages. Karena itu `db` selalu `null` dan aplikasi diam-diam hanya memakai jurnal OPFS. (Kesimpulan dari dokumentasi SQLite Wasm dan pembacaan kode; belum diverifikasi di browser dengan Wasm nyata.)
+
+### Perubahan
+- **SQLite berjalan di Worker** (`workers/sqlite-store.worker.js`) dengan VFS **OPFS SAH Pool**, yang tidak butuh SharedArrayBuffer/COOP/COEP sehingga cocok untuk GitHub Pages. Wasm dimuat dari `vendor/sqlite-wasm/` (tanpa CDN). Dependensi CDN dihapus dari `storage.js`.
+- **Satu sumber data.** Tiap perubahan = satu transaksi SQLite (key-value + tabel domain ERP sekaligus). Tabel ERP (`erp_marketplaces_raw`, `erp_order_items`, `erp_opex`, `erp_settings`) kini menjadi penyimpanan aktif untuk 4 koleksi itu; `erpPut/erpDelete/erpClear` menulis baris, bukan seluruh koleksi. `products` dan `inventory_logs` tetap key-value JSON.
+- **Impor sekali jalan dari jurnal OPFS** pada boot pertama dengan SQLite (atomik dalam satu transaksi, bersama penanda `journal_imported_at`). Berkas jurnal tidak diubah dan tetap menjadi sumber pemulihan.
+- **Penjaga keamanan data:** setelah beralih, `kalsara-backend.json` mencegah aplikasi jatuh diam-diam ke jurnal yang sudah usang; bila SQLite tidak dapat dibuka, aplikasi menampilkan pesan, bukan memakai data lama.
+- **Satu tab pada satu waktu** (Web Locks) karena SAH Pool hanya mengizinkan satu koneksi. Tab kedua menampilkan pesan yang jelas.
+- **Tanpa berkas Wasm** aplikasi berjalan seperti v9.10 (jurnal OPFS). Service Worker menyimpan berkas Wasm sebagai cache opsional sehingga instalasi PWA tidak gagal bila berkas belum ada. Cache: `kalsara-v5.82-client-v9.11`.
+- `scripts/fetch-sqlite-wasm.mjs`: memasang `sqlite3.mjs` + `sqlite3.wasm` (versi dipin `3.46.1-build1`, SHA-256 dicatat di `VERSION.json`) dan `--check` untuk verifikasi.
+- Skema lama `event_log` dihapus (tidak ada gunanya sebagai sumber data tunggal; jalur lama tidak pernah menulis ke database nyata).
+- Audit statis di `tests/storage.test.mjs` diarahkan ke `sqlite-engine.js` (SQL berpindah ke sana); tes runtime 19 assertion tidak diubah.
+
+### Tes (semua lulus di lingkungan build)
+- `tests/sqlite-engine.test.mjs`: 42 assertion pada **SQLite sungguhan** (node:sqlite): migrasi, upsert/urutan, kolom turunan, atomisitas batch, restore, durabilitas lintas koneksi.
+- `tests/storage-sqlite.test.mjs`: 48 assertion: impor jurnal, tulis ke SQLite bukan jurnal, rollback saat gagal tulis, backup/restore atomik, boot ulang, penolakan jatuh ke jurnal usang, penjaga tab, gagal impor, timeout klien. Diverifikasi dengan uji mutasi (merusak rollback/penanda membuat tes gagal).
+- `tests/vendor-script.test.mjs`: 9 assertion untuk skrip pemasang Wasm.
+- E2E Chromium nyata: `shelf` (20), `hitung` (13), dan `sqlite-fallback` (5): Worker SQLite termuat, membalas `wasm-missing` dengan benar, aplikasi tetap hidup lewat jurnal.
+
+### Belum terbukti / masih terbuka
+1. **SQLite Wasm + OPFS SAH Pool di browser nyata belum pernah dijalankan** (sandbox tanpa jaringan, berkas Wasm tidak tersedia). Lapisan Worker (`openWasmDb`, pemetaan `exec/run/all` ke API `oo1`) hanya terbukti sintaksis dan lewat jalur gagal-aman; logika SQL-nya terbukti di SQLite nyata melalui Node. Setelah Wasm dipasang: jalankan `npm run vendor:check`, `npm test`, buka aplikasi dan periksa `KStore.backend === 'sqlite'`.
+2. Rollback ke v9.10 setelah beralih ke SQLite membuat v9.10 membaca jurnal lama yang tidak lagi ditulis. Buat cadangan (backup) sebelum beralih dan sebelum rollback.
+3. Kuota OPFS penuh, crash saat tulis, dan perilaku dua tab pada browser nyata belum diuji.
+4. Agregasi laporan ERP masih berjalan di Worker komputasi dari baris yang dimuat; memindahkannya menjadi kueri SQL (`SUM/GROUP BY`) adalah Tahap 3b. Normalisasi penuh (membuang payload JSON) juga belum dilakukan.
+5. Pemecahan `legacy-app.js` per modul belum dikerjakan.

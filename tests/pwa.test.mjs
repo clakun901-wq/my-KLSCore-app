@@ -34,7 +34,16 @@ for (const m of index.matchAll(/<link rel="(?:icon|apple-touch-icon)"[^>]*href="
 
 const sw = read('sw.js').toString('utf8');
 ok(/addEventListener\('fetch'/.test(sw), 'Service Worker wajib punya handler fetch agar bisa dipasang');
-const core = [...sw.matchAll(/'\.\/([^']*)'/g)].map(m => m[1]).filter(f => f && !f.startsWith('kalsara'));
+const optional = new Set([...(sw.match(/const OPTIONAL=\[([^\]]*)\]/)?.[1] || '').matchAll(/'\.\/([^']*)'/g)].map(m => m[1]));
+const core = [...sw.matchAll(/'\.\/([^']*)'/g)].map(m => m[1]).filter(f => f && !f.startsWith('kalsara') && !optional.has(f));
 for (const f of core) ok(fs.existsSync(path.join(root, f)), 'file di cache Service Worker tidak ada: ' + f);
+// Wasm SQLite bersifat opsional untuk instalasi (tidak boleh menggagalkan addAll), tetapi nama berkasnya harus sama dengan yang dimuat Worker.
+ok(/caches\.open\(CACHE\)\.then\(async c=>\{await c\.addAll\(CORE\);await Promise\.all\(OPTIONAL\.map\(u=>c\.add\(u\)\.catch\(\(\)=>\{\}\)\)\)/.test(sw), 'berkas opsional di-cache satu per satu dan kegagalannya tidak membatalkan instalasi');
+const sqliteWorker = fs.readFileSync(path.join(root, 'workers/sqlite-store.worker.js'), 'utf8');
+for (const f of ['sqlite3.mjs', 'sqlite3.wasm']) ok(optional.has('vendor/sqlite-wasm/' + f), 'cache opsional harus memuat ' + f);
+ok(sqliteWorker.includes("'../vendor/sqlite-wasm/sqlite3.mjs'"), 'Worker memuat Wasm dari vendor lokal');
+ok(!/cdn\.jsdelivr|unpkg|esm\.sh/.test(fs.readFileSync(path.join(root, 'js/storage.js'), 'utf8') + sqliteWorker), 'tidak ada lagi dependensi CDN untuk SQLite');
+// Bila vendor sudah dipasang, harus utuh (hash cocok dengan VERSION.json).
+if (fs.existsSync(path.join(root, 'vendor/sqlite-wasm/sqlite3.wasm'))) { const { check } = await import('../scripts/fetch-sqlite-wasm.mjs'); const problems = check(); ok(problems.length === 0, 'vendor/sqlite-wasm tidak utuh: ' + problems.join('; ')); }
 for (const ic of manifest.icons) ok(sw.includes('./' + ic.src), 'ikon belum masuk cache Service Worker: ' + ic.src);
 console.log(`PWA installability audit: ${n} assertions passed`);

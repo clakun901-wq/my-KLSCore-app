@@ -6,7 +6,16 @@ import './dom.js';
 import './signals.js';
 import '../components/product-card.js';
 
-await initStorage();
+try { await initStorage(); }
+catch (e) {
+  // Kegagalan penyimpanan harus terlihat (mis. tab ganda atau SQLite tak terbuka); jangan biarkan layar kosong.
+  const box = document.createElement('div');
+  box.setAttribute('role','alert');
+  box.style.cssText = 'margin:24px auto;max-width:520px;padding:16px;border:1px solid #c33;border-radius:8px;font:15px/1.5 system-ui,sans-serif';
+  box.textContent = 'Kalsara tidak dapat membuka penyimpanan data. ' + (e && e.message ? e.message : '');
+  document.body.replaceChildren(box);
+  throw e;
+}
 // One-time, read-only migration of existing v5.82 browser data into OPFS.
 // After this pass the application uses KStore; localStorage is not used as the live database.
 if (KStore.getItem('__kalsara_migration_v1') !== 'done') {

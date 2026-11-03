@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { locateFiles, install, check } from '../scripts/fetch-sqlite-wasm.mjs';
+let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; };
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kls-vendor-'));
+// Paket palsu dengan tata letak seperti paket npm (sqlite-wasm/jswasm/...), plus salinan di jalur lebih dalam yang harus diabaikan.
+const pkg = path.join(tmp, 'package'), js = path.join(pkg, 'sqlite-wasm', 'jswasm');
+fs.mkdirSync(js, { recursive: true }); fs.mkdirSync(path.join(pkg, 'deep', 'er', 'x'), { recursive: true });
+const wasm = Buffer.concat([Buffer.from('0061736d01000000', 'hex'), Buffer.alloc(200_000, 7)]);
+fs.writeFileSync(path.join(js, 'sqlite3.wasm'), wasm);
+fs.writeFileSync(path.join(js, 'sqlite3.mjs'), 'export default async()=>({installOpfsSAHPoolVfs(){}})');
+fs.writeFileSync(path.join(pkg, 'deep', 'er', 'x', 'sqlite3.wasm'), 'bukan wasm');
+fs.writeFileSync(path.join(pkg, 'package.json'), '{"name":"@sqlite.org/sqlite-wasm","version":"9.9.9-test"}');
+ok(locateFiles(pkg)['sqlite3.wasm'].startsWith(js), 'memilih berkas dengan jalur paling dangkal');
+const vendor = path.join(tmp, 'vendor');
+const info = install(pkg, vendor);
+ok(info.version === '9.9.9-test' && info.files['sqlite3.wasm'].length === 64, 'install mencatat versi dan SHA-256');
+ok(check(vendor).length === 0, 'check lulus untuk vendor yang utuh');
+fs.appendFileSync(path.join(vendor, 'sqlite3.wasm'), 'x');
+ok(check(vendor).some(p => /sqlite3\.wasm.*hash/.test(p)), 'check mendeteksi berkas yang berubah');
+fs.rmSync(path.join(vendor, 'sqlite3.mjs'));
+ok(check(vendor).some(p => /sqlite3\.mjs tidak ada/.test(p)), 'check mendeteksi berkas hilang');
+ok(check(path.join(tmp, 'kosong')).length === 1, 'check melapor bila belum pernah dipasang');
+// Menolak paket yang salah: wasm palsu, atau build tanpa SAH Pool
+fs.writeFileSync(path.join(js, 'sqlite3.wasm'), 'bukan wasm');
+assert.throws(() => install(pkg, path.join(tmp, 'v2')), /WebAssembly/); n++;
+fs.writeFileSync(path.join(js, 'sqlite3.wasm'), wasm);
+fs.writeFileSync(path.join(js, 'sqlite3.mjs'), 'export default async()=>({})');
+assert.throws(() => install(pkg, path.join(tmp, 'v3')), /SAH Pool/); n++;
+fs.rmSync(path.join(js, 'sqlite3.mjs'));
+assert.throws(() => install(pkg, path.join(tmp, 'v4')), /tidak memuat/); n++;
+fs.rmSync(tmp, { recursive: true, force: true });
+console.log(`Vendor script audit: ${n} assertions passed`);

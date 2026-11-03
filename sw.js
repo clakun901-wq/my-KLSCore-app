@@ -1,5 +1,7 @@
-const CACHE='kalsara-v5.82-client-v9.10';
-const CORE=['./','./index.html','./css/app.css','./js/main.js','./js/money.js','./js/dom.js','./js/legacy-app.js','./js/storage.js','./js/worker-client.js','./js/migration.js','./js/signals.js','./components/product-card.js','./workers/compute.worker.js','./workers/calculator-engine.js','./workers/pricing-pipeline.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png','./progress.html'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
+const CACHE='kalsara-v5.82-client-v9.11';
+const CORE=['./','./index.html','./css/app.css','./js/main.js','./js/money.js','./js/dom.js','./js/legacy-app.js','./js/storage.js','./js/sqlite-engine.js','./js/sqlite-client.js','./workers/sqlite-store.worker.js','./js/worker-client.js','./js/migration.js','./js/signals.js','./components/product-card.js','./workers/compute.worker.js','./workers/calculator-engine.js','./workers/pricing-pipeline.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png','./progress.html'];
+// Berkas Wasm bersifat opsional: bila belum ada di hosting, instalasi PWA tidak boleh gagal.
+const OPTIONAL=['./vendor/sqlite-wasm/sqlite3.mjs','./vendor/sqlite-wasm/sqlite3.wasm'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(async c=>{await c.addAll(CORE);await Promise.all(OPTIONAL.map(u=>c.add(u).catch(()=>{})));}).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.origin!==location.origin)return;e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r;})));});

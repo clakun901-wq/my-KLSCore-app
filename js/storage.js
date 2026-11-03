@@ -1,59 +1,47 @@
-/* Kalsara client-only persistence.
- * OPFS append-only journal is authoritative; SQLite Wasm is a rebuildable index.
+/* Kalsara client-only persistence (Tahap 3).
+ *
+ * Dua mode, dipilih saat initStorage():
+ *  - 'sqlite'  : SQLite Wasm di Worker (OPFS SAH Pool) adalah SATU-SATUNYA sumber data.
+ *                Tiap perubahan = satu transaksi (key-value + tabel domain ERP sekaligus).
+ *                Jurnal OPFS lama tidak lagi ditulis; ia dibiarkan utuh sebagai sumber pemulihan.
+ *  - 'journal' : jalur lama (OPFS append-only journal). Hanya dipakai bila SQLite tidak tersedia
+ *                DAN aplikasi belum pernah beralih ke SQLite pada perangkat ini.
+ * Setelah beralih, penanda `kalsara-backend.json` mencegah jatuh diam-diam ke jurnal yang sudah usang.
  */
-const DB_NAME = 'kalsara.sqlite3';
+import { ERP_TABLES, ERP_KEY_PREFIX, erpEntityOfKey, isEmptyData } from './sqlite-engine.js';
+import { createSqliteBackend } from './sqlite-client.js';
+
 const JOURNAL = 'kalsara-delta.log';
+const MARKER = 'kalsara-backend.json';
+const WRITER_LOCK = 'kalsara-sqlite-writer';
 const encoder = new TextEncoder();
-let root, db, chain = Promise.resolve(), ready = false;
+let root, backend = null, mode = 'journal', chain = Promise.resolve(), ready = false, lockRelease = null;
 const cache = new Map();
-// durableCache tracks values known to have reached the OPFS journal.
+// durableCache tracks values known to have reached durable storage (journal or SQLite).
 const durableCache = new Map();
 const writeVersions = new Map();
 const failedWrites = new Map();
+// Mode SQLite: baris ERP per entitas domain (id -> baris). Tabel SQLite adalah sumber kebenaran di disk.
+const erpMaps = new Map();
 
-function sqlExec(sql, bind = []) {
-  if (!db) return;
-  const stmt = db.prepare(sql);
-  try { stmt.bind(bind); while (stmt.step()) {} } finally { stmt.finalize(); }
+function coded(code, message, cause) { const e = new Error(message); e.code = code; if (cause) e.cause = cause; return e; }
+const isErpDomain = entity => Object.prototype.hasOwnProperty.call(ERP_TABLES, entity);
+const erpKey = entity => ERP_KEY_PREFIX + entity;
+const sqliteErpEntity = k => (mode === 'sqlite' ? erpEntityOfKey(k) : null);
+function erpCompat(entity) {
+  const map = erpMaps.get(entity);
+  return map && map.size ? JSON.stringify(Object.fromEntries(map)) : null;
+}
+function allKeys() {
+  const keys = [...cache.keys()];
+  if (mode === 'sqlite') for (const entity of Object.keys(ERP_TABLES)) if (erpMaps.get(entity)?.size) keys.push(erpKey(entity));
+  return keys;
+}
+function dispatchStorageError(message) {
+  try { window.dispatchEvent(new CustomEvent('kalsara-storage-error', { detail: { message } })); } catch {}
 }
 
-const ERP_TABLES = Object.freeze({marketplaces_raw:'erp_marketplaces_raw',order_items:'erp_order_items',opex:'erp_opex',settings:'erp_settings'});
-function safeInt(v) { return Number.isSafeInteger(v) ? v : null; }
-function syncErpMaterialized(key, serialized) {
-  if (!db || !key.startsWith('kalsara_erp_')) return;
-  const entity=key.slice('kalsara_erp_'.length), table=ERP_TABLES[entity];
-  if (!table) return;
-  const rows=serialized ? JSON.parse(serialized) : {};
-  if (!rows || typeof rows!=='object' || Array.isArray(rows)) throw new Error('Data ERP '+entity+' tidak valid untuk indeks SQLite');
-  sqlExec('DELETE FROM '+table);
-  for (const [mapKey,row] of Object.entries(rows)) {
-    if (!row || typeof row!=='object') continue;
-    const id=String(row.id ?? mapKey), payload=JSON.stringify(row);
-    if (entity==='marketplaces_raw') sqlExec('INSERT INTO erp_marketplaces_raw(id,order_id,sku,date,gross_revenue,released_amount,quantity,payload) VALUES(?,?,?,?,?,?,?,?)',[id,String(row.order_id||''),String(row.sku||''),String(row.date||''),safeInt(row.gross_revenue),safeInt(row.tp),safeInt(row.qty),payload]);
-    else if (entity==='order_items') sqlExec('INSERT INTO erp_order_items(id,order_id,sku,quantity,price,payload) VALUES(?,?,?,?,?,?)',[id,String(row.order_id||''),String(row.sku||''),safeInt(row.qty),safeInt(row.price),payload]);
-    else if (entity==='opex') sqlExec('INSERT INTO erp_opex(id,date,category,amount,notes,payload) VALUES(?,?,?,?,?,?)',[id,String(row.date||''),String(row.category||''),safeInt(row.amount),String(row.notes||''),payload]);
-    else if (entity==='settings') sqlExec('INSERT INTO erp_settings(id,payload) VALUES(?,?)',[id,payload]);
-  }
-}
-async function openSQLite() {
-  try {
-    const mod = await import('https://cdn.jsdelivr.net/npm/@sqlite.org/sqlite-wasm@3.46.1-build1/index.mjs');
-    const sqlite3 = await mod.default({ print:()=>{}, printErr:()=>{} });
-    db = new sqlite3.oo1.OpfsDb('/' + DB_NAME, 'c');
-    db.exec('PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL, rev INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS event_log (seq INTEGER PRIMARY KEY AUTOINCREMENT, k TEXT NOT NULL, v TEXT NOT NULL, at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS erp_marketplaces_raw (id TEXT PRIMARY KEY, order_id TEXT, sku TEXT, date TEXT, gross_revenue INTEGER, released_amount INTEGER, quantity INTEGER, payload TEXT NOT NULL); CREATE INDEX IF NOT EXISTS idx_erp_market_date ON erp_marketplaces_raw(date); CREATE INDEX IF NOT EXISTS idx_erp_market_order ON erp_marketplaces_raw(order_id); CREATE TABLE IF NOT EXISTS erp_order_items (id TEXT PRIMARY KEY, order_id TEXT, sku TEXT, quantity INTEGER, price INTEGER, payload TEXT NOT NULL); CREATE INDEX IF NOT EXISTS idx_erp_items_order ON erp_order_items(order_id); CREATE INDEX IF NOT EXISTS idx_erp_items_sku ON erp_order_items(sku); CREATE TABLE IF NOT EXISTS erp_opex (id TEXT PRIMARY KEY, date TEXT, category TEXT, amount INTEGER, notes TEXT, payload TEXT NOT NULL); CREATE INDEX IF NOT EXISTS idx_erp_opex_date ON erp_opex(date); CREATE TABLE IF NOT EXISTS erp_settings (id TEXT PRIMARY KEY, payload TEXT NOT NULL);');
-    return true;
-  } catch (e) {
-    db = null;
-    console.warn('SQLite OPFS tidak tersedia; jurnal OPFS tetap menjadi penyimpanan utama.', e);
-    return false;
-  }
-}
-async function hydrateSQLite() {
-  if (!db) return;
-  try {
-    db.exec({sql:'SELECT k,v FROM kv',rowMode:'array',callback:r=>cache.set(r[0],r[1])});
-  } catch (e) { console.warn('Indeks SQLite akan dibangun ulang dari jurnal OPFS.', e); }
-}
+/* ---------- jurnal OPFS (jalur lama + sumber impor sekali jalan) ---------- */
 async function replayJournal() {
   const handle = await root.getFileHandle(JOURNAL, {create:true});
   const raw = await (await handle.getFile()).text();
@@ -78,147 +66,248 @@ async function replayJournal() {
     }
   }
 }
-async function rebuildSQLite() {
-  if (!db) return;
-  db.exec('BEGIN IMMEDIATE');
-  try {
-    sqlExec('DELETE FROM kv');
-    sqlExec('DELETE FROM erp_marketplaces_raw'); sqlExec('DELETE FROM erp_order_items'); sqlExec('DELETE FROM erp_opex'); sqlExec('DELETE FROM erp_settings');
-    for (const [k,v] of cache) { sqlExec('INSERT INTO kv(k,v,rev) VALUES(?,?,1)',[k,v]); syncErpMaterialized(k,v); }
-    db.exec('COMMIT');
-  } catch (e) { db.exec('ROLLBACK'); console.warn('Indeks SQLite gagal dibangun ulang; jurnal tetap aman.',e); db=null; }
-}
-async function appendDelta(k, v, del=false) {
-  const event = JSON.stringify({k,v,del,at:Date.now()}) + '\n';
+async function appendJournal(record) {
+  const event = JSON.stringify(record) + '\n';
   const handle = await root.getFileHandle(JOURNAL,{create:true});
   const file = await handle.getFile();
   const writer = await handle.createWritable({keepExistingData:true});
   try { await writer.seek(file.size); await writer.write(encoder.encode(event)); await writer.close(); }
   catch (e) { try { await writer.abort(); } catch {} throw e; }
+}
+const appendDelta = (k, v, del=false) => appendJournal({k,v,del,at:Date.now()});
+const appendSnapshot = snapshot => appendJournal({snapshot,at:Date.now()});
 
-  if (db) {
-    try {
-      db.exec('BEGIN IMMEDIATE');
-      sqlExec('INSERT INTO event_log(k,v,at) VALUES(?,?,?)',[k,v,Date.now()]);
-      if (del) sqlExec('DELETE FROM kv WHERE k=?',[k]);
-      else sqlExec('INSERT INTO kv(k,v,rev) VALUES(?,?,1) ON CONFLICT(k) DO UPDATE SET v=excluded.v, rev=kv.rev+1',[k,v]);
-      if (k.startsWith('kalsara_erp_')) syncErpMaterialized(k,del?null:v);
-      db.exec('COMMIT');
-    } catch (e) {
-      try { db.exec('ROLLBACK'); } catch {}
-      console.warn('SQLite tertinggal; data jurnal OPFS tetap tersimpan.',e);
-      db=null;
-    }
-  }
+/* ---------- penanda backend & penjaga multi-tab ---------- */
+async function readMarker() {
+  try {
+    const handle = await root.getFileHandle(MARKER);
+    const text = await (await handle.getFile()).text();
+    return text ? JSON.parse(text) : {};
+  } catch { return {}; }
 }
-function enqueue(k,v,del) {
-  const version = (writeVersions.get(k) || 0) + 1;
-  writeVersions.set(k, version);
-  const task = chain.then(async () => {
-    await appendDelta(k,v,del);
-    if (del) durableCache.delete(k); else durableCache.set(k,v);
-    failedWrites.delete(k);
-  }).catch(error => {
-    failedWrites.set(k,error);
-    // Roll back only if no newer optimistic edit superseded this write.
-    if (writeVersions.get(k) === version) {
-      if (durableCache.has(k)) cache.set(k,durableCache.get(k));
-      else cache.delete(k);
-    }
-    console.error('Gagal menyimpan perubahan Kalsara ke OPFS.',error);
-    try { window.dispatchEvent(new CustomEvent('kalsara-storage-error',{detail:{message:error.message}})); } catch {}
+async function writeMarker() {
+  const handle = await root.getFileHandle(MARKER, {create:true});
+  const writer = await handle.createWritable();
+  try { await writer.write(JSON.stringify({authoritative:'sqlite',since:new Date().toISOString()})); await writer.close(); }
+  catch (e) { try { await writer.abort(); } catch {} throw e; }
+}
+// SAH Pool hanya mengizinkan satu koneksi. Web Lock dipegang sepanjang umur halaman.
+function acquireWriterLock() {
+  if (!globalThis.navigator?.locks?.request) return Promise.resolve({held:true, release(){}});
+  return new Promise(resolve => {
+    navigator.locks.request(WRITER_LOCK, {ifAvailable:true}, lock => {
+      if (!lock) { resolve({held:false}); return; }
+      return new Promise(release => resolve({held:true, release}));
+    }).catch(() => resolve({held:true, release(){}}));
   });
-  chain = task;
 }
-export async function initStorage() {
+
+/* ---------- hidrasi ---------- */
+function hydrate(data) {
+  cache.clear(); durableCache.clear(); erpMaps.clear();
+  for (const [k,v] of data.kv) cache.set(k,v);
+  for (const entity of Object.keys(ERP_TABLES)) erpMaps.set(entity,new Map(data.erp[entity] || []));
+  for (const [k,v] of cache) durableCache.set(k,v);
+}
+async function resyncErp(entity) {
+  if (!backend) return;
+  erpMaps.set(entity,new Map(await backend.request('erp-load',{entity})));
+}
+
+async function openSqliteBackend(options) {
+  const factory = options.backendFactory || defaultBackendFactory;
+  const b = await factory();
+  try { await b.request('open'); } catch (e) { try { b.terminate?.(); } catch {} throw e; }
+  return b;
+}
+async function defaultBackendFactory() {
+  if (typeof Worker !== 'function') throw coded('no-worker','Browser ini tidak mendukung Web Worker.');
+  return createSqliteBackend(() => new Worker(new URL('../workers/sqlite-store.worker.js', import.meta.url), {type:'module'}));
+}
+
+export async function initStorage(options = {}) {
   if (!navigator.storage?.getDirectory) throw new Error('OPFS tidak didukung browser ini. Gunakan browser modern melalui HTTPS/localhost.');
   root = await navigator.storage.getDirectory();
   try { await navigator.storage.persist(); } catch {}
-  await openSQLite();
-  await hydrateSQLite();
-  await replayJournal(); // Journal is newer than the SQLite materialized view.
-  await rebuildSQLite();
-  durableCache.clear();
-  for (const [k,v] of cache) durableCache.set(k,v);
+  const marker = await readMarker();
+  const lock = await acquireWriterLock();
+  if (!lock.held) throw coded('another-tab','Kalsara sedang terbuka di tab atau jendela lain. Tutup yang lain, lalu muat ulang halaman ini agar data tidak bentrok.');
+
+  let opened = null, openError = null;
+  try {
+    opened = await openSqliteBackend(options);
+    backend = opened;
+    let data = await backend.request('load');
+    if (!data.meta.journal_imported_at) {
+      // Pertama kali SQLite dipakai: impor atomik dari jurnal OPFS (jurnal sendiri tidak diubah).
+      await writeMarker(); // Tanda ditulis SEBELUM impor: bila crash, boot berikutnya tidak jatuh ke jurnal usang.
+      await replayJournal();
+      const ops = [];
+      if (isEmptyData(data)) ops.push({op:'replace',snapshot:Object.fromEntries(cache)});
+      else console.warn('Database SQLite sudah berisi data tanpa penanda impor; data SQLite dipertahankan, jurnal tidak diimpor.');
+      ops.push({op:'meta',k:'journal_imported_at',v:new Date().toISOString()});
+      await backend.request('apply',{ops});
+      data = await backend.request('load');
+    }
+    hydrate(data);
+    mode = 'sqlite';
+    lockRelease = lock.release;
+  } catch (e) {
+    openError = e;
+    try { backend?.terminate?.(); } catch {}
+    backend = null; cache.clear(); durableCache.clear(); erpMaps.clear();
+  }
+  if (openError) {
+    lock.release();
+    // Baca ulang: impor pertama menulis penanda sebelum gagal; jangan jatuh ke jurnal bila penanda sudah ada.
+    const current = await readMarker();
+    if (marker.authoritative === 'sqlite' || current.authoritative === 'sqlite') throw coded('sqlite-required','Database SQLite Kalsara tidak dapat dibuka (' + openError.message + '). Data terbaru berada di SQLite, jadi aplikasi tidak memakai jurnal lama yang sudah usang. Pastikan file vendor/sqlite-wasm tersedia, lalu muat ulang.', openError);
+    console.warn('SQLite tidak tersedia; memakai jurnal OPFS.', openError);
+    mode = 'journal';
+    await replayJournal();
+    durableCache.clear();
+    for (const [k,v] of cache) durableCache.set(k,v);
+  }
   ready = true;
 }
-async function appendSnapshot(snapshot) {
-  const event = JSON.stringify({snapshot,at:Date.now()}) + '\n';
-  const handle = await root.getFileHandle(JOURNAL,{create:true});
-  const file = await handle.getFile();
-  const writer = await handle.createWritable({keepExistingData:true});
-  try { await writer.seek(file.size); await writer.write(encoder.encode(event)); await writer.close(); }
-  catch (e) { try { await writer.abort(); } catch {} throw e; }
+
+/* ---------- penulisan ---------- */
+function enqueueTask(key, run, rollback) {
+  const version = (writeVersions.get(key) || 0) + 1;
+  writeVersions.set(key, version);
+  chain = chain.then(async () => {
+    await run();
+    failedWrites.delete(key);
+  }).catch(async error => {
+    failedWrites.set(key,error);
+    // Roll back only if no newer optimistic edit superseded this write.
+    if (writeVersions.get(key) === version) {
+      try { await rollback(); } catch (e) { console.error('Gagal memulihkan keadaan setelah penulisan gagal.',e); }
+    }
+    console.error('Gagal menyimpan perubahan Kalsara.',error);
+    dispatchStorageError(error.message);
+  });
+}
+function enqueue(k,v,del) {
+  const entity = sqliteErpEntity(k);
+  enqueueTask(k, async () => {
+    if (backend) await backend.request('apply',{ops:[del?{op:'del',k}:{op:'put',k,v}]});
+    else await appendDelta(k,v,del);
+    if (!entity) { if (del) durableCache.delete(k); else durableCache.set(k,v); }
+  }, async () => {
+    if (entity) { await resyncErp(entity); return; }
+    if (durableCache.has(k)) cache.set(k,durableCache.get(k)); else cache.delete(k);
+  });
 }
 function erpFallbackMap(entity) {
-  const raw=cache.get('kalsara_erp_'+entity);
+  const raw=cache.get(erpKey(entity));
   if(!raw)return {};
   const value=JSON.parse(raw);
   if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Data ERP '+entity+' tidak valid');
   return value;
 }
-function erpRowsFromSQLite(entity) {
-  const table=ERP_TABLES[entity];
-  if(!db||!table)return null;
-  const rows=[];
-  try { db.exec({sql:'SELECT payload FROM '+table+' ORDER BY id',rowMode:'array',callback:r=>rows.push(JSON.parse(r[0]))}); return rows; }
-  catch(e) { console.warn('Pembacaan tabel ERP '+entity+' gagal; memakai jurnal OPFS.',e); return null; }
+function cloneRows(list) { return JSON.parse(JSON.stringify(list)); }
+function checkRows(list) {
+  if(!Array.isArray(list))throw new TypeError('Daftar baris ERP harus berupa array');
+  for(const row of list){if(!row||typeof row!=='object'||row.id==null)throw new Error('Setiap baris ERP harus memiliki ID');}
 }
+function sqliteErpMutation(entity, optimistic, op) {
+  optimistic(erpMaps.get(entity));
+  enqueueTask(erpKey(entity), async () => { await backend.request('apply',{ops:[op]}); }, () => resyncErp(entity));
+}
+
 export const KStore = {
-  getItem(k) { k=String(k); return cache.has(k) ? cache.get(k) : null; },
+  get backend() { return mode; },
+  getItem(k) {
+    k=String(k);
+    const entity = sqliteErpEntity(k);
+    if (entity) return erpCompat(entity);
+    return cache.has(k) ? cache.get(k) : null;
+  },
   async erpAll(entity) {
-    if(!Object.prototype.hasOwnProperty.call(ERP_TABLES,entity))return Object.values(erpFallbackMap(entity));
-    const rows=erpRowsFromSQLite(entity);
-    return rows===null?Object.values(erpFallbackMap(entity)):rows;
+    if (mode === 'sqlite' && isErpDomain(entity)) return structuredClone([...erpMaps.get(entity).values()]);
+    return Object.values(erpFallbackMap(entity));
   },
   async erpPut(entity, list) {
-    if(!Array.isArray(list))throw new TypeError('Daftar baris ERP harus berupa array');
-    const map=erpFallbackMap(entity);
-    for(const row of list){if(!row||typeof row!=='object'||row.id==null)throw new Error('Setiap baris ERP harus memiliki ID');map[String(row.id)]=row;}
-    this.setItem('kalsara_erp_'+entity,JSON.stringify(map));
+    checkRows(list);
+    if (mode === 'sqlite' && isErpDomain(entity)) {
+      const rows = cloneRows(list); // sama dengan yang akan tersimpan di tabel (payload JSON)
+      sqliteErpMutation(entity, map => { for (const row of rows) map.set(String(row.id),row); }, {op:'erp-put',entity,rows});
+    } else {
+      const map=erpFallbackMap(entity);
+      for(const row of list)map[String(row.id)]=row;
+      this.setItem(erpKey(entity),JSON.stringify(map));
+    }
     await this.flush();
     return this.erpAll(entity);
   },
   async erpDelete(entity, id) {
-    const map=erpFallbackMap(entity);delete map[String(id)];
-    this.setItem('kalsara_erp_'+entity,JSON.stringify(map));
+    if (mode === 'sqlite' && isErpDomain(entity)) {
+      sqliteErpMutation(entity, map => map.delete(String(id)), {op:'erp-del',entity,id:String(id)});
+    } else {
+      const map=erpFallbackMap(entity);delete map[String(id)];
+      this.setItem(erpKey(entity),JSON.stringify(map));
+    }
     await this.flush();
     return this.erpAll(entity);
   },
   async erpClear(entity) {
-    this.setItem('kalsara_erp_'+entity,'{}');
+    if (mode === 'sqlite' && isErpDomain(entity)) sqliteErpMutation(entity, map => map.clear(), {op:'erp-clear',entity});
+    else this.setItem(erpKey(entity),'{}');
     await this.flush();
     return this.erpAll(entity);
   },
   setItem(k,v) {
     if (!ready) throw new Error('Penyimpanan belum siap');
     k=String(k); v=String(v);
+    const entity = sqliteErpEntity(k);
+    if (entity) {
+      const parsed = JSON.parse(v);
+      if (!parsed || typeof parsed!=='object' || Array.isArray(parsed)) throw new Error('Data ERP '+entity+' tidak valid');
+      if (erpCompat(entity)===JSON.stringify(parsed) || (!erpMaps.get(entity).size && !Object.keys(parsed).length)) return;
+      erpMaps.set(entity,new Map(Object.entries(parsed).filter(([,row])=>row&&typeof row==='object').map(([mapKey,row])=>[String(row.id ?? mapKey),row])));
+      enqueue(k,v,false);
+      return;
+    }
     if (cache.has(k) && cache.get(k)===v) return;
     cache.set(k,v);
     enqueue(k,v,false);
   },
   removeItem(k) {
     if (!ready) throw new Error('Penyimpanan belum siap');
-    k=String(k); if (!cache.has(k) && !durableCache.has(k)) return; cache.delete(k); enqueue(k,'',true);
+    k=String(k);
+    const entity = sqliteErpEntity(k);
+    if (entity) { if (!erpMaps.get(entity).size) return; erpMaps.get(entity).clear(); enqueue(k,'',true); return; }
+    if (!cache.has(k) && !durableCache.has(k)) return; cache.delete(k); enqueue(k,'',true);
   },
-  key(i) { return [...cache.keys()][i] ?? null; },
-  get length() { return cache.size; },
+  key(i) { return allKeys()[i] ?? null; },
+  get length() { return allKeys().length; },
   async flush() {
     await chain;
-    if (failedWrites.size) { const [key,error] = failedWrites.entries().next().value; throw new Error('Data '+key+' belum tersimpan di OPFS: '+error.message); }
+    if (failedWrites.size) { const [key,error] = failedWrites.entries().next().value; throw new Error('Data '+key+' belum tersimpan: '+error.message); }
   },
-  async exportSnapshot() { await this.flush(); return JSON.stringify(Object.fromEntries(cache)); },
+  async exportSnapshot() {
+    await this.flush();
+    const out = Object.fromEntries(cache);
+    if (mode === 'sqlite') for (const entity of Object.keys(ERP_TABLES)) { const c = erpCompat(entity); if (c !== null) out[erpKey(entity)] = c; }
+    return JSON.stringify(out);
+  },
   async importSnapshot(json) {
     const obj=JSON.parse(json);
     if (!obj || typeof obj!=='object' || Array.isArray(obj)) throw new Error('Cadangan tidak valid');
     await chain; // A restore may recover from an earlier failed key write.
     const snapshot = Object.fromEntries(Object.entries(obj).map(([k,v])=>[k,String(v)]));
     const task = chain.then(async () => {
-      await appendSnapshot(snapshot); // One journal record: restore is all-or-nothing.
-      cache.clear(); durableCache.clear();
-      for (const [k,v] of Object.entries(snapshot)) { cache.set(k,v); durableCache.set(k,v); }
+      if (backend) {
+        // Satu transaksi SQLite: restore bersifat semua-atau-tidak-sama-sekali.
+        await backend.request('apply',{ops:[{op:'replace',snapshot}]});
+        hydrate(await backend.request('load'));
+      } else {
+        await appendSnapshot(snapshot); // One journal record: restore is all-or-nothing.
+        cache.clear(); durableCache.clear();
+        for (const [k,v] of Object.entries(snapshot)) { cache.set(k,v); durableCache.set(k,v); }
+      }
       failedWrites.clear();
-      await rebuildSQLite();
     });
     chain = task.catch(() => {});
     await task;

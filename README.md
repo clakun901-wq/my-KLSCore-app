@@ -1,6 +1,6 @@
 # Kalsara — migrasi client-side (basis Kalsara-v5.82)
 
-**Versi paket: v9.9 — pengembangan, belum disertifikasi untuk produksi.**
+**Versi paket: v9.11 — pengembangan, belum disertifikasi untuk produksi.**
 
 - **Dashboard progres:** buka [`progress.html`](./progress.html) untuk melihat estimasi, hasil tes yang sudah terbukti, dan gerbang yang masih terbuka.
 - **Status teknis rinci:** lihat [`MIGRATION-STATUS.md`](./MIGRATION-STATUS.md).
@@ -15,7 +15,9 @@ Paket ini mempertahankan markup, stylesheet, dan logika bisnis v5.82 sebagai lap
 - `source/Kalsara-v5_82.html` — salinan sumber asli yang tidak diubah sebagai referensi/cadangan.
 - `css/app.css` — stylesheet asli, tidak didesain ulang.
 - `js/legacy-app.js` — logika bisnis asli sebagai compatibility module.
-- `js/storage.js` — OPFS append-only journal sebagai sumber persistensi; SQLite Wasm OPFS sebagai materialized view yang dapat dibangun ulang.
+- `js/storage.js` — penyimpanan dengan dua mode: **SQLite** (Worker, OPFS SAH Pool) sebagai satu-satunya sumber data bila `vendor/sqlite-wasm/` tersedia; **jurnal OPFS** lama hanya sebagai jalur cadangan sebelum pernah beralih ke SQLite.
+- `js/sqlite-engine.js`, `js/sqlite-client.js`, `workers/sqlite-store.worker.js` — skema/transaksi SQLite (murni, diuji di SQLite nyata), proxy Worker, dan bootstrap Wasm lokal.
+- `scripts/fetch-sqlite-wasm.mjs` — memasang SQLite Wasm ke `vendor/sqlite-wasm/` (`npm run vendor:sqlite`) dan memverifikasinya (`npm run vendor:check`).
 - `js/main.js` — inisialisasi storage dan migrasi data localStorage serta IndexedDB ERP lama.
 - `workers/compute.worker.js` + `workers/calculator-engine.js` + `js/worker-client.js` — parsing CSV/XLSX, laporan Shopee, agregasi ERP, pipeline BigInt, filter/sort, dan operasi `calculate-product`. Pengalihan semua pemanggil UI ke Worker masih tahap integrasi.
 - `js/signals.js` — Preact Signals Core.
