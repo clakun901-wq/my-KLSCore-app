@@ -9,7 +9,7 @@
  *   run(sql, bind=[])    -> jalankan satu pernyataan dengan bind
  *   all(sql, bind=[])    -> array baris, tiap baris berupa array nilai kolom
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 export const ERP_KEY_PREFIX = 'kalsara_erp_';
 export const ERP_TABLES = Object.freeze({
   marketplaces_raw: 'erp_marketplaces_raw',
@@ -32,14 +32,17 @@ const DDL = [
   'CREATE TABLE IF NOT EXISTS erp_settings (id TEXT PRIMARY KEY, payload TEXT NOT NULL)'
 ];
 
+const MAX_SAFE = 9007199254740991;
+const MKT_FIELDS = ['fv', 'fs', 'fa', 'fx', 'fp', 'fr', 'fk', 'ft', 'platform_fee'];
 function safeInt(v) { return Number.isSafeInteger(v) ? v : null; }
 const str = v => String(v || '');
+const rptOk = (r, fields) => fields.every(f => { const v = r[f]; return v == null || v === '' || Number.isSafeInteger(v); }) ? 1 : 0;
 
 // Kolom turunan per entitas (selain id dan payload) dan cara mengambil nilainya.
 const ERP_COLUMNS = {
-  marketplaces_raw: { cols: ['order_id', 'sku', 'date', 'gross_revenue', 'released_amount', 'quantity'], values: r => [str(r.order_id), str(r.sku), str(r.date), safeInt(r.gross_revenue), safeInt(r.tp), safeInt(r.qty)] },
+  marketplaces_raw: { cols: ['order_id', 'sku', 'date', 'gross_revenue', 'released_amount', 'quantity', ...MKT_FIELDS, 'rpt_ok'], values: r => [str(r.order_id), str(r.sku), str(r.date), safeInt(r.gross_revenue), safeInt(r.tp), safeInt(r.qty), ...MKT_FIELDS.map(f => safeInt(r[f])), rptOk(r, ['gross_revenue', 'tp', ...MKT_FIELDS])] },
   order_items: { cols: ['order_id', 'sku', 'quantity', 'price'], values: r => [str(r.order_id), str(r.sku), safeInt(r.qty), safeInt(r.price)] },
-  opex: { cols: ['date', 'category', 'amount', 'notes'], values: r => [str(r.date), str(r.category), safeInt(r.amount), str(r.notes)] },
+  opex: { cols: ['date', 'category', 'amount', 'notes', 'rpt_ok'], values: r => [str(r.date), str(r.category), safeInt(r.amount), str(r.notes), rptOk(r, ['amount'])] },
   settings: { cols: [], values: () => [] }
 };
 const UPSERT = {};
@@ -59,13 +62,32 @@ function needEntity(entity) {
   return entity;
 }
 
+// Tipe nilai uang yang diterima laporan: kosong/null atau integer aman. Selain itu menandai baris "tidak valid" (rpt_ok=0).
+const sqlOk = f => "(json_type(payload,'$." + f + "') IS NULL OR json_type(payload,'$." + f + "')='null' OR (json_type(payload,'$." + f + "')='integer' AND ABS(json_extract(payload,'$." + f + "'))<=" + MAX_SAFE + "))";
+const sqlInt = f => "CASE WHEN json_type(payload,'$." + f + "')='integer' AND ABS(json_extract(payload,'$." + f + "'))<=" + MAX_SAFE + " THEN json_extract(payload,'$." + f + "') END";
+
+/* v2: kolom uang laporan menjadi kolom sungguhan (laporan tidak perlu mem-parse JSON per baris) + penanda rpt_ok.
+   Data v1 yang sudah ada diisi ulang dari payload dalam transaksi yang sama. */
+function migrateV2(db) {
+  for (const f of MKT_FIELDS) db.exec('ALTER TABLE erp_marketplaces_raw ADD COLUMN ' + f + ' INTEGER');
+  db.exec('ALTER TABLE erp_marketplaces_raw ADD COLUMN rpt_ok INTEGER NOT NULL DEFAULT 1');
+  db.exec('ALTER TABLE erp_opex ADD COLUMN rpt_ok INTEGER NOT NULL DEFAULT 1');
+  const mkt = ['gross_revenue', 'tp', ...MKT_FIELDS];
+  db.exec('UPDATE erp_marketplaces_raw SET ' + MKT_FIELDS.map(f => f + '=(' + sqlInt(f) + ')').join(', ') +
+    ', rpt_ok=CASE WHEN ' + mkt.map(sqlOk).join(' AND ') + ' THEN 1 ELSE 0 END');
+  db.exec('UPDATE erp_opex SET rpt_ok=CASE WHEN ' + sqlOk('amount') + ' THEN 1 ELSE 0 END');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_erp_market_month ON erp_marketplaces_raw(substr(date,1,7))');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_erp_opex_month ON erp_opex(substr(date,1,7))');
+}
+
 export function migrate(db) {
   const version = Number(db.all('PRAGMA user_version')[0][0]);
   if (version > SCHEMA_VERSION) throw new Error('Skema database (v' + version + ') lebih baru dari aplikasi ini (v' + SCHEMA_VERSION + '). Perbarui aplikasi; data tidak diubah.');
   if (version === SCHEMA_VERSION) return { from: version, to: version };
   db.exec('BEGIN IMMEDIATE');
   try {
-    for (const sql of DDL) db.exec(sql);
+    if (version < 1) for (const sql of DDL) db.exec(sql);
+    if (version < 2) migrateV2(db);
     db.exec('PRAGMA user_version = ' + SCHEMA_VERSION);
     db.exec('COMMIT');
   } catch (e) { try { db.exec('ROLLBACK'); } catch {} throw e; }
@@ -166,6 +188,51 @@ export function isEmptyData(data) {
   return data.kv.length === 0 && Object.values(data.erp).every(rows => rows.length === 0);
 }
 
+/* ---------- Laporan ERP di SQL ----------
+ * Semua penjumlahan uang dan HPP terkunci (snapshot) dihitung SQLite dalam SATU lintasan untuk seluruh bulan
+ * (kolom uang sudah menjadi kolom sungguhan sejak skema v2). Hanya baris tanpa snapshot dikembalikan ke JS untuk
+ * pencocokan modal (aturan pencocokan tetap satu-satunya di compute.worker.js).
+ * Bila ada nilai yang bukan "integer Rupiah aman" (yang membuat hitungan lama melempar RangeError), hasilnya
+ * {fallback:true} sehingga pemanggil memakai jalur lama dan perilakunya identik. */
+const REPORT_SUMS = { om: 'gross_revenue', fv: 'fv', fs: 'fs', fa: 'fa', fx: 'fx', fp: 'fp', fr: 'fr', fk: 'fk', ft: 'ft', fee: 'platform_fee', tp: 'released_amount' };
+const SUM_KEYS = Object.keys(REPORT_SUMS);
+const SNAP_CTE = "WITH snap AS (SELECT j.key AS id, json_extract(j.value,'$.hs') AS hs, json_type(j.value,'$.hs') AS t FROM erp_settings s, json_each(s.payload,'$.map') j WHERE s.id='hpp_snap' AND json_type(s.payload,'$.map')='object') ";
+const LOCKED = "COALESCE(sn.id IS NOT NULL AND sn.t='integer' AND ABS(sn.hs)<=" + MAX_SAFE + ",0)";
+const SNAPBAD = "COALESCE(sn.id IS NOT NULL AND sn.t='real' AND sn.hs=CAST(sn.hs AS INTEGER),0)";
+const GROUP_SQL = SNAP_CTE + 'SELECT substr(r.date,1,7), COUNT(*), SUM(' + LOCKED + '), SUM(CASE WHEN ' + LOCKED + ' THEN sn.hs ELSE 0 END), SUM(' + SNAPBAD + '), SUM(1-r.rpt_ok), ' +
+  SUM_KEYS.map(k => 'COALESCE(SUM(r.' + REPORT_SUMS[k] + '),0)').join(', ') + ' FROM erp_marketplaces_raw r LEFT JOIN snap sn ON sn.id=r.id GROUP BY 1';
+const UNLOCKED_SQL = SNAP_CTE + 'SELECT substr(r.date,1,7), r.payload FROM erp_marketplaces_raw r LEFT JOIN snap sn ON sn.id=r.id WHERE NOT ' + LOCKED + ' ORDER BY r.rowid';
+const OPEX_SQL = 'SELECT substr(date,1,7), COALESCE(SUM(amount),0), SUM(1-rpt_ok) FROM erp_opex GROUP BY 1';
+const num = v => { const n = typeof v === 'bigint' ? (v <= BigInt(MAX_SAFE) && v >= -BigInt(MAX_SAFE) ? Number(v) : NaN) : v; return Number.isSafeInteger(n) ? n : NaN; };
+const FALLBACK = reason => ({ fallback: true, reason });
+
+/** Satu hasil per bulan yang diminta ('' = semua periode). Satu pemindaian tabel untuk semuanya. */
+export function erpReports(db, months) {
+  const want = (Array.isArray(months) ? months : ['']).map(m => String(m || ''));
+  try {
+    const groups = new Map();
+    for (const r of db.all(GROUP_SQL)) {
+      const v = r.map(num);
+      groups.set(String(r[0]), { count: v[1], locked: v[2], lockedHpp: v[3], bad: v[4] + v[5], sums: Object.fromEntries(SUM_KEYS.map((k, i) => [k, v[6 + i]])) });
+    }
+    const opex = new Map(db.all(OPEX_SQL).map(r => [String(r[0]), { amount: num(r[1]), bad: num(r[2]) }]));
+    let unlocked = null;
+    return want.map(month => {
+      const pick = month === '' ? [...groups.values()] : (groups.has(month) ? [groups.get(month)] : []);
+      const ox = month === '' ? [...opex.values()] : (opex.has(month) ? [opex.get(month)] : []);
+      const out = { count: 0, locked: 0, lockedHpp: 0, sums: Object.fromEntries(SUM_KEYS.map(k => [k, 0])) };
+      let bad = 0;
+      for (const g of pick) { out.count += g.count; out.locked += g.locked; out.lockedHpp += g.lockedHpp; bad += g.bad; for (const k of SUM_KEYS) out.sums[k] += g.sums[k]; }
+      out.ox = 0; for (const o of ox) { out.ox += o.amount; bad += o.bad; }
+      const nums = [out.count, out.locked, out.lockedHpp, out.ox, ...Object.values(out.sums)];
+      if (bad !== 0 || nums.some(n => !Number.isSafeInteger(n))) return FALLBACK('nilai bukan integer Rupiah aman atau melebihi batas');
+      if (unlocked === null) unlocked = db.all(UNLOCKED_SQL).map(r => ({ mo: String(r[0]), payload: r[1] }));
+      return { fallback: false, month, ...out, unlocked: unlocked.filter(u => month === '' || u.mo === month).map(u => JSON.parse(u.payload)) };
+    });
+  } catch (e) { return want.map(() => FALLBACK(String(e && e.message || e))); }
+}
+export const erpReport = (db, month) => erpReports(db, [month])[0];
+
 /** Layanan pesan untuk Worker: type -> hasil. `openDb` membuat adapter (Wasm di browser, node:sqlite di tes). */
 export function createStoreService(openDb) {
   let db = null;
@@ -182,6 +249,7 @@ export function createStoreService(openDb) {
         }
         case 'load': return loadAll(need());
         case 'erp-load': return loadEntity(need(), payload.entity);
+        case 'erp-report': return erpReports(need(), payload.months || ['']);
         case 'apply': applyOps(need(), payload.ops); return { applied: payload.ops.length };
         case 'close': { const d = db; db = null; d?.close?.(); return {}; }
         default: throw new Error('Pesan penyimpanan tidak dikenal: ' + type);

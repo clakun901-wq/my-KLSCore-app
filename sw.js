@@ -1,4 +1,4 @@
-const CACHE='kalsara-v5.82-client-v9.11';
+const CACHE='kalsara-v5.82-client-v9.12';
 const CORE=['./','./index.html','./css/app.css','./js/main.js','./js/money.js','./js/dom.js','./js/legacy-app.js','./js/storage.js','./js/sqlite-engine.js','./js/sqlite-client.js','./workers/sqlite-store.worker.js','./js/worker-client.js','./js/migration.js','./js/signals.js','./components/product-card.js','./workers/compute.worker.js','./workers/calculator-engine.js','./workers/pricing-pipeline.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png','./progress.html'];
 // Berkas Wasm bersifat opsional: bila belum ada di hosting, instalasi PWA tidak boleh gagal.
 const OPTIONAL=['./vendor/sqlite-wasm/sqlite3.mjs','./vendor/sqlite-wasm/sqlite3.wasm'];

@@ -75,18 +75,37 @@ function parseShopeeReport(R){let hi=-1;const lower=r=>r.map(x=>String(x==null?'
 function parseShopeeOrders(R){let hi=-1;const lower=r=>r.map(x=>String(x==null?'':x).trim().toLowerCase());for(let i=0;i<Math.min(R.length,12);i++){const l=lower(R[i]);if(l.includes('no. pesanan')&&l.includes('nomor referensi sku')){hi=i;break}}if(hi<0)throw new Error('Bukan laporan Order completed Shopee');
  const h=lower(R[hi]),ci=colIndex(h,['no. pesanan']),cs=colIndex(h,['nomor referensi sku']),cn=colIndex(h,['nama produk']),cv=colIndex(h,['nama variasi']),cq=colIndex(h,['jumlah']),cr=colIndex(h,['returned quantity']),cp=colIndex(h,['harga setelah diskon']),cst=colIndex(h,['status pesanan']),out=[],seen={},orders={};
  R.slice(hi+1).forEach(r=>{const id=String(r[ci]==null?'':r[ci]).trim();if(id.length<8)return;const st=cst>=0?String(r[cst]).toLowerCase():'';if(/batal|cancel/.test(st))return;const sku=String(r[cs]||'').trim(),nm=String(r[cn]||'').trim(),q0=parseIDR(r[cq])||1,rq=cr>=0?parseIDR(r[cr]):0,k='oi|'+id+'|'+sku+'|'+nm.slice(0,40)+'|'+(cv>=0?String(r[cv]||''):'');if(seen[k]){seen[k].q0+=q0;seen[k].rq+=rq;seen[k].qty=Math.max(seen[k].q0-seen[k].rq,0);return}const o={id:k,order_id:id,sku,name:nm,q0,rq,qty:Math.max(q0-rq,0),price:cp>=0?parseIDR(r[cp]):0};seen[k]=o;out.push(o);orders[id]=1});if(!out.length)throw new Error('Tidak ada baris pesanan di file');return{rows:out,orders:Object.keys(orders).length};}
-function aggregateERP(payload){
- const month=payload.month||'',RAW=payload.raw||[],OPX=payload.opex||[],ITM=payload.items||{},SNAP=payload.snapshot||{},P=payload.products||[];
- const keys=['om','fv','fs','fa','fx','fp','fr','fk','ft','fee','tp','hpp','ox'],B={};keys.forEach(k=>B[k]=0n);
- const T={miss:{},n:0,nr:0,nl:0};
- const asBig=v=>{if(v==null||v==='')return 0n;if(typeof v==='bigint')return v;if(!Number.isSafeInteger(v))throw new RangeError('Nominal ERP harus berupa integer Rupiah aman');return BigInt(v)};
+function erpAsBig(v){if(v==null||v==='')return 0n;if(typeof v==='bigint')return v;if(!Number.isSafeInteger(v))throw new RangeError('Nominal ERP harus berupa integer Rupiah aman');return BigInt(v)}
+function erpMatchers(ITM,P){
+ const asBig=erpAsBig;
  const matches=(x)=>{const list=ITM[x.order_id];if(!list||!list.length)return null;const nm=String(x.name||'').toLowerCase().trim();let c=list.filter(it=>{const n=String(it.name||'').toLowerCase().trim();return nm&&n&&(n===nm||n.slice(0,30)===nm.slice(0,30))});if(!c.length&&list.length===1)c=list;if(c.length>1){const target=asBig(x.gross_revenue);const exact=c.filter(it=>{const total=asBig(it.price)*asBig(it.q0);const diff=total-target;return (diff<0n?-diff:diff)<2n});if(exact.length)c=exact}return c.length===1?c[0]:null};
- const findCost=x=>{const sku=String(x.sku||''),rsku=String(x.rsku||'').toLowerCase(),name=String(x.name||'').toLowerCase().trim();
+ const slowFindCost=x=>{const sku=String(x.sku||''),rsku=String(x.rsku||'').toLowerCase(),name=String(x.name||'').toLowerCase().trim();
   if(rsku)for(const p of P)if(asBig(p.m)>0n&&String(p.sku||'').toLowerCase()===rsku)return asBig(p.m);
   if(sku)for(const p of P)if(asBig(p.m)>0n&&(String(p.sku||'').toLowerCase()===sku.toLowerCase()||String(p.lnk||'').includes(sku)))return asBig(p.m);
   if(name.length>=8)for(const p of P){const pn=String(p.n||'').toLowerCase().trim();if(asBig(p.m)>0n&&pn.length>=8&&(pn===name||name.startsWith(pn)||pn.startsWith(name)))return asBig(p.m)}
   return null;
  };
+ /* Indeks pencarian modal: hasil SAMA persis dengan slowFindCost (produk pertama berurutan yang memenuhi syarat dan m>0),
+    tetapi pencocokan SKU memakai Map, bukan memindai seluruh daftar produk untuk setiap baris.
+    Bila ada nominal produk yang tidak valid, kembali ke slowFindCost agar kesalahan muncul persis seperti sebelumnya. */
+ let findCost=slowFindCost;
+ try{
+  const Q=[];for(const p of P){const m=asBig(p.m);if(m>0n)Q.push({m,sku:String(p.sku||'').toLowerCase(),lnk:String(p.lnk||''),pn:String(p.n||'').toLowerCase().trim()})}
+  const bySku=new Map(),withLnk=[],byName=[];
+  Q.forEach((q,i)=>{if(!bySku.has(q.sku))bySku.set(q.sku,i);if(q.lnk)withLnk.push(i);if(q.pn.length>=8)byName.push(i)});
+  findCost=x=>{const sku=String(x.sku||''),rsku=String(x.rsku||'').toLowerCase(),name=String(x.name||'').toLowerCase().trim();
+   if(rsku){const i=bySku.get(rsku);if(i!==undefined)return Q[i].m}
+   if(sku){let best=bySku.has(sku.toLowerCase())?bySku.get(sku.toLowerCase()):Infinity;for(const i of withLnk){if(i>=best)break;if(Q[i].lnk.includes(sku)){best=i;break}}if(best!==Infinity)return Q[best].m}
+   if(name.length>=8)for(const i of byName){const pn=Q[i].pn;if(pn===name||name.startsWith(pn)||pn.startsWith(name))return Q[i].m}
+   return null};
+ }catch(e){findCost=slowFindCost}
+ return {matches,findCost};
+}
+function aggregateERP(payload){
+ const month=payload.month||'',RAW=payload.raw||[],OPX=payload.opex||[],ITM=payload.items||{},SNAP=payload.snapshot||{},P=payload.products||[];
+ const keys=['om','fv','fs','fa','fx','fp','fr','fk','ft','fee','tp','hpp','ox'],B={};keys.forEach(k=>B[k]=0n);
+ const T={miss:{},n:0,nr:0,nl:0};
+ const asBig=erpAsBig,{matches,findCost}=erpMatchers(ITM,P);
  for(const x of RAW){if(month&&String(x.date||'').slice(0,7)!==month)continue;B.om+=asBig(x.gross_revenue);for(const k of ['fv','fs','fa','fx','fp','fr','fk','ft','tp'])B[k]+=asBig(x[k]);B.fee+=asBig(x.platform_fee);
   const sn=SNAP[x.id];if(sn&&Number.isSafeInteger(sn.hs)){B.hpp+=asBig(sn.hs);T.n++;T.nl++;continue}
   const it=matches(x),q=it?it.qty:x.qty,h=findCost(it?{sku:x.sku,rsku:it.sku,name:x.name}:x);if(!it)T.nr++;
@@ -95,6 +114,24 @@ function aggregateERP(payload){
  }
  for(const x of OPX)if(!month||String(x.date||'').slice(0,7)===month)B.ox+=asBig(x.amount);
  for(const k of keys)T[k]=safeRupiah(B[k]);B.lk=B.om+B.fv+B.fs-B.fee-B.ft-B.hpp;B.nb=B.lk-B.ox;T.lk=safeRupiah(B.lk);T.nb=safeRupiah(B.nb);return T;
+}
+/* Laporan ERP dari SQLite: SQL menjumlah semua kolom uang dan HPP yang sudah dikunci (snapshot);
+   di sini hanya baris TANPA snapshot yang dicocokkan ke pesanan/produk dengan aturan yang sama persis seperti aggregateERP. */
+function finishErpReport(r,matchers){
+ const asBig=erpAsBig,{matches,findCost}=matchers;
+ const keys=['om','fv','fs','fa','fx','fp','fr','fk','ft','fee','tp','hpp','ox'],B={};keys.forEach(k=>B[k]=0n);
+ for(const k of ['om','fv','fs','fa','fx','fp','fr','fk','ft','fee','tp'])B[k]=asBig(r.sums[k]);
+ B.ox=asBig(r.ox);B.hpp=asBig(r.lockedHpp);
+ const T={miss:{},n:r.count,nr:0,nl:r.locked};
+ for(const x of r.unlocked){
+  const it=matches(x),q=it?it.qty:x.qty,h=findCost(it?{sku:x.sku,rsku:it.sku,name:x.name}:x);if(!it)T.nr++;
+  if(h==null)T.miss[((it&&it.sku?it.sku+' ':'')+(x.name||x.sku||'(kosong)')).slice(0,44)]=1;else B.hpp+=h*asBig(q);
+ }
+ for(const k of keys)T[k]=safeRupiah(B[k]);B.lk=B.om+B.fv+B.fs-B.fee-B.ft-B.hpp;B.nb=B.lk-B.ox;T.lk=safeRupiah(B.lk);T.nb=safeRupiah(B.nb);return T;
+}
+function finishErpReports(payload){
+ const matchers=erpMatchers(payload.items||{},payload.products||[]);
+ return (payload.reports||[]).map(r=>finishErpReport(r,matchers));
 }
 function ent(s){return String(s).replace(/&#x([0-9a-f]+);/gi,(_,x)=>String.fromCodePoint(parseInt(x,16))).replace(/&#(\d+);/g,(_,d)=>String.fromCodePoint(+d)).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&')}
 function zip(buffer){const u=new Uint8Array(buffer),dv=new DataView(buffer);let e=u.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;if(e<0)throw new Error('File bukan .xlsx yang valid');const n=dv.getUint16(e+10,true);let o=dv.getUint32(e+16,true);const F={};for(let i=0;i<n;i++){const m=dv.getUint16(o+10,true),cs=dv.getUint32(o+20,true),nl=dv.getUint16(o+28,true),el=dv.getUint16(o+30,true),cl=dv.getUint16(o+32,true),lo=dv.getUint32(o+42,true),name=new TextDecoder().decode(u.subarray(o+46,o+46+nl)),st=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true);F[name]={m,d:u.subarray(st,st+cs)};o+=46+nl+el+cl}return F}
@@ -131,6 +168,8 @@ self.onmessage = async ({data}) => {
       result=parseShopeeOrders(payload.rows);
     } else if(type==='aggregate-erp') {
       result=aggregateERP(payload);
+    } else if(type==='finish-erp-reports') {
+      result=finishErpReports(payload);
     } else if(type==='filter') {
       const q=String(payload.query||'').toLocaleLowerCase().trim();
       result=(payload.items||[]).filter(x=>String(x.searchText||'').toLocaleLowerCase().includes(q));

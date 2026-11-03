@@ -63,6 +63,12 @@ const rows = await S.KStore.erpAll('opex'); rows[0].amount = -1;
 eq((await S.KStore.erpAll('opex'))[0].amount, 200, 'erpAll mengembalikan salinan (mutasi pemanggil tidak merusak store)');
 eq(S.KStore.length, S.KStore.length, 'length stabil'); ok(S.KStore.key(0) !== null, 'key(i) berfungsi');
 
+// 2b. Laporan ERP lewat KStore: menunggu penulisan antre, hasil cocok dengan isi tabel
+await S.KStore.erpPut('marketplaces_raw', [{ id: 'm1', date: '2026-11-01', gross_revenue: 50000, fv: -2000, qty: 1 }, { id: 'm2', date: '2026-10-01', gross_revenue: 7000 }]);
+const rep = await S.KStore.erpReport(['2026-11', '']);
+eq([rep[0].count, rep[0].sums.om, rep[0].sums.fv, rep[1].count, rep[1].sums.om], [1, 50000, -2000, 2, 57000], 'erpReport menjumlah di SQLite');
+eq(rep[0].ox, 500, 'OpEx November = opx-2 (200) + opx-3 (300) dari data uji sebelumnya'); eq((await S.KStore.erpReport(['2026-11'])).length, 1, 'satu hasil per bulan diminta');
+
 // 3. Kegagalan tulis: rollback ke nilai durabel, flush melapor
 hooks.before = m => { if (m.type === 'apply') { hooks.before = null; throw new Error('simulated disk full'); } };
 S.KStore.setItem('alpha', '999');
@@ -118,6 +124,7 @@ S = await fresh();
 await S.initStorage({ backendFactory: broken });
 eq(S.KStore.backend, 'journal', 'jatuh ke jurnal hanya bila belum pernah beralih');
 eq(S.KStore.getItem('alpha'), '1', 'jalur jurnal membaca data lama');
+eq(await S.KStore.erpReport(['']), null, 'mode jurnal: erpReport null (pemanggil memakai hitungan JS)');
 S.KStore.setItem('lewat-jurnal', 'ok'); await S.KStore.flush();
 ok(files.get('kalsara-delta.log').includes('lewat-jurnal'), 'jalur jurnal masih menulis ke jurnal');
 files.set('kalsara-delta.log', journal);

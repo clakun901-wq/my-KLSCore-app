@@ -228,6 +228,13 @@ export const KStore = {
     if (mode === 'sqlite' && isErpDomain(entity)) return structuredClone([...erpMaps.get(entity).values()]);
     return Object.values(erpFallbackMap(entity));
   },
+  /* Laporan ERP dihitung di SQLite (satu lintasan per bulan). Mengembalikan null bila SQLite tidak aktif atau gagal,
+     agar pemanggil memakai hitungan lama di JS. Menunggu penulisan yang masih antre supaya hasilnya mutakhir. */
+  async erpReport(months) {
+    if (mode !== 'sqlite' || !backend) return null;
+    try { await chain; return await backend.request('erp-report', {months: Array.isArray(months) ? months : ['']}); }
+    catch (e) { console.warn('Laporan ERP via SQLite gagal; memakai hitungan JS.', e); return null; }
+  },
   async erpPut(entity, list) {
     checkRows(list);
     if (mode === 'sqlite' && isErpDomain(entity)) {

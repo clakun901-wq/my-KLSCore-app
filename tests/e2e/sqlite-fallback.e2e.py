@@ -26,6 +26,21 @@ try:
             pg.evaluate("KStore.setItem('e2e_kunci','nilai')"); pg.evaluate("KStore.flush()")
             check(pg.evaluate("KStore.getItem('e2e_kunci')") == 'nilai', 'tulis/baca lewat jurnal tetap berfungsi')
             check(pg.evaluate("navigator.storage.getDirectory().then(r=>r.getFileHandle('kalsara-backend.json')).then(()=>true).catch(()=>false)") is False, 'penanda SQLite tidak boleh dibuat bila SQLite tidak pernah terbuka')
+        # Tab ERP (laporan): tanpa SQLite harus memakai hitungan JS lama dan tetap tampil tanpa error
+        pg.locator('#t6').click()
+        pg.wait_for_function("document.getElementById('erpr') && document.getElementById('erpr').textContent.trim().length>0", timeout=15000)
+        check('Omzet' in pg.inner_text('#erpr'), 'laporan ERP tampil (jalur JS saat SQLite tidak aktif)')
+        check(pg.evaluate("KStore.erpReport(['']).then(r=>r)") is None or HAS_WASM, 'tanpa SQLite erpReport mengembalikan null')
+        # Sambungan laporan SQL -> worker finish-erp-reports -> layar (SQLite disimulasikan: laporan disuntik lewat KStore.erpReport)
+        pg.evaluate("""(()=>{KStore.erpReport=async(ms)=>ms.map(m=>({fallback:false,month:m,count:1,locked:0,lockedHpp:0,sums:{om:100000,fv:-5000,fs:0,fa:2000,fx:0,fp:0,fr:0,fk:0,ft:0,fee:6000,tp:90000},ox:3000,unlocked:[]}));return 1})()""")
+        pg.locator('#t0').click(); pg.wait_for_timeout(300); pg.locator('#t6').click()
+        pg.wait_for_function("document.getElementById('erpr').textContent.includes('100.000')", timeout=15000)
+        txt = pg.inner_text('#erpr')
+        check('100.000' in txt and '86.000' in txt, 'laporan dari jalur SQL tampil benar (omzet 100.000, laba bersih 86.000)')
+        # Bila SQL menyatakan fallback untuk bulan itu, jalur JS lama dipakai dan tetap tampil tanpa error
+        pg.evaluate("(()=>{KStore.erpReport=async(ms)=>ms.map(m=>({fallback:true,reason:'uji'}));return 1})()")
+        pg.locator('#t0').click(); pg.wait_for_timeout(300); pg.locator('#t6').click(); pg.wait_for_timeout(1200)
+        check('Omzet' in pg.inner_text('#erpr') and '100.000' not in pg.inner_text('#erpr'), 'fallback per bulan memakai hitungan JS lama')
         check(not errs, f'tidak boleh ada pageerror: {errs}')
         b.close()
 finally:

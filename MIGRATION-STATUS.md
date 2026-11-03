@@ -1,4 +1,4 @@
-# Status migrasi Kalsara v5.82 — paket v9.11
+# Status migrasi Kalsara v5.82 — paket v9.12
 
 Tanggal build: 2026-11-02
 
@@ -286,3 +286,27 @@ Mesin kalkulator sekarang tersedia di Worker dan diuji terhadap v5.82, tetapi UI
 3. Kuota OPFS penuh, crash saat tulis, dan perilaku dua tab pada browser nyata belum diuji.
 4. Agregasi laporan ERP masih berjalan di Worker komputasi dari baris yang dimuat; memindahkannya menjadi kueri SQL (`SUM/GROUP BY`) adalah Tahap 3b. Normalisasi penuh (membuang payload JSON) juga belum dilakukan.
 5. Pemecahan `legacy-app.js` per modul belum dikerjakan.
+
+
+## Pembaruan v9.12 — Tahap 3b: laporan ERP dihitung di SQLite (+ perbaikan bug tab ERP)
+
+### Bug lama yang diperbaiki (ada sejak v9.10)
+Variabel `MODE` hilang saat migrasi sehingga **tab ERP menampilkan "Penyimpanan ERP tidak bisa dibuka: MODE is not defined"** dan ekspor cadangan ERP (`dump()`) ikut gagal. Satu deklarasi dikembalikan. Terbukti di Chromium nyata pada v9.10 asli (bug muncul) dan v9.12 (tab tampil).
+
+### Perubahan
+- **Skema SQLite v2** (migrasi otomatis dan atomik dari v1 saat aplikasi dibuka): kolom uang laporan (`fv, fs, fa, fx, fp, fr, fk, ft, platform_fee`) kini kolom sungguhan, ditambah penanda `rpt_ok` (baris dengan nilai bukan integer Rupiah aman). Data v1 yang sudah ada diisi ulang dari payload dalam transaksi yang sama; bila gagal, database tetap v1 dan utuh.
+- **Laporan di SQL:** `erpReports()` menjumlah semua kolom uang dan HPP terkunci (snapshot) untuk SEMUA bulan dalam satu lintasan. Hanya baris tanpa snapshot yang dikembalikan ke JS untuk pencocokan modal. Tab ERP dan grafik 6 bulan memakai satu permintaan (sebelumnya 7 kali kirim seluruh data ke worker).
+- **Pencarian modal terindeks:** pencocokan SKU memakai Map (hasil sama persis; SKU ganda, modal 0, dan urutan produk dipertahankan).
+- **Fallback aman:** bila SQLite tidak aktif, atau ada nilai tak valid (yang membuat hitungan lama melempar RangeError), jalur JS lama dipakai dengan hasil identik.
+- `scripts/bench-erp-report.mjs`: pengukuran ulang kapan saja.
+
+### Bukti
+- `tests/erp-report.test.mjs` (21): hasil jalur SQL == **worker v9.11 asli yang dibekukan** (`tests/fixtures/compute.worker.v9_11.js`) pada data acak berbenih tetap (baris terkunci/tidak, SKU ganda, tautan, modal 0, bulan kosong, nilai tak valid -> fallback). Uji mutasi pada filter bulan, aturan terkunci, dan indeks SKU membuat tes gagal.
+- `tests/sqlite-migration.test.mjs` (16): migrasi v1->v2 pada data yang sudah ada, laporan hasil migrasi == laporan data tulis langsung, kegagalan di tengah migrasi kembali ke v1 dengan data utuh.
+- E2E Chromium nyata `sqlite-fallback` (9): tab ERP tampil, sambungan laporan SQL (disimulasikan) -> worker -> layar benar (omzet 100.000, laba bersih 86.000), fallback per bulan memakai hitungan lama.
+- Benchmark (Node, SQLite native, data sintetis, 90% HPP terkunci, 1 tampilan + 6 bulan grafik): 20.000 baris 1816 ms -> 152 ms (12x); 100.000 baris 11190 ms -> 844 ms (13x); hasil identik. **Angka di browser akan berbeda** (SQLite Wasm lebih lambat dari native; di sisi lama ada juga biaya salin data ke worker), jadi jangan dibaca sebagai janji 12x di perangkat.
+
+### Belum terbukti
+1. Migrasi v1->v2 dan laporan SQL pada **SQLite Wasm di browser nyata** (perangkat pengguna sudah v1 dan akan bermigrasi saat pertama dibuka). Logikanya terbukti di SQLite nyata lewat Node. Buat cadangan sebelum memperbarui.
+2. Kecepatan di handphone belum diukur.
+3. Normalisasi penuh (membuang payload JSON) dan pemecahan `legacy-app.js` per modul belum dikerjakan.
