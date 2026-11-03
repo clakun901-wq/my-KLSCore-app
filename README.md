@@ -163,3 +163,5 @@ Tanggal build: 2026-11-02
 ## v9.6 — safe ERP migration
 
 The legacy `localStorage` migration now reports conflicting values instead of silently skipping them; the destination value is preserved and both values are retained for review. The legacy `KalsaraERP` IndexedDB migration now merges by record ID instead of replacing the destination collection. Existing destination records win on conflicting IDs, and the source/destination pair is retained in `__kalsara_erp_idb_migration_conflicts_v1` for review. Audit metadata is stored in `__kalsara_localstorage_migration_report_v1` and `__kalsara_erp_idb_migration_report_v1`. Conflict logs are stored in `__kalsara_localstorage_migration_conflicts_v1` and `__kalsara_erp_idb_migration_conflicts_v1`. The migration helper is covered by dedicated idempotency/conflict tests. This reduces migration data-loss risk; it does not replace browser-based validation on a copy of real user data.
+
+v9.13
