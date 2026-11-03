@@ -18,9 +18,7 @@ function syncVL(u){if(A.vp=='no')A.vx=0;else if(A.vp=='auto')A.vx=A.pp=='no'?3:2
 $('def').onclick=function(){ask('Kembalikan semua pengaturan toko dan tarif ke bawaan? Tabel tarif kustom dan status cek tarif ikut direset, jadi harga jual produk bisa berubah. Data produk dan catatan perubahan tarif tidak terhapus.','Ya, kembalikan',function(){A=Object.assign({},DEF,{tlog:A.tlog});fill();upd(true);toast('Pengaturan dikembalikan')})};
 function bkText(lt){try{var sn=snapState();if(lt)delete sn.sl;return JSON.stringify(sn)}catch(e){return null}}
 /*5.81: cadangan lengkap = data utama + data ERP dalam satu file. Cadangan ringan tidak memuat ERP*/
-function bkFull(lt){var sn;try{sn=snapState();if(lt)delete sn.sl}catch(e){return Promise.resolve({t:null})}
- if(lt)return Promise.resolve({t:JSON.stringify(sn),erp:false});
- return ERP.dump().then(function(e){try{sn.erp=e;sn.bv=2;return{t:JSON.stringify(sn),erp:true,n:e.n}}catch(x){return{t:null}}},function(err){var t=null;try{t=JSON.stringify(sn)}catch(x){}return{t:t,erp:false,err:(err&&err.message)||'gagal dibaca'}})}
+function bkFull(lt){return Backup.full(lt)}
 function bkDo(lt,use){bkFull(lt).then(function(r){if(!r.t){toast('Gagal membuat cadangan');return}
  if(r.err){ask('Data ERP tidak bisa dibaca ('+r.err+'). Cadangan ini HANYA memuat data utama (produk, promo, penjualan), bukan data ERP. Lanjutkan?','Ya, tanpa ERP',function(){use(r)});return}
  use(r)})}
@@ -46,19 +44,19 @@ $('bp').onclick=function(){showBp('')};
 $('bpg').onclick=function(){var v=$('bpt').value.trim();if(!v){toast('Tempel teks cadangan dulu');return}restoreText(v)};
 /*5.20: toleran BOM dan teks tambahan di sekitar cadangan, mendeteksi teks terpotong, menampilkan ringkasan sebelum memulihkan, dan mempertahankan penjualan jika cadangan ringan*/
 function bpFail(m){if(!$('bpw').hidden)$('bpm').textContent=m;toast(m)}
-function restoreText(txt){var raw=String(txt).replace(/^\ufeff/,'').trim(),i=raw.indexOf('{'),j=raw.lastIndexOf('}'),d;
- if(i<0){bpFail('Cadangan tidak valid: tidak ada data.');return}
- var body=j>i?raw.slice(i,j+1):raw.slice(i);
- try{d=JSON.parse(body)}catch(e){bpFail(j>i&&/\}\s*$/.test(raw)?'Cadangan tidak valid atau rusak.':'Teks cadangan tampak terpotong ('+raw.length.toLocaleString('id-ID')+' karakter). Salin ulang dari awal sampai akhir, atau pakai file cadangan.');return}
- if(!d||!d.A||!Array.isArray(d.rows)){bpFail('Cadangan tidak valid: bukan data Kalsara.');return}
- var np=d.rows.length,nm=Array.isArray(d.pr)?d.pr.length:0,ns=Array.isArray(d.sl)?d.sl.length:null,ec=null;
- if(d.erp!==undefined&&d.erp!==null){ec=ERP.check(d.erp);if(!ec.ok){bpFail('Cadangan tidak bisa dipulihkan: '+ec.msg+'. Data Anda tidak diubah.');return}}
- var et=ec?', beserta data ERP ('+(ec.n.marketplaces_raw||0)+' baris laporan, '+(ec.n.order_items||0)+' detail pesanan, '+(ec.n.opex||0)+' OpEx)':'. Data ERP saat ini tidak diubah';
- ask('Pulihkan '+np+' produk dan '+nm+' promo'+(ns===null?', penjualan saat ini dipertahankan':', '+ns.toLocaleString('id-ID')+' catatan penjualan')+et+'? Data saat ini akan diganti.','Ya, pulihkan',function(){
-  var fin=function(){if(d.sl===undefined)d.sl=SALES.slice();applyState(d);persist();$('bpw').hidden=true;$('bpt').value='';$('bpm').textContent='';toast('Data dipulihkan: '+np+' produk'+(ec?' dan data ERP':''))};
-  if(!ec){fin();return}
-  toast('Memulihkan data ERP...');
-  ERP.restore(d.erp).then(fin,function(err){bpFail('Pemulihan ERP gagal: '+((err&&err.message)||'tidak diketahui')+'. Data produk dan promo belum diubah.')})})}
+const Backup=createBackup({
+ parseBackupText:parseBackupText,
+ snapshotState:snapState,
+ ERP:ERP,
+ getSales:function(){return SALES},
+ applyState:applyState,
+ persist:persist,
+ ask:ask,
+ toast:toast,
+ onFailure:bpFail,
+ onRestored:function(){ $('bpw').hidden=true;$('bpt').value='';$('bpm').textContent=''; }
+});
+function restoreText(txt){Backup.restoreText(txt)}
 $('rs').onclick=function(){$('bf').click()};
 $('bf').onchange=function(){var f=this.files[0];this.value='';if(!f)return;var fr=new FileReader();fr.onload=function(){restoreText(fr.result)};fr.onerror=function(){toast('File tidak bisa dibaca')};fr.readAsText(f)};
 function snapState(){return{A:A,rows:rows.map(strip),pr:PRM,sl:SALES,ts:TS}}
@@ -98,19 +96,8 @@ function applyState(d){
  if(a.vp===undefined)a.vp=a.vx>0?'man':'no';if(a.lp===undefined)a.lp=a.lv>0?'man':'no';if(a.pp==='no'&&a.px>0)a.pp='man';if(a.sh===undefined){a.sh=5;if(!(a.sl>=10))a.sl=10}A=Object.assign({},DEF,a);TS=d.ts||0;SALES=Array.isArray(d.sl)?d.sl.slice(-SALES_MAX):[];var pa=pruneAge();if(pa&&typeof toast=='function')setTimeout(function(){toast(pa+' catatan penjualan lebih dari '+Math.round(SALES_DAYS/365)+' tahun dibersihkan otomatis')},1200);VCC=null;GK=null;PRM=(Array.isArray(d.pr)?d.pr.slice(0,300):[]).map(migPt);rows=[];KDOM.setHTML($('list'), '');
  (d.rows||[]).slice(0,ROW_MAX).forEach(function(x){add(x)});if(!rows.length)add();
  fill();upd(false);prRender();lsave()}
-var TH=['auto','light','dark'],THN={auto:'Otomatis',light:'Terang',dark:'Gelap'},THI={
- auto:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
- light:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>',
- dark:'<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>'};
-function thm(v,save){var h=document.documentElement;if(v=='auto')h.removeAttribute('data-theme');else h.setAttribute('data-theme',v);
- var b=$('thm');KDOM.setHTML(b, THI[v]);b.setAttribute('aria-label','Tema: '+THN[v]+'. Ketuk untuk ganti');
- if(save){try{KStore.setItem('kalsara_theme',v)}catch(e){}}}
-$('thm').onclick=function(){var c=document.documentElement.getAttribute('data-theme')||'auto',n=TH[(TH.indexOf(c)+1)%3];thm(n,true);toast('Tema: '+THN[n])};
+createTheme({$,KStore,KDOM,toast,document});
 $('hp').onclick=function(){var p=$('hpt');p.hidden=!p.hidden;this.setAttribute('aria-expanded',String(!p.hidden))};
-var t0='auto';try{t0=KStore.getItem('kalsara_theme')||'auto'}catch(e){}thm(TH.indexOf(t0)<0?'auto':t0,false);
-function setMode(m,save){document.body.classList.toggle('fast',m=='fast');document.querySelectorAll('#mseg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.m==m)});if(save){try{KStore.setItem('kalsara_mode',m)}catch(e){}}}
-$('mseg').onclick=function(e){var b=e.target.closest('button');if(b){setMode(b.dataset.m,true);toast(b.dataset.m=='fast'?'Mode Cepat: isian penting saja':'Mode Lengkap: semua isian')}};
-var m0='fast';try{m0=KStore.getItem('kalsara_mode')||'fast'}catch(e){}setMode(m0=='full'?'full':'fast',false);
 function obDone(){$('ob').hidden=true;try{KStore.setItem('kalsara_ob','1')}catch(e){}}
 function obInit(){var ok=null;try{ok=KStore.getItem('kalsara_ob')}catch(e){}if(ok||rows.some(function(r){return r.m>0}))return;
  [['obc','ac'],['obg','gc']].forEach(function(x){var e=$(x[0]);KDOM.copyChildren(e, $(x[1]));e.querySelectorAll('option[value="man"]').forEach(function(o){o.remove()});e.value=A[x[1]]});

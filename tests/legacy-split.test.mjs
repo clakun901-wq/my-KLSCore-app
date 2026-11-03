@@ -47,3 +47,25 @@ ok(xlsx.includes("from './money.js'") && xlsx.includes('getRows') && xlsx.includ
 ok(pwa.includes('export function createPWA({ $, toast, lflush, APPV'), 'PWA harus menerima dependensi aplikasi eksplisit');
 for (const f of ['xlsx-reader.js', 'pwa.js']) ok(sw.includes("'./js/" + f + "'"), 'sw.js CORE harus menyebut js/' + f);
 ok(/import \{createXlsxReader\} from/.test(loader) && /import \{createPWA\} from/.test(loader), 'loader harus mengimpor factory XLSX Reader dan PWA');
+// Tahap 3 (v9.17): preferensi tema dan parser cadangan dipisahkan dari orkestrasi state legacy.
+const theme = fs.readFileSync(new URL('../js/theme.js', import.meta.url), 'utf8');
+const backupFormat = fs.readFileSync(new URL('../js/backup-format.js', import.meta.url), 'utf8');
+ok(theme.includes('export function createTheme({ $, KStore, KDOM, toast, document })'), 'tema harus berupa factory ES dengan dependensi eksplisit');
+ok(!/\bwindow\.|globalThis\./.test(theme), 'modul tema tidak boleh membaca global tersembunyi');
+ok(backupFormat.includes('export function parseBackupText(text)'), 'parser cadangan harus diekspor sebagai fungsi murni');
+ok(!/KStore|localStorage|sessionStorage|ERP\./.test(backupFormat), 'parser cadangan tidak boleh menyentuh storage atau ERP');
+for (const f of ['theme.js', 'backup-format.js']) {
+  execFileSync(process.execPath, ['--check', new URL('../js/' + f, import.meta.url).pathname]); n++;
+  ok(sw.includes("'./js/" + f + "'"), 'sw.js CORE harus menyebut js/' + f);
+}
+ok(/import \{createTheme\} from/.test(loader) && /import \{parseBackupText\} from/.test(loader), 'loader harus mengimpor modul tema dan parser cadangan');
+const backupPart = fs.readFileSync(new URL('80-cadangan-tema.js', dir), 'utf8');
+ok(/Backup\.restoreText\(txt\)/.test(backupPart), 'restoreText legacy harus meneruskan ke modul orkestrasi cadangan');
+const backupModule = fs.readFileSync(new URL('../js/backup.js', import.meta.url), 'utf8');
+ok(backupModule.includes('export function createBackup('), 'orkestrasi cadangan harus menjadi factory ES');
+ok(/getSales\(\)\.slice\(\)/.test(backupModule), 'restore backup ringan harus membaca sales terbaru lewat getter dinamis');
+ok(!/window\.|globalThis\./.test(backupModule), 'modul cadangan tidak boleh membaca global tersembunyi');
+execFileSync(process.execPath, ['--check', new URL('../js/backup.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/backup.js'"), 'sw.js CORE harus menyebut js/backup.js');
+ok(/import \{createBackup\} from/.test(loader), 'loader harus mengimpor factory backup');
+ok(/createTheme\(\{\$,KStore,KDOM,toast,document\}\)/.test(backupPart), 'legacy harus memasang factory tema dengan dependensi eksplisit');

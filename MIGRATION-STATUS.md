@@ -1,23 +1,41 @@
-# Status migrasi Kalsara v5.82 — paket v9.16
+# Status migrasi Kalsara v5.82 — paket v9.19
 
 Tanggal build: 2026-11-04
 
 ## CARA MELANJUTKAN (baca ini dulu di percakapan baru)
-Unggah zip paket terbaru + berkas ini. Posisi saat ini: **tahap 3 dari 4 sedang berjalan (v9.16 parsial)**. Perintah berikutnya: **"lanjut tahap 3"**.
-- Tahap 3: `70-xlsx-reader.js` dan `99-pwa.js` sudah dipindahkan menjadi modul ES (`js/xlsx-reader.js`, `js/pwa.js`) dengan factory/dependensi eksplisit. `80-cadangan-tema.js` BELUM dipindahkan karena mengelola state inti yang dapat diganti (`A`, `rows`, `SALES`, `PRM`, `TS`) dan memasang banyak handler lintas tab; perlu desain bridge state dua arah sebelum aman dipisah. Lanjutkan bagian ini dulu. Modul baru sudah didaftarkan pada loader dan cache SW.
-- Tahap 4 (belum): bagian inti (calc, hitung-etalase, promosi, dst.), lalu loader dihapus.
-- Wajib tiap tahap: `npm test`, `npm run test:e2e` (harus 20/13/9 assertion), uji offline dengan service worker, dan uji ERP (HPP, OpEx) di Chromium.
-- Jebakan yang sudah terjadi di tahap 2: (1) `js/legacy-app.js` ada di `js/`, jadi URL modul memakai `./erp.js`, BUKAN `../erp.js`; (2) saat memindah kode lewat skrip ganti-teks, cek spasi di `return(...)` yang berubah jadi `returnX`.
+Unggah ZIP terbaru dan berkas ini. Posisi: **tahap 3 dari 4 selesai pada batas modul pendukung (v9.18)**. Tahap 4 berikutnya memisahkan modul inti kalkulator, hitung/etalase, penjualan, voucher, dan promosi secara bertahap. Jangan menghapus loader legacy sebelum semua pemanggil global dan E2E lintas tab terbukti aman.
+- Sudah menjadi modul ES: ERP (`js/erp.js`), XLSX Reader (`js/xlsx-reader.js`), PWA (`js/pwa.js`), tema/mode (`js/theme.js`), dan parser teks cadangan murni (`js/backup-format.js`).
+- Masih di legacy: alur UI backup/restore, `applyState`, penyimpanan/kuota, sinkronisasi, onboarding, catatan tarif, dan pengaturan tarif di `js/legacy/80-cadangan-tema.js`. Bagian ini mengubah state inti (`A`, `rows`, `SALES`, `PRM`, `TS`) yang bisa diganti ketika restore; perlu bridge getter/setter dua arah.
+- Tahap 4 (belum): modul inti (calc, hitung-etalase, penjualan/promosi, dst.), kemudian hapus loader setelah seluruh pemanggil global dihilangkan.
+- Wajib tiap tahap: `npm test`; `npm run test:e2e` (target baseline 20/13/9); uji offline Service Worker; uji ERP (HPP, OpEx) dan impor XLSX/CSV.
+- Di lingkungan build ini, Playwright dapat meluncurkan `/usr/bin/chromium`, tetapi navigasi ke `127.0.0.1` ditolak kebijakan lingkungan (`ERR_BLOCKED_BY_ADMINISTRATOR`). Jangan anggap E2E lulus berdasarkan unit test.
+- Jebakan tahap 2: loader berada di `js/`, sehingga URL modul memakai `./erp.js` bukan `../erp.js`; periksa spasi pada hasil transformasi teks (`return getRows()` jangan berubah menjadi `returngetRows()`).
+
+## Perubahan v9.19
+- Perbaikan: sisa kode tema/mode di `js/legacy/80-cadangan-tema.js` (baris `thm(TH...)`, `setMode`, handler `mseg`) dihapus karena sudah ditangani `js/theme.js`; sebelumnya memicu `ReferenceError: TH is not defined` saat muat dan daftar produk kosong. Dicek di Chromium. Ditambah `tests/e2e/load.e2e.py` (boot tanpa error, tema, mode, persistensi mode; didaftarkan di `test:e2e`); diuji gagal di v9.18 dan lulus di v9.19. `npm test` lulus. E2E lama (shelf/hitung/sqlite) belum dijalankan.
+
+## Perubahan v9.18 — tahap 3 selesai pada batas modul pendukung
+- `js/backup.js` (baru): factory ES `createBackup({...})` memindahkan orkestrasi pembuatan backup penuh/ringan dan pemulihan teks. Semua akses state aplikasi melalui callback eksplisit; `getSales()` membaca penjualan terbaru saat konfirmasi restore backup ringan, bukan snapshot lama.
+- `js/legacy/80-cadangan-tema.js` sekarang memasang factory `createBackup`; fungsi global `bkFull` dan `restoreText` dipertahankan sebagai wrapper kompatibilitas. `snapState`, `applyState`, `persist`, kuota, sinkronisasi, dan onboarding tetap di legacy karena masih mengelola state inti yang saling terkait. Ini disengaja agar tidak mengubah urutan mutasi state.
+- Validasi envelope backup dilakukan sebelum dialog konfirmasi. Jika data ERP tidak valid, pemulihan dihentikan sebelum state produk/promo diubah. Backup ringan mempertahankan penjualan yang ada saat tombol konfirmasi ditekan. Kegagalan restore ERP tidak menjalankan `applyState`.
+- Loader mengimpor `createBackup`; `sw.js` memasukkan `backup.js` ke CORE dan cache naik ke `client-v9.18`; `package.json` menjadi `0.9.18`.
+- Test baru `backup.test.mjs`: 14 assertion untuk backup lengkap/ringan, konfirmasi restore, mempertahankan sales terbaru, validasi ERP, dan penolakan teks rusak. Audit pemisahan modul diperluas.
+- Pengujian: `npm test` lulus seluruh suite termasuk golden-master 4.127 differential assertions dan suite baru backup. `npm run test:e2e` belum lulus: Chromium default tidak terpasang; dengan `/usr/bin/chromium`, navigasi localhost diblokir `ERR_BLOCKED_BY_ADMINISTRATOR`. Karena itu browser E2E, offline Service Worker pada browser, dan Android belum terverifikasi.
+- **Status tahap 3:** modul ERP, XLSX Reader, PWA, tema, parser backup, dan orkestrasi backup/restore sudah terpisah. State inti, persistensi, sinkronisasi, serta `applyState` tetap legacy dan menjadi bagian pekerjaan pemisahan modul inti/adapter pada tahap berikutnya. Paket tetap pengembangan, bukan rilis produksi.
+
+## Perubahan v9.17
+- `js/theme.js` (baru): preferensi tema `auto/light/dark` dan mode `fast/full` dipindahkan ke factory `createTheme({ $, KStore, KDOM, toast, document })`. Penyimpanan key `kalsara_theme` dan `kalsara_mode`, markup ikon, aria-label, serta notifikasi dipertahankan.
+- `js/backup-format.js` (baru): parser teks cadangan dipisah sebagai fungsi murni `parseBackupText(text)`. Tetap toleran BOM dan teks pembungkus, memvalidasi envelope Kalsara, dan membedakan JSON rusak/terpotong. Parser tidak menyentuh storage, ERP, atau state aplikasi.
+- `js/legacy/80-cadangan-tema.js` kini menggunakan parser cadangan dan factory tema. Orkestrasi backup/restore dan manajemen state tetap legacy dengan sengaja; belum aman dipindahkan sebelum bridge state dua arah selesai.
+- `js/legacy-app.js` menyisipkan import absolut `createTheme` dan `parseBackupText` ke Blob module. `sw.js` memasukkan `theme.js` dan `backup-format.js` ke CORE serta cache menjadi `client-v9.17`. `package.json` menjadi `0.9.17`.
+- Test baru: `backup-format.test.mjs` (6 assertion) dan `theme.test.mjs` (7 runtime assertion). Audit pemisahan diperluas; `compatibility.test.mjs` kini juga memeriksa fungsi tema yang dipindah.
+- Pengujian: `npm test` lulus seluruh suite termasuk golden-master kalkulator 2.010, voucher 112, promo 205, harga promo 200, Kombo/Hadiah 100, dan pipa sen 1.500 differential assertions. `npm run test:e2e` belum dapat dieksekusi sampai selesai: Chromium ditemukan, tetapi browser menerima `ERR_BLOCKED_BY_ADMINISTRATOR` saat membuka localhost. Uji offline SW dan Android belum dijalankan.
 
 ## Perubahan v9.16 (tahap 3 parsial)
-- `js/xlsx-reader.js` (baru): memindahkan parser XLSX/CSV dan alur impor harga/stok ke factory ES `createXlsxReader({...})`. Dependensi disuntikkan eksplisit (`$`, `today`, `toast`, `ask`, `upd`, `srt`, `add`, `strip`, `getRows`, `replaceRows`, `KDOM`, `num`, `parseCsv`, `KStore`); parser Rupiah memakai `parseIDR` dari `money.js`. `getRows` membaca `rows` terbaru, sedangkan `replaceRows` menjaga assignment legacy tetap bekerja.
-- `js/legacy/70-xlsx-reader.js` kini satu baris pemasangan.
-- `js/pwa.js` (baru): memindahkan runtime PWA ke factory ES `createPWA({$, toast, lflush, APPV})`; status Service Worker, pembaruan, install prompt, dan handler tetap sama. `js/legacy/99-pwa.js` kini satu baris pemasangan.
-- Loader menyisipkan import absolut `createERP`, `createXlsxReader`, dan `createPWA` di Blob module.
-- `sw.js` memasukkan dua modul baru ke CORE dan cache dinaikkan ke `client-v9.16`; `package.json` menjadi 0.9.16.
-- `legacy-split.test.mjs` menjaga factory, dependensi, loader, dan cache modul baru. `compatibility.test.mjs` tetap menjaga seluruh nama fungsi legacy.
-- **Belum dipindahkan:** `80-cadangan-tema.js`. Bagian ini mengubah dan mengganti state inti melalui `applyState()` serta menangani backup/restore ERP; memindahkannya tanpa bridge state dua arah berisiko mengubah data. Tahap 3 belum selesai.
-- Pengujian: `npm test` lulus seluruh suite, termasuk 2.010 kalkulator, 112 voucher, 205 promo, 200 harga promo, 100 Kombo/Hadiah, dan 1.500 pipa sen differential assertions. E2E belum dapat dijalankan: Chromium lokal berhasil ditemukan, tetapi browser diblokir saat membuka `127.0.0.1` (`ERR_BLOCKED_BY_ADMINISTRATOR`). Uji service worker offline dan uji Android juga belum dilakukan.
+- `js/xlsx-reader.js` memindahkan parser XLSX/CSV dan impor harga/stok ke factory ES `createXlsxReader({...})` dengan dependensi eksplisit dan bridge `getRows`/`replaceRows`.
+- `js/pwa.js` memindahkan runtime PWA ke factory ES `createPWA({$, toast, lflush, APPV})`.
+- `js/legacy/70-xlsx-reader.js` dan `js/legacy/99-pwa.js` hanya memasang factory.
+- `js/legacy-app.js` mengimpor kedua modul dan cache Service Worker menjadi `client-v9.16`.
 
 ## Perubahan v9.15 (tahap 2 dari 4: modul ERP jadi modul ES)
 - `js/erp.js` (baru): modul ES yang mengekspor `createERP({$, today, toast, getRows})`. Isinya = isi lama `js/legacy/90-erp.js` tanpa perubahan logika. Dependensi kini eksplisit: `KStore` (storage.js), `compute` (worker-client.js), `Money` (money.js), `KDOM` (dom.js) diimpor; `$`, `today`, `toast`, dan `getRows` (membaca `rows` legacy segar setiap dipanggil, karena `rows` bisa diganti `applyState`) diberikan pemanggil. Pembacaan `window.rows||rows` dan `globalThis.Kalsara*` dihapus dari ERP.

@@ -4,7 +4,8 @@ const originalNames=JSON.parse(fs.readFileSync(new URL('./legacy-functions.json'
 import {readLegacySource} from './helpers/legacy-source.mjs';
 const app=readLegacySource();
 const worker=fs.readFileSync(new URL('../workers/compute.worker.js',import.meta.url),'utf8');
-const combined=app+'\n'+worker;
+const theme=fs.readFileSync(new URL('../js/theme.js',import.meta.url),'utf8');
+const combined=app+'\n'+theme+'\n'+worker;
 for(const name of originalNames) assert.match(combined,new RegExp('function\\s+'+name+'\\s*\\('),'original function '+name+' remains in app or Worker');
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const tabs=[...html.matchAll(/<button[^>]+id="(t[0-9])"/g)].map(m=>m[1]);
