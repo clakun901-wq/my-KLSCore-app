@@ -20,7 +20,7 @@ def check(cond, msg):
     ok += 1
 try:
     with sync_playwright() as p:
-        b = p.chromium.launch()
+        b = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH') or None)
         # ---- 1. Fungsi ----
         rows = [mkrow(1, n='Rak Buku', m=42320, s=5, ha=151080), mkrow(2, n='Kaos', s=40)]
         pr = [dict(id='v1', t='vc', jt='toko', u='rp', a=2000, b=20000, x=100, y=1, s='', e='', n='Kals53d')]

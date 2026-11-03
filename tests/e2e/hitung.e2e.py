@@ -14,7 +14,7 @@ def check(c, m):
     ok += 1
 try:
     with sync_playwright() as p:
-        b = p.chromium.launch(); ctx = b.new_context(viewport={'width': 412, 'height': 900}, service_workers='block'); ctx.add_init_script(seed)
+        b = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH') or None); ctx = b.new_context(viewport={'width': 412, 'height': 900}, service_workers='block'); ctx.add_init_script(seed)
         pg = ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         t0 = time.time(); pg.goto(f'http://127.0.0.1:{PORT}/index.html'); pg.wait_for_selector('#list .pc', state='attached', timeout=60000)
         pg.wait_for_function("document.querySelectorAll('#list .pc').length>=1000", timeout=60000); boot = round((time.time() - t0) * 1000)

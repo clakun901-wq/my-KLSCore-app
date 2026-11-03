@@ -7,6 +7,10 @@ const manifest = await fetch(new URL('parts.json', base)).then(r => { if (!r.ok)
 const texts = await Promise.all(manifest.parts.map(name => fetch(new URL(name, base)).then(r => { if (!r.ok) throw new Error('Bagian ' + name + ' gagal dimuat (' + r.status + ')'); return r.text(); })));
 /* Modul ES yang sudah dipisah (mulai v9.15: ERP) diimpor lewat URL absolut yang disisipkan di awal gabungan, karena import relatif tidak bisa dipakai di dalam Blob. */
 const erpUrl = new URL('./erp.js', import.meta.url).href;
-const preamble = 'import {createERP} from ' + JSON.stringify(erpUrl) + ';\n';
+const xlsxUrl = new URL('./xlsx-reader.js', import.meta.url).href;
+const pwaUrl = new URL('./pwa.js', import.meta.url).href;
+const preamble = 'import {createERP} from ' + JSON.stringify(erpUrl) + ';\n' +
+  'import {createXlsxReader} from ' + JSON.stringify(xlsxUrl) + ';\n' +
+  'import {createPWA} from ' + JSON.stringify(pwaUrl) + ';\n';
 const url = URL.createObjectURL(new Blob([preamble + texts.join('') + '\n//# sourceURL=kalsara-legacy-app.js'], { type: 'text/javascript' }));
 try { await import(url); } finally { URL.revokeObjectURL(url); }

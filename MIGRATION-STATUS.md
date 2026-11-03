@@ -1,13 +1,23 @@
-# Status migrasi Kalsara v5.82 — paket v9.15
+# Status migrasi Kalsara v5.82 — paket v9.16
 
 Tanggal build: 2026-11-04
 
 ## CARA MELANJUTKAN (baca ini dulu di percakapan baru)
-Unggah zip paket terbaru + berkas ini. Posisi saat ini: **tahap 2 dari 4 SELESAI (v9.15)**. Perintah berikutnya: **"lanjut tahap 3"**.
-- Tahap 3 (belum dikerjakan): pindahkan bagian relatif mandiri menjadi modul ES di `js/`: `70-xlsx-reader.js`, `80-cadangan-tema.js`, `99-pwa.js`. Pola yang dipakai sama dengan ERP: modul mengekspor fungsi pembuat (`createXxx({deps})`), loader `js/legacy-app.js` menyisipkan `import` (URL absolut) di awal gabungan Blob, bagian legacy tinggal satu baris pemasangan. Setiap modul baru: daftarkan di `sw.js` CORE, naikkan versi cache, perbarui `tests/legacy-split.test.mjs`.
+Unggah zip paket terbaru + berkas ini. Posisi saat ini: **tahap 3 dari 4 sedang berjalan (v9.16 parsial)**. Perintah berikutnya: **"lanjut tahap 3"**.
+- Tahap 3: `70-xlsx-reader.js` dan `99-pwa.js` sudah dipindahkan menjadi modul ES (`js/xlsx-reader.js`, `js/pwa.js`) dengan factory/dependensi eksplisit. `80-cadangan-tema.js` BELUM dipindahkan karena mengelola state inti yang dapat diganti (`A`, `rows`, `SALES`, `PRM`, `TS`) dan memasang banyak handler lintas tab; perlu desain bridge state dua arah sebelum aman dipisah. Lanjutkan bagian ini dulu. Modul baru sudah didaftarkan pada loader dan cache SW.
 - Tahap 4 (belum): bagian inti (calc, hitung-etalase, promosi, dst.), lalu loader dihapus.
 - Wajib tiap tahap: `npm test`, `npm run test:e2e` (harus 20/13/9 assertion), uji offline dengan service worker, dan uji ERP (HPP, OpEx) di Chromium.
 - Jebakan yang sudah terjadi di tahap 2: (1) `js/legacy-app.js` ada di `js/`, jadi URL modul memakai `./erp.js`, BUKAN `../erp.js`; (2) saat memindah kode lewat skrip ganti-teks, cek spasi di `return(...)` yang berubah jadi `returnX`.
+
+## Perubahan v9.16 (tahap 3 parsial)
+- `js/xlsx-reader.js` (baru): memindahkan parser XLSX/CSV dan alur impor harga/stok ke factory ES `createXlsxReader({...})`. Dependensi disuntikkan eksplisit (`$`, `today`, `toast`, `ask`, `upd`, `srt`, `add`, `strip`, `getRows`, `replaceRows`, `KDOM`, `num`, `parseCsv`, `KStore`); parser Rupiah memakai `parseIDR` dari `money.js`. `getRows` membaca `rows` terbaru, sedangkan `replaceRows` menjaga assignment legacy tetap bekerja.
+- `js/legacy/70-xlsx-reader.js` kini satu baris pemasangan.
+- `js/pwa.js` (baru): memindahkan runtime PWA ke factory ES `createPWA({$, toast, lflush, APPV})`; status Service Worker, pembaruan, install prompt, dan handler tetap sama. `js/legacy/99-pwa.js` kini satu baris pemasangan.
+- Loader menyisipkan import absolut `createERP`, `createXlsxReader`, dan `createPWA` di Blob module.
+- `sw.js` memasukkan dua modul baru ke CORE dan cache dinaikkan ke `client-v9.16`; `package.json` menjadi 0.9.16.
+- `legacy-split.test.mjs` menjaga factory, dependensi, loader, dan cache modul baru. `compatibility.test.mjs` tetap menjaga seluruh nama fungsi legacy.
+- **Belum dipindahkan:** `80-cadangan-tema.js`. Bagian ini mengubah dan mengganti state inti melalui `applyState()` serta menangani backup/restore ERP; memindahkannya tanpa bridge state dua arah berisiko mengubah data. Tahap 3 belum selesai.
+- Pengujian: `npm test` lulus seluruh suite, termasuk 2.010 kalkulator, 112 voucher, 205 promo, 200 harga promo, 100 Kombo/Hadiah, dan 1.500 pipa sen differential assertions. E2E belum dapat dijalankan: Chromium lokal berhasil ditemukan, tetapi browser diblokir saat membuka `127.0.0.1` (`ERR_BLOCKED_BY_ADMINISTRATOR`). Uji service worker offline dan uji Android juga belum dilakukan.
 
 ## Perubahan v9.15 (tahap 2 dari 4: modul ERP jadi modul ES)
 - `js/erp.js` (baru): modul ES yang mengekspor `createERP({$, today, toast, getRows})`. Isinya = isi lama `js/legacy/90-erp.js` tanpa perubahan logika. Dependensi kini eksplisit: `KStore` (storage.js), `compute` (worker-client.js), `Money` (money.js), `KDOM` (dom.js) diimpor; `$`, `today`, `toast`, dan `getRows` (membaca `rows` legacy segar setiap dipanggil, karena `rows` bisa diganti `applyState`) diberikan pemanggil. Pembacaan `window.rows||rows` dan `globalThis.Kalsara*` dihapus dari ERP.

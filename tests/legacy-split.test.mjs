@@ -1,6 +1,7 @@
 // Menjaga pemecahan js/legacy-app.js (v9.14): daftar bagian, urutan, sintaks tiap bagian, dan cache offline.
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {execFileSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 import {legacyParts, readLegacyPartsOnly, erpModuleSource} from './helpers/legacy-source.mjs';
 let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; };
@@ -34,3 +35,15 @@ ok(/getRows:function\(\)\{return rows\}/.test(part90), 'daftar produk harus diba
 ok(/import \{createERP\} from/.test(loader) && /new URL\('\.\/erp\.js', import\.meta\.url\)/.test(loader), 'loader harus menyisipkan import createERP dari js/erp.js');
 ok(sw.includes("'./js/erp.js'"), 'sw.js CORE harus menyebut js/erp.js');
 console.log(`Legacy split audit: ${n} assertions passed (${legacyParts.length} bagian).`);
+
+// Tahap 3 parsial (v9.16): XLSX Reader dan PWA dipindahkan menjadi modul ES dengan bridge eksplisit.
+const xlsx = fs.readFileSync(new URL('../js/xlsx-reader.js', import.meta.url), 'utf8');
+const pwa = fs.readFileSync(new URL('../js/pwa.js', import.meta.url), 'utf8');
+for (const [name, src, exp] of [['xlsx-reader', xlsx, 'createXlsxReader'], ['pwa', pwa, 'createPWA']]) {
+  ok(src.includes('export function ' + exp), name + ' harus mengekspor factory ES');
+  execFileSync(process.execPath, ['--check', new URL('../js/' + name + '.js', import.meta.url).pathname]); n++;
+}
+ok(xlsx.includes("from './money.js'") && xlsx.includes('getRows') && xlsx.includes('replaceRows'), 'XLSX Reader harus memakai dependensi eksplisit dan bridge rows dinamis');
+ok(pwa.includes('export function createPWA({ $, toast, lflush, APPV'), 'PWA harus menerima dependensi aplikasi eksplisit');
+for (const f of ['xlsx-reader.js', 'pwa.js']) ok(sw.includes("'./js/" + f + "'"), 'sw.js CORE harus menyebut js/' + f);
+ok(/import \{createXlsxReader\} from/.test(loader) && /import \{createPWA\} from/.test(loader), 'loader harus mengimpor factory XLSX Reader dan PWA');

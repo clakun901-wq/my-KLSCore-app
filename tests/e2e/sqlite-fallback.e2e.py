@@ -12,7 +12,7 @@ def check(c, m):
     ok += 1
 try:
     with sync_playwright() as p:
-        b = p.chromium.launch(); ctx = b.new_context(service_workers='block'); pg = ctx.new_page(); errs = []
+        b = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH') or None); ctx = b.new_context(service_workers='block'); pg = ctx.new_page(); errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.goto(f'http://127.0.0.1:{PORT}/index.html'); pg.wait_for_function("typeof KStore!=='undefined' && document.querySelectorAll('nav button').length>=7", timeout=30000)
         backend = pg.evaluate("KStore.backend")
