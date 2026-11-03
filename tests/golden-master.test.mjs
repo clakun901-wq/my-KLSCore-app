@@ -10,7 +10,8 @@ const root = new URL('../', import.meta.url);
 const originalHTML = fs.readFileSync(new URL('../source/Kalsara-v5_82.html', import.meta.url), 'utf8');
 const originalBlock = [...originalHTML.matchAll(/<script>([\s\S]*?)<\/script>/g)][1]?.[1];
 assert.ok(originalBlock, 'Skrip bisnis utama v5.82 harus tersedia');
-const migratedSource = fs.readFileSync(new URL('../js/legacy-app.js', import.meta.url), 'utf8');
+import {readLegacySource} from './helpers/legacy-source.mjs';
+const migratedSource = readLegacySource();
 
 function fixedDate(iso) {
   return class FixedDate extends Date {

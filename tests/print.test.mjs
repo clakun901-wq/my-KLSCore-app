@@ -1,7 +1,8 @@
 // Audit statis cetak laporan ERP (v9.13): cetak harus memakai salinan #erpp di luar tata letak aplikasi.
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-const js = fs.readFileSync(new URL('../js/legacy-app.js', import.meta.url), 'utf8');
+import {readLegacySource} from './helpers/legacy-source.mjs';
+const js = readLegacySource();
 const css = fs.readFileSync(new URL('../css/app.css', import.meta.url), 'utf8');
 let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; };
 

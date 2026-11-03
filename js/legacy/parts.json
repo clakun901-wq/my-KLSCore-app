@@ -1,0 +1,16 @@
+{
+ "parts": [
+  "00-core.js",
+  "10-calc.js",
+  "20-hitung-etalase.js",
+  "30-penjualan.js",
+  "40-voucher-panel.js",
+  "50-promosi.js",
+  "60-tab-impor-sinkron.js",
+  "70-xlsx-reader.js",
+  "80-cadangan-tema.js",
+  "90-erp.js",
+  "95-boot.js",
+  "99-pwa.js"
+ ]
+}

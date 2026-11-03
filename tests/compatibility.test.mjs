@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const originalNames=JSON.parse(fs.readFileSync(new URL('./legacy-functions.json',import.meta.url),'utf8'));
-const app=fs.readFileSync(new URL('../js/legacy-app.js',import.meta.url),'utf8');
+import {readLegacySource} from './helpers/legacy-source.mjs';
+const app=readLegacySource();
 const worker=fs.readFileSync(new URL('../workers/compute.worker.js',import.meta.url),'utf8');
 const combined=app+'\n'+worker;
 for(const name of originalNames) assert.match(combined,new RegExp('function\\s+'+name+'\\s*\\('),'original function '+name+' remains in app or Worker');

@@ -12,7 +12,8 @@ ok(!/innerHTML|insertAdjacentHTML|outerHTML|document\.write/.test(card.replace(/
 ok(/attachShadow\(\{mode: 'open'\}\)/.test(card), 'kartu harus memakai Shadow DOM');
 ok(/customElements\.define\('kalsara-product-card'/.test(card), 'custom element harus terdaftar');
 ok(/from '\.\.\/js\/signals\.js'/.test(card) && /effect\(/.test(card), 'kartu harus reaktif lewat Signals');
-const legacy = read('js/legacy-app.js');
+import {readLegacySource} from './helpers/legacy-source.mjs';
+const legacy = readLegacySource();
 const shopSrc = legacy.slice(legacy.indexOf('function shopChips'), legacy.indexOf("$('shl').addEventListener('kls-lock'"));
 ok(shopSrc.length > 500 && !/KDOM\.setHTML|innerHTML/.test(shopSrc), 'shop() tidak boleh merakit HTML string');
 ok(!/data-sin|data-lk|class=\\"si\\"/.test(shopSrc), 'shop() tidak boleh lagi membuat markup kartu lama');

@@ -14,7 +14,7 @@ Paket ini mempertahankan markup, stylesheet, dan logika bisnis v5.82 sebagai lap
 - `index.html` — markup dan navigasi asli.
 - `source/Kalsara-v5_82.html` — salinan sumber asli yang tidak diubah sebagai referensi/cadangan.
 - `css/app.css` — stylesheet asli, tidak didesain ulang.
-- `js/legacy-app.js` — logika bisnis asli sebagai compatibility module.
+- `js/legacy-app.js` — loader kecil; logika bisnis asli ada di `js/legacy/*.js` (urutan di `js/legacy/parts.json`), dijalankan sebagai satu compatibility module.
 - `js/storage.js` — penyimpanan dengan dua mode: **SQLite** (Worker, OPFS SAH Pool) sebagai satu-satunya sumber data bila `vendor/sqlite-wasm/` tersedia; **jurnal OPFS** lama hanya sebagai jalur cadangan sebelum pernah beralih ke SQLite.
 - `js/sqlite-engine.js`, `js/sqlite-client.js`, `workers/sqlite-store.worker.js` — skema/transaksi SQLite (murni, diuji di SQLite nyata), proxy Worker, dan bootstrap Wasm lokal.
 - `scripts/fetch-sqlite-wasm.mjs` — memasang SQLite Wasm ke `vendor/sqlite-wasm/` (`npm run vendor:sqlite`) dan memverifikasinya (`npm run vendor:check`).
@@ -163,5 +163,3 @@ Tanggal build: 2026-11-02
 ## v9.6 — safe ERP migration
 
 The legacy `localStorage` migration now reports conflicting values instead of silently skipping them; the destination value is preserved and both values are retained for review. The legacy `KalsaraERP` IndexedDB migration now merges by record ID instead of replacing the destination collection. Existing destination records win on conflicting IDs, and the source/destination pair is retained in `__kalsara_erp_idb_migration_conflicts_v1` for review. Audit metadata is stored in `__kalsara_localstorage_migration_report_v1` and `__kalsara_erp_idb_migration_report_v1`. Conflict logs are stored in `__kalsara_localstorage_migration_conflicts_v1` and `__kalsara_erp_idb_migration_conflicts_v1`. The migration helper is covered by dedicated idempotency/conflict tests. This reduces migration data-loss risk; it does not replace browser-based validation on a copy of real user data.
-
-v9.13

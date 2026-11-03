@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-const app=fs.readFileSync(new URL('../js/legacy-app.js',import.meta.url),'utf8');
+import {readLegacySource} from './helpers/legacy-source.mjs';
+const app=readLegacySource();
 const dom=fs.readFileSync(new URL('../js/dom.js',import.meta.url),'utf8');
 const main=fs.readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
 assert.equal((app.match(/\.innerHTML\s*=/g)||[]).length,0,'legacy renderer must not assign innerHTML');

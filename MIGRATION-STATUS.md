@@ -1,6 +1,14 @@
-# Status migrasi Kalsara v5.82 — paket v9.13
+# Status migrasi Kalsara v5.82 — paket v9.14
 
-Tanggal build: 2026-11-02
+Tanggal build: 2026-11-04
+
+## Perubahan v9.14 (tahap 1 dari 4: pemecahan legacy-app.js)
+- `js/legacy-app.js` (1.299 baris) dipecah menjadi 12 bagian berurutan di `js/legacy/` (daftar dan urutan eksekusi: `js/legacy/parts.json`). `js/legacy-app.js` kini loader kecil yang menggabungkan bagian-bagian itu dan menjalankannya sebagai SATU modul, jadi lingkup variabel (`A`, `rows`, `$`, ...) dan urutan eksekusi sama persis. Hasil gabungan terbukti identik byte per byte dengan v9.13.
+- Bagian: 00-core, 10-calc (penanda /*CALC*/../*END*/ dipertahankan untuk golden-master), 20-hitung-etalase, 30-penjualan, 40-voucher-panel, 50-promosi, 60-tab-impor-sinkron, 70-xlsx-reader, 80-cadangan-tema, 90-erp, 95-boot, 99-pwa.
+- Test membaca sumber lewat `tests/helpers/legacy-source.mjs`; ditambah `tests/legacy-split.test.mjs`. Cache service worker memuat parts.json dan semua bagian (client-v9.14).
+- Tidak ada perubahan logika, hitungan, penyimpanan, atau skema data. Diuji: semua test unit, 3 e2e Chromium (20/13/9 assertion, sama dengan baseline), dan boot offline dengan service worker.
+- Rencana: tahap 2 = ERP jadi modul ES sungguhan (js/erp.js) dengan dependensi eksplisit; tahap 3 = bagian leaf (xlsx-reader, cadangan, PWA); tahap 4 = bagian inti (calc, hitung, promosi) dan penghapusan loader.
+
 
 ## Perubahan v9.13
 - Cetak / PDF laporan ERP diperbaiki: cetak kini memakai salinan laporan (#erpp) di luar tata letak aplikasi, bukan posisi absolut + visibility:hidden yang memotong halaman. Diuji di Chromium: PDF lama kosong, PDF baru memuat seluruh baris sampai akhir (3 halaman pada data uji 60 baris). Belum diuji di Chrome Android/iOS Safari nyata.
