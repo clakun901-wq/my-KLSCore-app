@@ -1,0 +1,67 @@
+/* Pipa harga maju/mundur versi sinkron (v5.82): vbest, volt, fees, tmod, fwdL, fwd, impas, calcSync. Dipindahkan apa adanya dari js/legacy/10-calc.js (tahap 4c).
+   Dependensi disuntikkan eksplisit: getA (A diganti utuh saat restore), getVNO (flag panel pembanding, dimutasi dari luar), pr, Money (KalsaraMoney),
+   tariff (adRate/goRate/capG/rate dari tariff.js) dan hooks (vcBest/vcThr/vcBad dari panel voucher; dibaca saat dipanggil karena dipasang belakangan, bisa belum ada). */
+export function createPricing({getA,getVNO,pr,Money,tariff,hooks}){
+  var adRate=tariff.adRate,goRate=tariff.goRate,capG=tariff.capG,rate=tariff.rate;
+  function vbest(L,r){var A=getA();
+   if(getVNO())return{v:0,s:'',q:null};
+   var m=0;
+   if(A.vm=='pct')m=Math.min(pr(A.vv,L),A.vc>0?A.vc:1e12);
+   else if(A.vm=='nom')m=Math.min(Math.round(A.vv),L);
+   var b={v:m,s:m>0?'Voucher toko manual':'',q:null};
+   var vcBest=hooks.vcBest();if(typeof vcBest==='function'){var x=vcBest(L,r);if(x&&x.v>b.v)b=x}
+   return b}
+  function volt(L,r){return vbest(L,r).v}
+  function fees(P,R){var A=getA();
+   var b={fx:A.fb=='yes'?A.fl:0,ad:pr(R.ad,P),gx:Math.min(pr(R.gx,P),R.cg),px:Math.min(pr(R.px,P),R.cp),vx:Math.min(pr(R.vx,P),R.cvx),lv:Math.min(pr(R.lv,P),R.clv),pay:Math.min(pr(A.pb,P),R.cpb)};
+   var f=Money.safeMoneySum([b.fx,b.ad,b.gx,b.px,b.vx,b.lv,b.pay]);
+   return{sh:f,b:b,pm:pr(R.pm,P),tax:pr(A.pj,P),ads:pr(R.ads,P),rt:pr(R.rt,P)}}
+  function tmod(r){var q=r.q>0?r.q:1;return Money.safeMoneySum([Money.multiplyRupiah(r.m,q),r.d,r.p])}
+  function fwdL(L,r,R){var A=getA();
+   var vb=vbest(L,r),v=vb.v,P=Money.safeMoneySum([L,-v]),f=fees(P,R),s=Money.safeMoneySum([P,-f.sh,-f.pm,-f.tax,-f.ads,-f.rt,-A.og]);
+   return{L:L,v:v,vs:vb.s,vq:vb.q,P:P,sh:f.sh,b:f.b,pm:f.pm,tax:f.tax,ads:f.ads,rt:f.rt,s:s,u:Money.safeMoneySum([s,-tmod(r)])}}
+  function fwd(M,r,R){
+   var L=R.dm=='nom'?Money.safeMoneySum([M,-Math.round(R.dv)]):Money.discountedPrice(M,R.dv);L=Math.max(L,0);
+   var o=fwdL(L,r,R);o.M=M;return o}
+  /*5.40: harga impas konservatif. Bila ada voucher dengan min. belanja, untung bisa turun mendadak saat voucher mulai berlaku, jadi impas = harga terendah yang aman untuk semua harga di atasnya (dicek per segmen antar batas min. belanja).*/
+  function impas(r,R){
+   var okL=function(L){for(var k=0;k<=5;k++)if(fwdL(L+k,r,R).u<0)return false;return true};
+   var vcThr=hooks.vcThr(),th=typeof vcThr==='function'?vcThr(r):[];
+   if(!th.length){
+    var hi=1;while(!okL(hi)){hi*=2;if(hi>1e9)return null}
+    var lo=0;while(hi-lo>1){var mid=Math.floor((lo+hi)/2);if(okL(mid))hi=mid;else lo=mid}
+    while(hi>1&&okL(hi-1))hi--;
+    return hi}
+   var seg=[0].concat(th),n=seg.length,Lc=null;
+   var fo=function(a0,h0){var h;if(h0===Infinity){h=Math.max(a0,1);while(!okL(h)){h*=2;if(h>1e9)return null}}else{if(!okL(h0-1))return h0;h=h0-1}
+    var a=a0,b=h;while(a<b){var m=Math.floor((a+b)/2);if(okL(m))b=m;else a=m+1}return a};
+   for(var i=n-1;i>=0;i--){var sl=seg[i],sh=i==n-1?Infinity:seg[i+1],mm=fo(sl,sh);if(mm===null)return null;
+    if(i==n-1)Lc=mm;else if(mm<sh)Lc=mm;else break;
+    if(mm>sl)break}
+   return Math.max(Lc,1)}
+  function calcSync(r){var A=getA();
+   if(!(r.m>0))return null;
+   var Q=r.q>0?r.q:1,sk=((r.o&&r.o.sz)||A.sz)=='k',R={ad:adRate(r),gx:goRate(r),cg:capG(sk)*Q,cp:A.cp*Q,cvx:A.cvx*Q,clv:A.clv*Q,cpb:A.pbc*Q,px:rate(r,'px'),vx:rate(r,'vx'),lv:rate(r,'lv'),pm:rate(r,'pm'),ads:rate(r,'ads'),rt:rate(r,'rt'),dv:(A.pa=='no'&&!(r.o&&r.o.dv!==null&&r.o.dv!==undefined)?0:rate(r,'dv')),dm:A.dm};
+   var K=Money.safeMoneySum([tmod(r),r.t,A.og]),fx=A.fb=='yes'?A.fl:0,CP=[[R.gx,R.cg],[R.px,R.cp],[A.pb,R.cpb],[R.vx,R.cvx],[R.lv,R.clv]];
+   var best=Money.estimateGrossPrice(Money.safeMoneySum([K,fx]),[R.ad,R.pm,A.pj,R.ads,R.rt],CP.map(function(c){return{rate:c[0],cap:c[1]}}));
+   if(best===null)return{err:'Total tarif 100% atau lebih'};
+   var P=best,L=P;
+   if(A.vm=='pct'&&Money.percentUnits(A.vv||0)>=1000000n)return{err:'Voucher 100% tidak valid'};
+   var vcBad=hooks.vcBad();if(typeof vcBad==='function'&&vcBad(r))return{err:'Voucher 100% tidak valid'};
+   for(var vz=0;vz<400;vz++){var L2=Money.safeMoneySum([P,volt(L,r)]);if(L2<=L)break;L=L2}
+   var M0;
+   if(R.dm=='nom')M0=Money.safeMoneySum([L,Math.round(R.dv)]);else{if(Money.percentUnits(R.dv)>=1000000n)return{err:'Diskon coret tidak valid'};M0=Money.grossUpDiscount(L,R.dv)}
+   var re=+A.re||0,st=re>0?1000:(A.rd>0?A.rd:1),lb=re>0?re:st,M=re>0?Math.max(re,Math.ceil((M0-re)/1000)*1000+re-3000):Math.max(st,Math.ceil(M0/st)*st-3*st),o;
+   /*v5.14: 64 langkah pertama dipindai linear (kasus normal, hasil identik dengan sebelumnya); bila belum ketemu, lompat eksponensial + binary search (±40 evaluasi, bukan hingga 20.000)*/
+   if(!Number.isSafeInteger(M0))return{err:'Harga awal melebihi batas integer aman'};var M0s=M,k=0,hit=false;
+   for(;k<64;k++){o=fwd(M,r,R);if(o.u>=r.t){hit=true;break}M+=st}
+   if(!hit){var lo=63,hi=-1,g=64;
+    while(hi<0){if(g>19999)g=19999;var q0=fwd(M0s+g*st,r,R);if(q0.u>=r.t){hi=g;o=q0}else{lo=g;if(g>=19999)break;g*=2}}
+    if(hi<0)return{err:'Target untung di luar batas pencarian harga'}
+    else{while(hi-lo>1){var mid=(lo+hi)>>1,qm=fwd(M0s+mid*st,r,R);if(qm.u>=r.t){hi=mid;o=qm}else lo=mid}
+     for(var j=Math.max(64,hi-24);j<hi;j++){var qj=fwd(M0s+j*st,r,R);if(qj.u>=r.t){hi=j;break}}
+     M=M0s+hi*st;o=fwd(M,r,R)}}
+   for(var z=0;z<50&&M-st>=lb;z++){var q=fwd(M-st,r,R);if(q.u>=r.t){M-=st;o=q}else break}
+   o.R=R;return o}
+  return {vbest,volt,fees,tmod,fwdL,fwd,impas,calcSync};
+}

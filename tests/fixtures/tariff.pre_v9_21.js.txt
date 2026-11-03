@@ -1,0 +1,11 @@
+var GO={A:[1,2.5],B:[2,3.5],C:[3.5,5],D:[5.5,7],E:[6,7.5],F:[6.5,8],G:[7.5,9],H:[8,9.5]};
+var GO2={A:[1.5,3.5],B:[5,7],C:[6.5,8.5],D:[8.5,10.5],E:[9,11],F:[9.5,11.5],G:[10.5,12],H:[11,13]},GO2D='2026-12-01';
+function gcOf(r){var o=r.o||{};if(today()>=GO2D&&o.g2)return o.g2;return o.gc||A.gc}
+function goT(c){if(today()>=GO2D&&!(A.tbl&&A.tbl.GO&&A.tbl.GO[c])&&GO2[c])return GO2[c];return GO[c]}
+function capG(sk){if(today()>=GO2D&&(sk?A.cgk===60000:A.cg===40000))return sk?80000:60000;return sk?A.cgk:A.cg}
+function gfac(){if(A.gfd&&today()>A.gfd)return 100;return A.gf}
+function goRate(r){var ov=r.o&&r.o.gx;if(ov!==null&&ov!==undefined)return Math.round(ov*gfac()*100)/10000;var c=gcOf(r),s=(r.o&&r.o.sz)||A.sz;if(c=='man')return Math.round(A.gm*gfac()*100)/10000;var t=goT(c);return t?Math.max(Math.round((Math.round(t[s=='k'?1:0]*gfac()*100)/10000-(A.gad||0))*10000)/10000,0):0}
+var AD={A:[10,11.7],B:[9.5,10.45],C:[9,10.2],D:[8.25,9.95],E:[6.75,7.7],F:[6.5,7.2],G:[5.25,6.2],H:[4.25,4.7],I:[2.5,2.5]};
+function adRate(r){if(r.o&&r.o.ad!==null&&r.o.ad!==undefined)return r.o.ad;var t=AD[(r.o&&r.o.ac)||A.ac];return t?t[A.tp=='ml'?1:0]:A.ad}
+function rate(r,k){var v=r.o&&r.o[k];return(v===null||v===undefined)?A[k]:v}
+return{GO:GO,GO2:GO2,GO2D:GO2D,AD:AD,gcOf:gcOf,goT:goT,capG:capG,gfac:gfac,goRate:goRate,adRate:adRate,rate:rate};

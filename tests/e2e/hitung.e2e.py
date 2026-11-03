@@ -32,9 +32,9 @@ try:
         print('satu ketikan (upd penuh, 1.000 produk):', ms, 'ms')
         check(ms < 250, f'satu ketikan terlalu lambat: {ms} ms')
         s3 = pg.evaluate("document.getElementById('s3').textContent"); check(s3 and s3 != '-', 'ringkasan untung terisi setelah edit satu produk')
-        # scroll ke bawah -> kartu terakhir harus terbangun otomatis
+        # scroll ke bawah -> kartu terakhir harus terbangun otomatis. behavior:'instant' wajib: CSS memakai html{scroll-behavior:smooth}, sehingga scrollIntoView biasa menganimasikan ~900.000 px dan membangunkan 700+ kartu di sepanjang jalan (penyebab kegagalan di v9.16-v9.22).
         for _ in range(40):  # gulir bertahap sampai kartu terakhir terlihat (kartu dibangun sambil menggulir)
-            pg.evaluate("document.querySelector('#list').lastElementChild.scrollIntoView()"); pg.wait_for_timeout(150)
+            pg.evaluate("document.querySelector('#list').lastElementChild.scrollIntoView({behavior:'instant'})"); pg.wait_for_timeout(150)
             if pg.evaluate("document.querySelector('#list').lastElementChild.getBoundingClientRect().top<900"): break
         pg.wait_for_timeout(600)
         last = pg.evaluate("(()=>{const c=document.querySelector('#list .pc:last-child');return {lz:c.classList.contains('lz'),inputs:c.querySelectorAll('input[data-f]').length,name:c.querySelector('.nm')?.value}})()")

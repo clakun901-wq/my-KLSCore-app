@@ -12,7 +12,8 @@ const tabs=[...html.matchAll(/<button[^>]+id="(t[0-9])"/g)].map(m=>m[1]);
 assert.deepEqual(tabs,['t0','t1','t3','t4','t5','t6','t2']);
 
 // Core price path must use exact gross-up and checked integer sums for money boundaries.
-assert.match(app,/KalsaraMoney\.grossUpDiscount\(L,R\.dv\)/);
+/* v9.22: calcSync pindah ke js/pricing.js; KalsaraMoney disuntikkan sebagai `Money`. */
+assert.match(app,/(?:KalsaraMoney|Money)\.grossUpDiscount\(L,R\.dv\)/);
 assert.match(app,/safeMoneySum\(\[P,-f\.sh,-f\.pm,-f\.tax,-f\.ads,-f\.rt,-A\.og\]\)/);
 assert.doesNotMatch(app,/L2>L\+1e-9/);
 assert.match(app,/function calcSync\(r\)/,'synchronous compatibility calculation remains as the safe first-paint fallback');

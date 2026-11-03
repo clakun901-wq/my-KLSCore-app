@@ -30,6 +30,12 @@ function extractFunction(source, name) {
   assert.ok(match, `Fungsi ${name} harus ditemukan`);
   return match[0];
 }
+/* v9.20: pembaca angka/tanggal kini modul ES (js/format.js); sumber legacy yang dimigrasi memakainya lewat import loader, jadi harness vm menyediakannya tanpa kata kunci export. Sumber v5.82 asli sudah memuatnya sendiri. */
+function formatPrelude(source) {
+  if (/^function pf\(/m.test(source)) return '';
+  const strip = f => fs.readFileSync(new URL('../js/' + f, import.meta.url), 'utf8').replace(/^import .*$/gm, '').replace(/^export /gm, '') + '\n';
+  return strip('format.js') + strip('tariff.js') + strip('pricing.js');
+}
 function createCalc(source, useIntegerMoney, DateImpl = FixedDate) {
   const context = vm.createContext({ Date: DateImpl, console, KalsaraMoney, document: { addEventListener() {} } });
   const promoStart = source.indexOf('var PRM=[],PSEL=');
@@ -37,7 +43,7 @@ function createCalc(source, useIntegerMoney, DateImpl = FixedDate) {
   assert.ok(promoStart >= 0 && promoEnd > promoStart, 'Blok rule engine voucher harus ditemukan');
   const voucherBlock = source.slice(promoStart, promoEnd);
   const promoFunctions = ['ptp','pst','actPromo','ppd','pkombo','phm','warns','WN','bis','pc1','rw','pinfo','esc'].map(name => extractFunction(source, name)).join('\n');
-  vm.runInContext(executablePrefix(source) + voucherBlock + promoFunctions + `
+  vm.runInContext(formatPrelude(source) + executablePrefix(source) + voucherBlock + promoFunctions + `
     var CFG={pt:{n:'Promo Toko',c:'pt'},fs:{n:'Flash Sale Toko Saya',c:'pr'},kh:{n:'Kombo Hemat',c:'kh'},hm:{n:'Hadiah Min. Belanja',c:'hm'}};
     globalThis.__runPromo=(settings,promos,product,offer)=>{
       A=Object.assign({},DEF,settings);PRM=promos;VCC=null;

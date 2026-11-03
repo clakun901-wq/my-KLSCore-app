@@ -69,3 +69,36 @@ execFileSync(process.execPath, ['--check', new URL('../js/backup.js', import.met
 ok(sw.includes("'./js/backup.js'"), 'sw.js CORE harus menyebut js/backup.js');
 ok(/import \{createBackup\} from/.test(loader), 'loader harus mengimpor factory backup');
 ok(/createTheme\(\{\$,KStore,KDOM,toast,document\}\)/.test(backupPart), 'legacy harus memasang factory tema dengan dependensi eksplisit');
+// Tahap 4a (v9.20): pembaca angka/format/tanggal murni dipisahkan dari 00-core.js.
+const formatMod = fs.readFileSync(new URL('../js/format.js', import.meta.url), 'utf8');
+for (const name of ['rp', 'pf', 'num', 'fmt', 'PCT', 'today']) ok(new RegExp('export (const|function) ' + name + '\\b').test(formatMod), 'format.js harus mengekspor ' + name);
+ok(!/\bwindow\.|globalThis\.|document\.|KStore/.test(formatMod), 'format.js tidak boleh membaca global tersembunyi atau DOM');
+ok(!/parseFloat/.test(formatMod), 'format.js tidak boleh memakai parseFloat');
+execFileSync(process.execPath, ['--check', new URL('../js/format.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/format.js'"), 'sw.js CORE harus menyebut js/format.js');
+ok(/import \{rp, pf, num, fmt, PCT, today\} from/.test(loader), 'loader harus mengimpor modul format');
+const core = fs.readFileSync(new URL('00-core.js', dir), 'utf8');
+ok(!/^(var rp=|function pf\(|var num=|var fmt=|function today\(|var PCT=)/m.test(core), '00-core.js tidak boleh lagi mendefinisikan ulang fungsi format');
+// Tahap 4b (v9.21): tabel dan fungsi tarif dipisahkan dari 10-calc.js.
+const tariffMod = fs.readFileSync(new URL('../js/tariff.js', import.meta.url), 'utf8');
+for (const name of ['GO', 'GO2', 'GO2D', 'AD']) ok(new RegExp('export const ' + name + '=').test(tariffMod), 'tariff.js harus mengekspor ' + name);
+ok(tariffMod.includes('export function createTariff({getA})'), 'tariff.js harus berupa factory dengan getA eksplisit');
+ok(!/\bwindow\.|globalThis\.|document\.|KStore/.test(tariffMod), 'tariff.js tidak boleh membaca global tersembunyi atau DOM');
+execFileSync(process.execPath, ['--check', new URL('../js/tariff.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/tariff.js'"), 'sw.js CORE harus menyebut js/tariff.js');
+ok(/import \{GO, GO2, GO2D, AD, createTariff\} from/.test(loader), 'loader harus mengimpor modul tarif');
+const calcPart = fs.readFileSync(new URL('10-calc.js', dir), 'utf8');
+ok(!/^(var GO=|var GO2=|var AD=|function (gcOf|goT|capG|gfac|goRate|adRate|rate)\()/m.test(calcPart), '10-calc.js tidak boleh lagi mendefinisikan ulang tarif');
+ok(/createTariff\(\{getA:function\(\)\{return A\}\}\)/.test(calcPart), 'legacy harus memasang factory tarif dengan getter A');
+// Tahap 4c (v9.22): pipa harga sinkron dipisahkan dari 10-calc.js.
+const pricingMod = fs.readFileSync(new URL('../js/pricing.js', import.meta.url), 'utf8');
+ok(pricingMod.includes('export function createPricing({getA,getVNO,pr,Money,tariff,hooks})'), 'pricing.js harus berupa factory dengan dependensi eksplisit');
+for (const name of ['vbest', 'volt', 'fees', 'tmod', 'fwdL', 'fwd', 'impas', 'calcSync']) ok(new RegExp('function ' + name + '\\(').test(pricingMod), 'pricing.js harus memuat ' + name);
+ok(!/\bwindow\.|globalThis\.|document\.|KStore|\bVNO\b(?!\))/.test(pricingMod.replace(/getVNO/g, '').replace(/\/\*[\s\S]*?\*\//g, '')), 'pricing.js tidak boleh membaca global tersembunyi, DOM, atau VNO langsung');
+execFileSync(process.execPath, ['--check', new URL('../js/pricing.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/pricing.js'"), 'sw.js CORE harus menyebut js/pricing.js');
+ok(/import \{createPricing\} from/.test(loader), 'loader harus mengimpor modul pipa harga');
+const calcPart2 = fs.readFileSync(new URL('10-calc.js', dir), 'utf8');
+ok(!/^function (vbest|volt|fees|tmod|fwdL|fwd|impas|calcSync)\(/m.test(calcPart2), '10-calc.js tidak boleh lagi mendefinisikan ulang pipa harga');
+ok(/createPricing\(\{getA:function\(\)\{return A\},getVNO:function\(\)\{return VNO\}/.test(calcPart2), 'legacy harus memasang factory pipa harga dengan getA dan getVNO');
+ok(/var VNO=0;/.test(calcPart2), 'flag VNO harus tetap di legacy (dimutasi calcNV)');
