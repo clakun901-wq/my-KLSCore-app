@@ -19,7 +19,8 @@ assert.doesNotMatch(app,/L2>L\+1e-9/);
 assert.match(app,/function calcSync\(r\)/,'synchronous compatibility calculation remains as the safe first-paint fallback');
 assert.match(app,/function rkey\(r\)/,'hasil kalkulator berkunci isi (versi global + field produk)');
 assert.match(app,/gver\(\)!==gv/,'balasan Worker yang usang (setelan berubah) dibuang');
-assert.match(app,/compute\('calculate-batch',\{settings:A,promos:PRM/,'produk usang dihitung sekaligus di Worker (satu kiriman)');
+/* v9.24: prewarm pindah ke js/calc-cache.js; A/PRM dibaca lewat getA()/getPRM(). */
+assert.match(app,/compute\('calculate-batch',\{settings:(?:A|getA\(\)),promos:(?:PRM|getPRM\(\))/,'produk usang dihitung sekaligus di Worker (satu kiriman)');
 assert.doesNotMatch(app,/products:rows\.map\(strip\)/,'tidak boleh lagi mengirim seluruh daftar produk per produk (O(n^2))');
 assert.match(app,/function calc\(r\)[\s\S]*CC\.get\(k\)/,'tampilan memakai hasil cache; produk yang meleset dihitung sinkron');
 assert.match(app,/if\(light\)rows\.forEach\(function\(r\)\{if\(r\.hy\)updRow\(r\)\}\)/,'selama Worker bekerja upd hanya menggambar kartu terbangun');

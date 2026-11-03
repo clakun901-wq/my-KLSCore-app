@@ -1,4 +1,4 @@
-# Status migrasi Kalsara v5.82 — paket v9.23
+# Status migrasi Kalsara v5.82 — paket v9.24
 
 Tanggal build: 2026-11-04
 
@@ -10,6 +10,14 @@ Unggah ZIP terbaru dan berkas ini. Posisi: **tahap 3 dari 4 selesai pada batas m
 - Wajib tiap tahap: `npm test`; `npm run test:e2e` (target baseline 20/13/9); uji offline Service Worker; uji ERP (HPP, OpEx) dan impor XLSX/CSV.
 - Di lingkungan build ini, Playwright dapat meluncurkan `/usr/bin/chromium`, tetapi navigasi ke `127.0.0.1` ditolak kebijakan lingkungan (`ERR_BLOCKED_BY_ADMINISTRATOR`). Jangan anggap E2E lulus berdasarkan unit test.
 - Jebakan tahap 2: loader berada di `js/`, sehingga URL modul memakai `./erp.js` bukan `../erp.js`; periksa spasi pada hasil transformasi teks (`return getRows()` jangan berubah menjadi `returngetRows()`).
+
+## Perubahan v9.24 — tahap 4d (cache kalkulator + pra-hitung Worker)
+- `js/calc-cache.js` (baru): `createCalcCache({getA,getPRM,getRows,getVNO,getWorker,calcSync,onReady})` berisi `CC`, `GK`, `GKV`, `GKS`, `PW`, `PWQ`, `PWN`, `PWFAIL`, `gver`, `rkey`, `staleRows`, `prewarm`, `pwKick`, `calc` (state cache sekarang PRIVAT di closure). Ditambah dua metode baru: `invalidate()` (pengganti penulisan langsung `GK=null` di 7 tempat: 30-penjualan x2, 50-promosi x3, 80-cadangan-tema x2) dan `prewarmStale(only)` (blok pra-hitung yang dulu menempel di `upd()`; `upd` sekarang `CalcCache.invalidate();var light=CalcCache.prewarmStale(only);`). `getWorker` dibaca saat dipanggil; `onReady` memanggil `upd(false)` setelah batch selesai.
+- `10-calc.js` kini hanya: pemasangan tarif, pemasangan pipa harga, `VNO`, pemasangan cache + `var calc=CalcCache.calc`, penanda `/*END*/` (~1,7 KB dari 8,4 KB semula).
+- Loader `js/legacy-app.js` diubah menjadi berbasis daftar `modules=[[berkas, nama impor],...]` (batas "loader < 30 baris" di test terlewati oleh gaya lama). Untuk modul baru cukup tambah SATU baris di daftar itu, tambah ke `sw.js` CORE dan `leafModuleSources`.
+- Test baru `calc-cache.test.mjs`: jejak 38 langkah identik antara kode v9.23 (dibekukan di `tests/fixtures/calc-cache.pre_v9_24.js.txt`, termasuk blok pra-hitung lama `upd`) dan modul baru: cache hit, batch Worker, `onReady`, dedup batch yang sedang jalan, `VNO=1` melewati cache, baris < BATCH_MIN, penggantian `A`/`PRM`/`rows`, batch ditolak (reject), hasil bukan array. Harness golden-master menyediakan `calc-cache.js`. `compatibility.test.mjs` menerima `getA()/getPRM()` pada pemanggilan batch.
+- Pengujian (semua hijau): `npm test`; `npm run test:e2e` = shelf 20, hitung 13 (1.000 produk lewat batch Worker di Chromium, jalur nyata cache+prewarm+onReady), sqlite-fallback 9; `load.e2e` 8.
+- Berikutnya (tahap 5, tab): urutan dari yang paling kecil dan paling sedikit ketergantungan: 30-penjualan.js (14 KB; memakai `fwdL/vbest/calc`, `SALES`, `rlSet`, `CalcCache.invalidate`), 40-voucher-panel.js (17 KB; mendefinisikan `vfAuto`, memakai `volt/fees/calc`), lalu 20-hitung-etalase.js (39 KB), 50-promosi.js (41 KB; mendefinisikan `vcBest/vcThr/vcBad`, `calcNV` yang memutasi `VNO`), 60-tab-impor-sinkron.js (22 KB) dan sisa 80-cadangan-tema.js. Tab-tab ini menulis banyak state global (`rows`, `SALES`, `PRM`, `A`), jadi perlu satu "state store" dengan getter/setter bersama lebih dulu (usulan: `js/state.js`) sebelum dipindah, supaya tiap modul tab tidak membawa daftar getter sendiri.
 
 ## Perubahan v9.23 — E2E hitung diperbaiki (baseline E2E hijau)
 - `tests/e2e/hitung.e2e.py` gagal sejak v9.16 pada "kartu terakhir terbangun dengan data benar saat di-scroll". **Penyebab: bug di tes, bukan di aplikasi.** CSS memakai `html{scroll-behavior:smooth}` (css/app.css baris 184), sehingga `scrollIntoView()` biasa menganimasikan ~900.000 px dan membangunkan 700+ kartu sepanjang jalan; loop 40 iterasi tidak cukup mencapai kartu terakhir, dan assertion berikutnya ("hidrasi tetap terbatas", <600 kartu) juga akan gagal. Perbaikan: `scrollIntoView({behavior:'instant'})` di tes. Aplikasi tidak diubah (hidrasi lazy via IntersectionObserver, rootMargin 900px, berfungsi benar).

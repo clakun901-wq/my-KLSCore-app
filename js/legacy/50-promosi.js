@@ -12,7 +12,7 @@ function pst(p){var t=today();if(!p.s&&!p.e)return{k:'a',t:'Berjalan (tanpa jadw
  var d2=p.e?dd(t,p.e):null;return{k:'a',t:d2===null?'Berjalan':d2===0?'Berakhir hari ini':'Berjalan, sisa '+d2+' hari'}}
 function rw(l,v,c){return '<div class="rw">'+l+'<b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>'}
 /*5.39: voucher otomatis. Hanya Voucher Toko dan Voucher Produk berjalan (bukan cashback, bukan Live/Video, kuota belum habis) yang ikut memengaruhi harga di tab Hitung.*/
-var VCC=null;GK=null;
+var VCC=null;CalcCache.invalidate();
 /*5.68: Promosi tidak memicu hitung ulang tab Hitung. psig() = tanggal + isi semua promosi. upd() mencatatnya di PSIG; tab() menghitung ulang hanya bila psig() berbeda (promosi berubah, kuota voucher bertambah, atau tanggal berganti).*/
 var PSIG='';
 function psig(){try{return today()+'|'+JSON.stringify(PRM)}catch(e){return''}}
@@ -220,7 +220,7 @@ function prTiles(){var h='',cnt={},tot={a:0,u:0,e:0};
  PORD.forEach(function(k){h+='<button type="button" class="tl'+(PSEL==k?' on':'')+'" data-pt="'+k+'" aria-pressed="'+(PSEL==k)+'"><span class="tc"><svg viewBox="0 0 24 24">'+IC[k]+'</svg>'+(cnt[k]?'<i>'+cnt[k]+'</i>':'')+'</span><span class="tn">'+CFG[k].n+'</span></button>'});
  KDOM.setHTML($('prt'), h);$('prs').textContent=PRM.length?tot.a+' berjalan, '+tot.u+' akan datang, '+tot.e+' berakhir':'Pilih jenis promo, lalu tekan tombol Tambah.';
  $('vcs').hidden=PSEL!='vc';$('pts').hidden=PSEL!='pt';paSync();var b=$('pra');b.textContent=PSEL?'Tambah '+CFG[PSEL].n:'Pilih jenis promo di atas';b.className='btn'+(PSEL?'':' gh')}
-function prRender(){VCC=null;GK=null;prTiles();var ix=[];PRM.forEach(function(p,i){if(!PSEL||p.t==PSEL)ix.push(i)});
+function prRender(){VCC=null;CalcCache.invalidate();prTiles();var ix=[];PRM.forEach(function(p,i){if(!PSEL||p.t==PSEL)ix.push(i)});
  var ord={a:0,u:1,n:2,e:3};ix.sort(function(x,y){var a=ord[pst(PRM[x]).k],b=ord[pst(PRM[y]).k];return a-b||(PRM[x].s||'').localeCompare(PRM[y].s||'')});
  KDOM.setHTML($('prl'), ix.length?ix.map(function(i){return pfCard(i,PRM[i])}).join(''):'<div class="si"><div class="empty">'+(PSEL?'Belum ada '+CFG[PSEL].n+'. Tekan tombol Tambah di bawah.':'Belum ada promo.')+'</div></div>');
  document.querySelectorAll('#prl .pe').forEach(function(c){prRes(c,PRM[+c.dataset.i])})}
@@ -228,7 +228,7 @@ $('prt').addEventListener('click',function(e){var b=e.target.closest('[data-pt]'
 $('pra').onclick=function(){if(!PSEL){toast('Pilih jenis promo dulu');return}if(PRM.length>=300){toast('Maksimal 300 promo');return}
  PRM.push({id:uid(),t:PSEL,n:'',s:today(),e:'',p:'',a:0,b:0,k:'',it:[],mp:[],gf:[]});prRender();persist();var c=$('prl').querySelector('.pe[data-i="'+(PRM.length-1)+'"]');if(c){c.scrollIntoView({block:'center'});c.querySelector('input').focus()}};
 $('prl').addEventListener('click',function(e){if(!e.target.closest('[data-del]'))return;var c=e.target.closest('.pe'),p=PRM[+c.dataset.i];ask('Hapus promo ini?','Ya, hapus',function(){PRM.splice(PRM.indexOf(p),1);prRender();persist();toast('Promo dihapus')})});
-$('prl').addEventListener('input',function(e){var t=e.target,c=t.closest('.pe');if(!c||!t.dataset.pf)return;var p=PRM[+c.dataset.i],k=t.dataset.pf;VCC=null;GK=null;
+$('prl').addEventListener('input',function(e){var t=e.target,c=t.closest('.pe');if(!c||!t.dataset.pf)return;var p=PRM[+c.dataset.i],k=t.dataset.pf;VCC=null;CalcCache.invalidate();
  if(k=='a'||k=='b'||k=='x'||k=='y'||k=='m'||k=='cp'){var u=pun(p,k);if(u=='%'){var v=(t.value.trim()===''?NaN:Number(t.value.replace(',','.')));p[k]=isNaN(v)||v<0?0:Math.min(v,100)}else{var n=num(t.value);p[k]=n;t.value=n?n.toLocaleString('id-ID'):''}}
  else if(k=='u'){p.u=t.value;p.a=0;prRender();persist();return}
  else if(k=='tp'){p.tp=t.value;p.b=0;prRender();persist();return}

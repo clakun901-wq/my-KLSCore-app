@@ -34,7 +34,7 @@ function extractFunction(source, name) {
 function formatPrelude(source) {
   if (/^function pf\(/m.test(source)) return '';
   const strip = f => fs.readFileSync(new URL('../js/' + f, import.meta.url), 'utf8').replace(/^import .*$/gm, '').replace(/^export /gm, '') + '\n';
-  return strip('format.js') + strip('tariff.js') + strip('pricing.js');
+  return strip('format.js') + strip('tariff.js') + strip('pricing.js') + strip('calc-cache.js');
 }
 function createCalc(source, useIntegerMoney, DateImpl = FixedDate) {
   const context = vm.createContext({ Date: DateImpl, console, KalsaraMoney, document: { addEventListener() {} } });

@@ -132,10 +132,7 @@ function updRow(r){var H=!!r.hy,g=r._ag={n:0,sm:0,su:0,nw:0,ns:0};
   CR('Tarif administrasi',o.R.ad,o.b.ad,o.b.ad)+CR('Tarif Gratis Ongkir XTRA',o.R.gx,o.b.gx,Math.round(o.R.gx/100*o.P))+CR('Tarif Promo XTRA',o.R.px,o.b.px,Math.round(o.R.px/100*o.P))+CR('Tarif Video XTRA',o.R.vx,o.b.vx,Math.round(o.R.vx/100*o.P))+CR('Tarif Live XTRA',o.R.lv,o.b.lv,Math.round(o.R.lv/100*o.P))+CR('Biaya pembayaran',A.pb,o.b.pay,pr(A.pb,o.P))+(o.b.fx?'<div class="rw">Biaya layanan pesanan<b>'+rp(o.b.fx)+'</b></div>':'')+'<div class="rw">Total Biaya Shopee<b>'+rp(o.sh)+'</b></div><div class="rw">Premi<b>'+rp(o.pm)+'</b></div><div class="rw">PPh 22<b>'+rp(o.tax)+'</b></div>'+(o.ads?'<div class="rw">Biaya iklan ('+fmt(o.R.ads)+'%)<b>'+rp(o.ads)+'</b></div>':'')+(o.rt?'<div class="rw">Cadangan retur ('+fmt(o.R.rt)+'%)<b>'+rp(o.rt)+'</b></div>':'')+(A.og?'<div class="rw">Ongkir ditanggung<b>'+rp(A.og)+'</b></div>':'')+
   '<div class="rw">Saldo masuk toko<b>'+rp(o.s)+'</b></div><div class="rw">Modal + Management Partner + packing<b>'+rp(tmod(r))+'</b></div><div class="rw">Untung bersih<b class="'+okc+'">'+rp(o.u)+'</b></div><div class="rw">Margin (dari harga jual)<b>'+pc1(wx.m)+'%</b></div>'+(im===null?'':'<div class="rw">Harga impas (harga diskon coret)<b>'+rp(im)+'</b></div>')+'</details>');
   if(r.cx>0)H&&KDOM.setHTML(r.cxr, revHtml(r,o,im))}
-function upd(save,only){GK=null;var light=false;
- if(!only&&rows.length>=BATCH_MIN&&globalThis.KalsaraWorker&&!VNO){var gv=gver(),st=staleRows();
-  if(!st.length)PWN={};
-  else if(st.length>=BATCH_STALE&&PWFAIL!==gv&&(PWN[gv]||0)<3){var pp=(PW&&PW.gv!==gv)?PW.p:prewarm(st,gv);if(pp){light=true;pwKick(pp)}}}
+function upd(save,only){CalcCache.invalidate();var light=CalcCache.prewarmStale(only);
  tblSync();refreshLabels();tchk();gwarn();vwarn();dep();
  $('gci').textContent=A.gc=='none'?'Tidak ikut Gratis Ongkir XTRA':'Tarif berlaku sekarang: '+fmt(goRate({o:{}}))+'% (ukuran '+(A.sz=='k'?'khusus':'biasa')+')';
  $('aci').textContent='Tarif berlaku sekarang: '+fmt(adRate({o:{}}))+'%';
