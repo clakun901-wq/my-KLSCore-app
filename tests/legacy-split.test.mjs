@@ -116,3 +116,126 @@ const calcPart3 = fs.readFileSync(new URL('10-calc.js', dir), 'utf8');
 ok(!/^function (gver|rkey|staleRows|prewarm|pwKick|calc)\(/m.test(calcPart3) && !/var CC=new Map/.test(calcPart3), '10-calc.js tidak boleh lagi mendefinisikan ulang cache kalkulator');
 for (const f of ['20-hitung-etalase.js', '30-penjualan.js', '50-promosi.js', '80-cadangan-tema.js']) ok(!/(?<![\w.])GK=null/.test(fs.readFileSync(new URL(f, dir), 'utf8')), f + ' tidak boleh menulis GK langsung (pakai CalcCache.invalidate())');
 ok(/var light=CalcCache\.prewarmStale\(only\)/.test(fs.readFileSync(new URL('20-hitung-etalase.js', dir), 'utf8')), 'upd() harus memakai CalcCache.prewarmStale');
+// Tahap 5a (v9.25): aturan voucher dipisahkan dari 50-promosi.js ke js/voucher-rules.js.
+const vrMod = fs.readFileSync(new URL('../js/voucher-rules.js', import.meta.url), 'utf8');
+ok(vrMod.includes('export function createVoucherRules({getPRM,today,pr,fmt,rp})'), 'voucher-rules.js harus berupa factory dengan dependensi eksplisit');
+for (const name of ['vdisc', 'cbc', 'dd', 'pst', 'vcList', 'vcApply', 'vcLab', 'vcBest', 'vcBad', 'vcThr', 'reset']) ok(new RegExp('function ' + name + '\\(').test(vrMod), 'voucher-rules.js harus memuat ' + name);
+ok(!/\bwindow\.|globalThis\.|document\.|KStore|\$\(/.test(vrMod.replace(/\/\*[\s\S]*?\*\//g, '')), 'voucher-rules.js tidak boleh membaca global tersembunyi, DOM, atau penyimpanan');
+execFileSync(process.execPath, ['--check', new URL('../js/voucher-rules.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/voucher-rules.js'"), 'sw.js CORE harus menyebut js/voucher-rules.js');
+ok(loaderImports('./voucher-rules.js', 'createVoucherRules'), 'loader harus mengimpor modul aturan voucher');
+const promoPart = fs.readFileSync(new URL('50-promosi.js', dir), 'utf8');
+ok(!/^function (vdisc|cbc|dd|pst|vcList|vcApply|vcLab|vcBest|vcBad|vcThr)\(/m.test(promoPart) && !/var VCC=/.test(promoPart), '50-promosi.js tidak boleh lagi mendefinisikan ulang aturan voucher');
+for (const f of ['30-penjualan.js', '50-promosi.js', '80-cadangan-tema.js']) ok(!/(?<![\w.])VCC\b/.test(fs.readFileSync(new URL(f, dir), 'utf8')), f + ' tidak boleh menulis VCC langsung (pakai VoucherRules.reset())');
+ok(/createVoucherRules\(\{getPRM:function\(\)\{return PRM\}/.test(fs.readFileSync(new URL('10-calc.js', dir), 'utf8')), 'legacy harus memasang factory aturan voucher dengan getPRM segar');
+// Tahap 5b (v9.26): jembatan state inti (js/state.js) dan tab Penjualan (js/penjualan.js) dipisahkan dari legacy.
+const stMod = fs.readFileSync(new URL('../js/state.js', import.meta.url), 'utf8');
+ok(stMod.includes('export function createState(bindings)') && stMod.includes("export const STATE_KEYS = Object.freeze(['A', 'rows', 'SALES', 'PRM', 'TS'])"), 'state.js harus mengekspor createState dan daftar kunci tetap');
+ok(!/\bwindow\.|globalThis\.|document\.|KStore|localStorage/.test(stMod.replace(/\/\*[\s\S]*?\*\//g, '')), 'state.js tidak boleh membaca global tersembunyi atau storage');
+const pjMod = fs.readFileSync(new URL('../js/penjualan.js', import.meta.url), 'utf8');
+ok(pjMod.includes('export function createPenjualan({st,$,esc,today,rp,num,toast,ask,uid,KDOM,calc,fwdL,vbest,actL,ptp,getCFG,VoucherRules,CalcCache,setStock,persist,salesRows,copySales,showCpBox,dl,csv,getSalesMax})'), 'penjualan.js harus berupa factory dengan dependensi eksplisit');
+for (const name of ['sold', 'curP', 'rpt', 'delSale', 'rlSet', 'rlAll', 'perS', 'bkHtml', 'fprod', 'sgrp', 'ymd']) ok(new RegExp('function ' + name + '\\(').test(pjMod), 'penjualan.js harus memuat ' + name);
+ok(/return \{rpt:rpt,sold:sold,curP:curP,VUSE:VUSE,rlAll:rlAll,ymd:ymd\};/.test(pjMod), 'penjualan.js hanya mengekspos yang dipakai bagian legacy lain');
+const pjCode = pjMod.replace(/\/\*[\s\S]*?\*\//g, '');
+ok(!/\bwindow\.|globalThis\.|document\.|KStore|localStorage/.test(pjCode), 'penjualan.js tidak boleh membaca global tersembunyi atau storage');
+ok(!/(?<![\w.])(SALES|PRM|CFG|SALES_MAX|VCC|GK)\b(?!\s*:)/.test(pjCode.replace(/var CFG=getCFG\(\),m=0;[\s\S]*?(?=\nvar VUSE)/, '').replace(/CFG\[/g, '').replace(/\bst\.(SALES|PRM)\b/g, '')) , 'penjualan.js tidak boleh mengakses SALES/PRM/SALES_MAX langsung (pakai st/getSalesMax)');
+for (const f of ['state.js', 'penjualan.js']) {
+  execFileSync(process.execPath, ['--check', new URL('../js/' + f, import.meta.url).pathname]); n++;
+  ok(sw.includes("'./js/" + f + "'"), 'sw.js CORE harus menyebut js/' + f);
+}
+ok(loaderImports('./state.js', 'createState') && loaderImports('./penjualan.js', 'createPenjualan'), 'loader harus mengimpor createState dan createPenjualan');
+const core5b = fs.readFileSync(new URL('00-core.js', dir), 'utf8');
+ok(/var State=createState\(\{A:\{get:function\(\)\{return A\},set:function\(v\)\{A=v\}\},rows:\{get:function\(\)\{return rows\},set:function\(v\)\{rows=v\}\},SALES:\{get:function\(\)\{return SALES\},set:function\(v\)\{SALES=v\}\},/.test(core5b) && /PRM:\{get:function\(\)\{return PRM\},set:function\(v\)\{PRM=v\}\},TS:\{get:function\(\)\{return TS\},set:function\(v\)\{TS=v\}\}\}\);/.test(core5b), '00-core.js harus memasang State dengan getter/setter segar untuk A, rows, SALES, PRM, TS');
+ok(/,SALES=\[\],/.test(core5b), 'SALES tetap variabel legacy yang dideklarasikan di 00-core.js (sumber kebenaran sampai semua penugas ulang pindah)');
+const part30 = fs.readFileSync(new URL('30-penjualan.js', dir), 'utf8');
+ok(/var \{rpt,sold,curP,VUSE,rlAll,ymd\}=createPenjualan\(\{st:State,/.test(part30) && part30.split('\n').length < 10, '30-penjualan.js hanya memasang dependensi, tanpa logika tab');
+ok(!/^(var SALES=|function (sold|curP|rpt|delSale|perS|bkHtml|fprod|sgrp|rlSet|rlOn|rlAll|ymd)\()/m.test(part30), '30-penjualan.js tidak boleh lagi mendefinisikan ulang logika penjualan');
+ok(/getCFG:function\(\)\{return CFG\}/.test(part30) && /getSalesMax:function\(\)\{return SALES_MAX\}/.test(part30), 'CFG dan SALES_MAX dibaca saat dipanggil (didefinisikan di bagian setelahnya)');
+for (const f of ['20-hitung-etalase.js', '50-promosi.js', '60-tab-impor-sinkron.js', '80-cadangan-tema.js']) ok(!/(?<![\w.])(RM|RD|RO|RPL|RLU|RLT|SW|swMoved)\b\s*=[^=]/.test(fs.readFileSync(new URL(f, dir), 'utf8')), f + ' tidak boleh menyentuh state privat tab Penjualan');
+// Tahap 5c (v9.27): panel "Cek pesanan nyata" + dialog peringatan/panduan tarif (js/voucher-panel.js) dipisahkan dari legacy.
+execFileSync(process.execPath, ['--check', new URL('../js/voucher-panel.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/voucher-panel.js'"), 'sw.js CORE harus menyebut js/voucher-panel.js');
+ok(loaderImports('./voucher-panel.js', 'createVoucherPanel'), 'loader harus mengimpor createVoucherPanel');
+const vpMod = fs.readFileSync(new URL('../js/voucher-panel.js', import.meta.url), 'utf8');
+const vpParams = 'st,$,esc,num,rp,today,pr,KDOM,KStore,document,calc,volt,fees,gfac,toast,upd,fill,syncVL,prodSig,feeSig,tlOk,tlRender,dtx,inertBg,getDprev,setDprev';
+ok(vpMod.includes('export function createVoucherPanel({' + vpParams + '})'), 'voucher-panel.js harus mengekspor createVoucherPanel dengan dependensi eksplisit');
+ok(/return \{vgSync:vgSync,vfKeep:vfKeep\};\n\}\n$/.test(vpMod), 'voucher-panel.js hanya mengekspos yang dipakai bagian legacy lain (vgSync, vfKeep)');
+const vpPrivate = ['VF', 'vfOpt', 'vfFill', 'vfN', 'vfLines', 'vfAuto', 'vfCombo', 'vfNum', 'vfAddRow', 'vfaState', 'vfRate', 'tlPush', 'vgOpen', 'vgClose', 'gdOpen', 'gdClose', 'vfSrc', 'vfSrc2', 'vfBtn'];
+for (const name of [...vpPrivate, 'vgSync', 'vfKeep']) ok(name === 'VF' ? /var VF=/.test(vpMod) : new RegExp('function ' + name + '\\(').test(vpMod), 'voucher-panel.js harus memuat ' + name);
+const vpCode = vpMod.replace(/\/\*[\s\S]*?\*\//g, '');
+ok(!/\bwindow\.|globalThis\.|localStorage/.test(vpCode), 'voucher-panel.js tidak boleh membaca global tersembunyi atau localStorage (document dan KStore disuntikkan)');
+ok(!/(?<![\w$.])(A(?=\.)|rows|dprev|SALES|PRM|TS)(?![\w$])/.test(vpCode.replace(/(?<![\w$.])st\.(A|rows)\b/g, '')), 'voucher-panel.js tidak boleh mengakses A/rows/dprev/SALES/PRM/TS langsung (lewat st, getDprev/setDprev)');
+const part40 = fs.readFileSync(new URL('40-voucher-panel.js', dir), 'utf8');
+const wireKeys = (/createVoucherPanel\(\{([\s\S]*?)\}\);\s*$/.exec(part40) || [])[1] || '';
+ok(/var \{vgSync,vfKeep\}=createVoucherPanel\(\{st:State,/.test(part40) && part40.split('\n').length < 12, '40-voucher-panel.js hanya memasang dependensi, tanpa logika panel');
+ok(vpParams.split(',').every(k => new RegExp('(^|[,{\\s])' + k.replace('$', '\\$') + ':').test(wireKeys)) && vpParams.split(',').length === (wireKeys.match(/(?:^|[,{\s])[\w$]+:/g) || []).length, 'pemasangan di legacy harus menyuntikkan tepat semua dependensi factory');
+ok(/getDprev:getDprev,setDprev:setDprev\}\);\s*$/.test(part40) && !/(?<![\w$.])dprev\b/.test(part40.replace(/\/\*[\s\S]*?\*\//g, '')), 'dprev dibagikan lewat getDprev/setDprev dari createUI (bagian 40 tidak menyentuh variabel dprev)');
+ok(!/^(var VF=|function (vf[A-Za-z0-9]*|vg[A-Za-z]*|gd[A-Za-z]*|tlPush)\()/m.test(part40), '40-voucher-panel.js tidak boleh lagi mendefinisikan ulang logika panel');
+for (const f of legacyParts.filter(f => f !== '40-voucher-panel.js')) ok(!new RegExp('(?<![\\w$.])(' + vpPrivate.join('|') + ')(?![\\w$])').test(fs.readFileSync(new URL(f, dir), 'utf8')), f + ' tidak boleh memakai fungsi panel yang kini privat (hanya vgSync/vfKeep yang dibagikan)');
+ok(/vgSync\(\)/.test(fs.readFileSync(new URL('80-cadangan-tema.js', dir), 'utf8')) && /vfKeep\(\)/.test(fs.readFileSync(new URL('80-cadangan-tema.js', dir), 'utf8')), '80-cadangan-tema.js tetap memakai vgSync dan vfKeep dari hasil factory');
+// Tahap 6a (v9.28): dialog konfirmasi (ask), inertBg, dan toast (js/ui.js) dipisahkan dari 20-hitung-etalase.js.
+execFileSync(process.execPath, ['--check', new URL('../js/ui.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/ui.js'"), 'sw.js CORE harus menyebut js/ui.js');
+ok(loaderImports('./ui.js', 'createUI'), 'loader harus mengimpor createUI');
+const uiMod = fs.readFileSync(new URL('../js/ui.js', import.meta.url), 'utf8');
+ok(uiMod.includes('export function createUI({$,document}){'), 'ui.js harus mengekspor createUI({$,document})');
+ok(/return \{inertBg:inertBg,ask:ask,toast:toast,getDprev:function\(\)\{return dprev\},setDprev:function\(v\)\{dprev=v\}\};\n\}\n$/.test(uiMod), 'ui.js hanya mengekspos inertBg, ask, toast, getDprev, setDprev');
+for (const name of ['inertBg', 'ask', 'dclose', 'toast']) ok(new RegExp('function ' + name + '\\(').test(uiMod), 'ui.js harus memuat ' + name);
+ok(!/\bwindow\.|globalThis\.|localStorage|KStore/.test(uiMod.replace(/\/\*[\s\S]*?\*\//g, '')), 'ui.js tidak boleh membaca global tersembunyi');
+const part20 = fs.readFileSync(new URL('20-hitung-etalase.js', dir), 'utf8');
+ok(/var \{inertBg,ask,toast,getDprev,setDprev\}=createUI\(\{\$:\$,document:document\}\);/.test(part20), '20-hitung-etalase.js memasang createUI');
+ok(!/function (inertBg|ask|dclose|toast)\(/.test(part20) && !/var (dfn|dprev|toastT)\b/.test(part20) && !/var dfn=null,dprev=null/.test(part20), '20-hitung-etalase.js tidak boleh lagi mendefinisikan dialog/toast');
+for (const f of legacyParts) ok(!/(?<![\w$.])(dfn|dprev|toastT|dclose)\b/.test(fs.readFileSync(new URL(f, dir), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')), f + ' tidak boleh memakai dfn/dprev/toastT/dclose (privat di ui.js)');
+{ /* pemasangan harus terjadi SEBELUM pemakaian saat muat: tak ada pemanggilan ask/toast/inertBg di tingkat atas bagian 00/10 atau 20 sebelum baris pemasangan */
+  const pre = part20.slice(0, part20.indexOf('var {inertBg,ask,toast,getDprev,setDprev}=createUI(')) + fs.readFileSync(new URL('00-core.js', dir), 'utf8') + fs.readFileSync(new URL('10-calc.js', dir), 'utf8');
+  ok(!/(?<![\w$.])(toast|ask|inertBg):(toast|ask|inertBg)\b/.test(pre), 'tak ada yang meneruskan ask/toast/inertBg sebagai nilai sebelum pemasangan createUI (bukan lagi di-hoist)');
+}
+// Tahap 6b (v9.29): helper murni (esc, dtx, uid, prodSig, SGL, feeSig) dipisahkan ke js/helpers.js.
+execFileSync(process.execPath, ['--check', new URL('../js/helpers.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/helpers.js'"), 'sw.js CORE harus menyebut js/helpers.js');
+ok(loaderImports('./helpers.js', 'esc, dtx, uid, prodSig, SGL, createFeeSig'), 'loader harus mengimpor esc, dtx, uid, prodSig, SGL, createFeeSig');
+const hlpMod = fs.readFileSync(new URL('../js/helpers.js', import.meta.url), 'utf8');
+ok(/export function createFeeSig\(\{getA,gfac\}\)\{/.test(hlpMod) && /return feeSig;\n\}\n$/.test(hlpMod), 'helpers.js harus mengekspor createFeeSig({getA,gfac}) yang mengembalikan feeSig');
+for (const name of ['esc', 'dtx', 'uid', 'prodSig']) ok(new RegExp('export function ' + name + '\\(').test(hlpMod), 'helpers.js harus mengekspor ' + name);
+ok(/export var SGL=\{/.test(hlpMod), 'helpers.js harus mengekspor SGL');
+const hlpCode = hlpMod.replace(/\/\*[\s\S]*?\*\//g, '');
+ok(/function feeSig\(\)\{var A=getA\(\);/.test(hlpCode), 'feeSig membaca A lewat getA() di dalam fungsinya (A bisa ditugaskan ulang saat restore)');
+ok(!/\bwindow\.|globalThis\.|localStorage|KStore|document\b/.test(hlpCode.replace(/function esc\(.*?\}\)\}\n/, '').replace(/var SGL=\{[^}]*\};/, '')), 'helpers.js tidak boleh membaca global tersembunyi');
+const part20b = fs.readFileSync(new URL('20-hitung-etalase.js', dir), 'utf8');
+ok(!/^(function (esc|dtx|uid|prodSig|feeSig)\(|var SGL=)/m.test(part20b), '20-hitung-etalase.js tidak boleh lagi mendefinisikan esc/dtx/uid/prodSig/feeSig/SGL');
+ok(/^var feeSig=createFeeSig\(\{getA:function\(\)\{return A\},gfac:gfac\}\);$/m.test(part20b), '20-hitung-etalase.js memasang createFeeSig dengan getA dan gfac');
+for (const f of legacyParts) ok(!/^(function (esc|dtx|uid|prodSig|feeSig)\(|var SGL=)/m.test(fs.readFileSync(new URL(f, dir), 'utf8')), f + ' tidak boleh mendefinisikan ulang helper yang kini di js/helpers.js');
+{ // feeSig dulu function yang di-hoist; kini var. Tidak boleh dipakai saat muat sebelum baris pemasangannya.
+  const at = part20b.indexOf('var feeSig=createFeeSig(');
+  const pre = fs.readFileSync(new URL('00-core.js', dir), 'utf8') + fs.readFileSync(new URL('10-calc.js', dir), 'utf8') + part20b.slice(0, at);
+  ok(!/(?<![\w$.])feeSig\b/.test(pre.replace(/\/\*[\s\S]*?\*\//g, '').replace('feeSig:function(){return feeSig()}', '')), 'feeSig tidak boleh dirujuk di 00-core, 10-calc, atau bagian 20 sebelum pemasangannya (kecuali pembungkus late-bound createTarifUI, yang baru memanggil saat dipakai)');
+  ok(/prodSig:prodSig,feeSig:feeSig/.test(fs.readFileSync(new URL('40-voucher-panel.js', dir), 'utf8')) && !/^\s*(feeSig|prodSig|esc|dtx|uid)\(/m.test(part20b.slice(0, at)), 'bagian 40 menerima feeSig/prodSig sebagai nilai setelah bagian 20 (urutan eksekusi terjaga)'); }
+// Tahap 6c (v9.30): logika tarif/peringatan (tblSync, tbuild, fillT, tchk, verStale, ADN, refreshLabels, AD0/GO0) dipisahkan ke js/tarif-ui.js.
+execFileSync(process.execPath, ['--check', new URL('../js/tarif-ui.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/tarif-ui.js'"), 'sw.js CORE harus menyebut js/tarif-ui.js');
+ok(loaderImports('./tarif-ui.js', 'createTarifUI'), 'loader harus mengimpor createTarifUI');
+const tuMod = fs.readFileSync(new URL('../js/tarif-ui.js', import.meta.url), 'utf8');
+const tuCode = tuMod.replace(/\/\*[\s\S]*?\*\//g, '');
+ok(/export function createTarifUI\(\{getA,getRows,\$,document,KDOM,AD,GO,GO2,fmt,today,SGL,prodSig,feeSig,calc,upd,fill,toast\}\)\{/.test(tuCode), 'tarif-ui.js mengekspor createTarifUI dengan tanda tangan yang disepakati');
+ok(/return \{tblSync:tblSync,tbuild:tbuild,fillT:fillT,tchk:tchk,verStale:verStale,refreshLabels:refreshLabels\};\n\}\n$/.test(tuCode), 'tarif-ui.js mengembalikan enam fungsi');
+ok(!/\bwindow\.|globalThis\.|localStorage|KStore|\bsessionStorage\b/.test(tuCode), 'tarif-ui.js tidak boleh membaca global tersembunyi (document dan KDOM disuntikkan)');
+for (const fnName of ['tblSync', 'tchk', 'refreshLabels']) ok(new RegExp('function ' + fnName + '\\([^)]*\\)\\{var A=getA\\(\\);').test(tuCode), fnName + ' membaca A lewat getA() di dalam fungsinya (A bisa ditugaskan ulang saat restore)');
+ok(/function verStale\(\)\{var A=getA\(\),rows=getRows\(\);/.test(tuCode), 'verStale membaca A dan rows lewat getA()/getRows()');
+ok(/addEventListener\('input',function\(e\)\{var A=getA\(\);/.test(tuCode) && /\$\('tr'\)\.onclick=function\(\)\{var A=getA\(\);/.test(tuCode), 'pendengar tbuild membaca A ulang saat peristiwa terjadi');
+const part20c = fs.readFileSync(new URL('20-hitung-etalase.js', dir), 'utf8');
+ok(/^var \{tblSync,tbuild,fillT,tchk,refreshLabels\}=createTarifUI\(\{getA:function\(\)\{return A\},getRows:function\(\)\{return rows\},/m.test(part20c), '20-hitung-etalase.js memasang createTarifUI dengan getA dan getRows');
+for (const w of ['feeSig:function(){return feeSig()}', 'calc:function(){return calc.apply(null,arguments)}', 'upd:function(){return upd.apply(null,arguments)}', 'fill:function(){return fill()}', 'toast:function(m){return toast(m)}']) ok(part20c.includes(w), 'pemasangan createTarifUI memakai pembungkus late-bound: ' + w);
+for (const f of legacyParts) ok(!/^(function (tblSync|tbuild|fillT|tchk|verStale|refreshLabels)\(|var (AD0|GO0|ADN)\b)/m.test(fs.readFileSync(new URL(f, dir), 'utf8')), f + ' tidak boleh mendefinisikan ulang fungsi/variabel tarif yang kini di js/tarif-ui.js');
+for (const f of legacyParts) ok(!/(?<![\w$.])(verStale|ADN|AD0|GO0)\b/.test(fs.readFileSync(new URL(f, dir), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')), f + ' tidak boleh memakai verStale/ADN/AD0/GO0 (privat di tarif-ui.js)');
+{ // tchk harus tetap bisa ditugaskan ulang (80-cadangan-tema.js membungkusnya): dipasang sebagai var legacy, bukan const/let.
+  ok(/^var _tchk=tchk;\ntchk=function\(\)\{_tchk\(\);/m.test(fs.readFileSync(new URL('80-cadangan-tema.js', dir), 'utf8')), '80-cadangan-tema.js masih membungkus tchk (_tchk=tchk; tchk=function)');
+  ok(!/\b(const|let)\s*\{[^}]*\btchk\b/.test(part20c) && /^var \{[^}]*\btchk\b/m.test(part20c), 'tchk dipasang dengan var (bisa ditugaskan ulang)');
+}
+{ // Dulu function yang di-hoist; kini var. Tak boleh dipakai saat muat sebelum baris pemasangan (00-core, 10-calc, awal bagian 20).
+  const at = part20c.indexOf('var {tblSync,tbuild,fillT,tchk,refreshLabels}=createTarifUI(');
+  const pre = fs.readFileSync(new URL('00-core.js', dir), 'utf8') + fs.readFileSync(new URL('10-calc.js', dir), 'utf8') + part20c.slice(0, at);
+  ok(at >= 0 && !/(?<![\w$.'"])(tblSync|tbuild|fillT|tchk|refreshLabels)\b(?!\s*:)/.test(pre.replace(/\/\*[\s\S]*?\*\//g, '')), 'tblSync/tbuild/fillT/tchk/refreshLabels tidak boleh dirujuk sebelum pemasangannya');
+  const boot = fs.readFileSync(new URL('95-boot.js', dir), 'utf8');
+  ok(legacyParts.indexOf('95-boot.js') > legacyParts.indexOf('20-hitung-etalase.js') && /\btbuild\(\)/.test(boot), 'tbuild dipanggil di 95-boot.js, yang berjalan SETELAH bagian 20');
+}
+console.log(`Legacy split audit (tahap 6c): ${n} assertions passed total.`);

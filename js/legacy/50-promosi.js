@@ -3,26 +3,13 @@ var CFG={af:{n:'Affiliate Marketing',p:1,a:['Komisi affiliate (%)','%'],c:'af'},
 var IC={af:'<circle cx="7" cy="12" r="2.5"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M9.2 10.8l5.6-3.6M9.2 13.2l5.6 3.6"/>',lv:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M10.5 11v5l4-2.5zM8 3.5L12 7l4-3.5"/>',pt:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/>',vc:'<path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4z"/><path d="M14 6v12" stroke-dasharray="2 2"/>',fs:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 1.5M5 4L3 6M19 4l2 2"/>',vi:'<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 13 0M19 8v6M16 11h6"/>',pd:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',hm:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8h14v-8M8 8a2.5 2.5 0 0 1 0-5c2 0 4 2 4 5 0-3 2-5 4-5a2.5 2.5 0 0 1 0 5"/>',kh:'<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>'};
 function migPt(q){if(q&&q.t=='pt'&&!Array.isArray(q.it)){q.it=q.p?[{p:q.p,h:q.a||0,d:0,l:0}]:[];q.a=0;q.p=''}if(q&&q.t=='kh'&&!Array.isArray(q.it)){q.mp=q.p?[q.p]:[];q.it=[q.p2,q.p3].filter(Boolean).map(function(id){return{p:id,d:0,h:0,l:0}});if(q.a>0)q.k=(q.k?q.k+' | ':'')+'Harga kombo lama Rp'+q.a;q.a=0;q.p=q.p2=q.p3=''}return q}
 function ptp(p,z,M){var d=z.d>0?z.d:p.a,L=z.h>0?Math.round(z.h):(d>0?globalThis.KalsaraMoney.percentOfRupiah(M,100-d):0);return L>0?L:0}
-function vdisc(p,L){if(p.u=='cb')return 0;if(p.u=='pct'){var v=pr(p.a,L);return p.cp>0?Math.min(v,Math.round(p.cp)):v}return Math.min(Math.round(p.a),L)}
-function cbc(p,L){var v=pr(p.a,L);return p.cp>0?Math.min(v,Math.round(p.cp)):v}
-function dd(a,b){return Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5)}
-function pst(p){var t=today();if(!p.s&&!p.e)return{k:'a',t:'Berjalan (tanpa jadwal)'};
- if(p.e&&t>p.e)return{k:'e',t:'Berakhir'};
- if(p.s&&t<p.s){var d=dd(t,p.s);return{k:'u',t:d==1?'Mulai besok':'Mulai '+d+' hari lagi'}}
- var d2=p.e?dd(t,p.e):null;return{k:'a',t:d2===null?'Berjalan':d2===0?'Berakhir hari ini':'Berjalan, sisa '+d2+' hari'}}
 function rw(l,v,c){return '<div class="rw">'+l+'<b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>'}
 /*5.39: voucher otomatis. Hanya Voucher Toko dan Voucher Produk berjalan (bukan cashback, bukan Live/Video, kuota belum habis) yang ikut memengaruhi harga di tab Hitung.*/
-var VCC=null;CalcCache.invalidate();
+CalcCache.invalidate();
 /*5.68: Promosi tidak memicu hitung ulang tab Hitung. psig() = tanggal + isi semua promosi. upd() mencatatnya di PSIG; tab() menghitung ulang hanya bila psig() berbeda (promosi berubah, kuota voucher bertambah, atau tanggal berganti).*/
 var PSIG='';
 function psig(){try{return today()+'|'+JSON.stringify(PRM)}catch(e){return''}}
-function vcList(){var d=today();if(!VCC||VCC.d!==d){VCC={d:d,a:[]};PRM.forEach(function(q){if(!q||q.t!='vc')return;var jt=q.jt||'toko';if(jt=='live'||jt=='video'||q.u=='cb'||!(q.a>0))return;if(pst(q).k!='a')return;if(q.x>0&&(q.y||0)>=q.x)return;VCC.a.push(q)})}return VCC.a}
-function vcApply(q,r){if((q.jt||'toko')=='toko')return true;return !!(r&&r.id)&&[q.p,q.p2,q.p3].indexOf(r.id)>=0}
-function vcLab(q){return((q.jt||'toko')=='produk'?'Voucher Produk ':'Voucher Toko ')+(q.u=='pct'?fmt(q.a)+'%':rp(q.a))+(q.n?' ('+q.n+')':'')}
-function vcBest(L,r){var b=null;vcList().forEach(function(q){if(!vcApply(q,r))return;if(q.b>0&&L<q.b)return;var d=vdisc(q,L);if(d>0&&(!b||d>b.v))b={v:d,s:vcLab(q),q:q}});return b}
-function vcBad(r){return vcList().some(function(q){return vcApply(q,r)&&q.u=='pct'&&q.a>=100})}
 function calcNV(r){VNO=1;try{return calc(r)}finally{VNO=0}}
-function vcThr(r){var t=[];vcList().forEach(function(q){if(vcApply(q,r)&&q.b>0&&t.indexOf(q.b)<0)t.push(q.b)});return t.sort(function(x,y){return x-y})}
 function vsc(r,o){var out=[];if(!o||o.err||!(o.L>0))return out;
  vcList().forEach(function(q){if(!vcApply(q,r)||!(q.b>0)||o.L>=q.b)return;
   var N=Math.max(Math.ceil(q.b/o.L),1),r2=Object.assign({},r,{q:(r.q>0?r.q:1)*N}),R2=Object.assign({},o.R,{cg:o.R.cg*N,cp:o.R.cp*N,cvx:o.R.cvx*N,clv:o.R.clv*N,cpb:o.R.cpb*N}),Lt=o.L*N,f=fwdV(Lt,vdisc(q,Lt),r2,R2),tg=(r.t||0)*N;
@@ -220,7 +207,7 @@ function prTiles(){var h='',cnt={},tot={a:0,u:0,e:0};
  PORD.forEach(function(k){h+='<button type="button" class="tl'+(PSEL==k?' on':'')+'" data-pt="'+k+'" aria-pressed="'+(PSEL==k)+'"><span class="tc"><svg viewBox="0 0 24 24">'+IC[k]+'</svg>'+(cnt[k]?'<i>'+cnt[k]+'</i>':'')+'</span><span class="tn">'+CFG[k].n+'</span></button>'});
  KDOM.setHTML($('prt'), h);$('prs').textContent=PRM.length?tot.a+' berjalan, '+tot.u+' akan datang, '+tot.e+' berakhir':'Pilih jenis promo, lalu tekan tombol Tambah.';
  $('vcs').hidden=PSEL!='vc';$('pts').hidden=PSEL!='pt';paSync();var b=$('pra');b.textContent=PSEL?'Tambah '+CFG[PSEL].n:'Pilih jenis promo di atas';b.className='btn'+(PSEL?'':' gh')}
-function prRender(){VCC=null;CalcCache.invalidate();prTiles();var ix=[];PRM.forEach(function(p,i){if(!PSEL||p.t==PSEL)ix.push(i)});
+function prRender(){VoucherRules.reset();CalcCache.invalidate();prTiles();var ix=[];PRM.forEach(function(p,i){if(!PSEL||p.t==PSEL)ix.push(i)});
  var ord={a:0,u:1,n:2,e:3};ix.sort(function(x,y){var a=ord[pst(PRM[x]).k],b=ord[pst(PRM[y]).k];return a-b||(PRM[x].s||'').localeCompare(PRM[y].s||'')});
  KDOM.setHTML($('prl'), ix.length?ix.map(function(i){return pfCard(i,PRM[i])}).join(''):'<div class="si"><div class="empty">'+(PSEL?'Belum ada '+CFG[PSEL].n+'. Tekan tombol Tambah di bawah.':'Belum ada promo.')+'</div></div>');
  document.querySelectorAll('#prl .pe').forEach(function(c){prRes(c,PRM[+c.dataset.i])})}
@@ -228,7 +215,7 @@ $('prt').addEventListener('click',function(e){var b=e.target.closest('[data-pt]'
 $('pra').onclick=function(){if(!PSEL){toast('Pilih jenis promo dulu');return}if(PRM.length>=300){toast('Maksimal 300 promo');return}
  PRM.push({id:uid(),t:PSEL,n:'',s:today(),e:'',p:'',a:0,b:0,k:'',it:[],mp:[],gf:[]});prRender();persist();var c=$('prl').querySelector('.pe[data-i="'+(PRM.length-1)+'"]');if(c){c.scrollIntoView({block:'center'});c.querySelector('input').focus()}};
 $('prl').addEventListener('click',function(e){if(!e.target.closest('[data-del]'))return;var c=e.target.closest('.pe'),p=PRM[+c.dataset.i];ask('Hapus promo ini?','Ya, hapus',function(){PRM.splice(PRM.indexOf(p),1);prRender();persist();toast('Promo dihapus')})});
-$('prl').addEventListener('input',function(e){var t=e.target,c=t.closest('.pe');if(!c||!t.dataset.pf)return;var p=PRM[+c.dataset.i],k=t.dataset.pf;VCC=null;CalcCache.invalidate();
+$('prl').addEventListener('input',function(e){var t=e.target,c=t.closest('.pe');if(!c||!t.dataset.pf)return;var p=PRM[+c.dataset.i],k=t.dataset.pf;VoucherRules.reset();CalcCache.invalidate();
  if(k=='a'||k=='b'||k=='x'||k=='y'||k=='m'||k=='cp'){var u=pun(p,k);if(u=='%'){var v=(t.value.trim()===''?NaN:Number(t.value.replace(',','.')));p[k]=isNaN(v)||v<0?0:Math.min(v,100)}else{var n=num(t.value);p[k]=n;t.value=n?n.toLocaleString('id-ID'):''}}
  else if(k=='u'){p.u=t.value;p.a=0;prRender();persist();return}
  else if(k=='tp'){p.tp=t.value;p.b=0;prRender();persist();return}

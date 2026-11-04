@@ -1,28 +1,7 @@
-var AD0=JSON.parse(JSON.stringify(AD)),GO0=JSON.parse(JSON.stringify(GO));
-function tblSync(){Object.keys(AD0).forEach(function(k){AD[k]=(A.tbl&&A.tbl.AD&&A.tbl.AD[k])?A.tbl.AD[k].slice():AD0[k].slice()});Object.keys(GO0).forEach(function(k){GO[k]=(A.tbl&&A.tbl.GO&&A.tbl.GO[k])?A.tbl.GO[k].slice():GO0[k].slice()})}
-function tbuild(){var h='',NM=['Admin','Admin Mall','Ongkir biasa','Ongkir khusus'];'ABCDEFGHI'.split('').forEach(function(c){h+='<div class="tb"><b>Kategori '+c+'</b>'+[['AD',0],['AD',1],['GO',0],['GO',1]].map(function(x,ix){if(x[0]=='GO'&&!GO0[c])return'';return'<label><span>'+NM[ix]+' (%)</span><input inputmode="decimal" aria-label="Kategori '+c+' '+NM[ix]+'" data-t="'+x[0]+'|'+x[1]+'|'+c+'"></label>'}).join('')+'</div>'});
- KDOM.setHTML($('tbl'), h);
- $('tbl').addEventListener('input',function(e){var t=e.target,p=(t.dataset.t||'').split('|');if(p.length<3)return;var v=(t.value.trim()===''?NaN:Number(t.value.replace(',','.')));if(isNaN(v)||v<0)return;if(v>100){v=100;t.value='100'}
-  A.tbl=A.tbl||{AD:{},GO:{}};var src=p[0]=='AD'?AD:GO,arr=(A.tbl[p[0]][p[2]]||src[p[2]]).slice();arr[+p[1]]=v;A.tbl[p[0]][p[2]]=arr;upd(true)});
- $('tr').onclick=function(){A.tbl=null;fill();upd(true);toast('Tabel tarif dikembalikan')}}
-function fillT(){document.querySelectorAll('[data-t]').forEach(function(t){var p=t.dataset.t.split('|'),a=(p[0]=='AD'?AD:GO)[p[2]];t.value=a?fmt(a[+p[1]]):''})}
-function tchk(){var w=$('tw');if(A.ver&&!A.ver.ok&&!A.ver.ig){w.hidden=false;w.textContent='Cek pesanan nyata ('+A.ver.d+') menemukan selisih pada: '+A.ver.bad.join(', ')+'. Perbaiki di tab Tarif, lalu cek ulang.';return}var sd=verStale();if(sd){w.hidden=false;w.textContent='Tarif berubah sejak cek pesanan nyata ('+A.ver.d+'): '+sd.slice(0,4).join(', ')+(sd.length>4?', dan '+(sd.length-4)+' lainnya':'')+'. Cek ulang dengan pesanan nyata.';return}var d=A.tchk?Math.floor((new Date(today()+'T00:00')-new Date(A.tchk+'T00:00'))/864e5):null;
- if(d===null){w.hidden=false;w.textContent='Tanggal pengecekan tarif belum diisi. Cocokkan tabel tarif dengan Seller Centre di tab Tarif, lalu isi tanggalnya.'}
- else if(d>(A.tcd>0?A.tcd:30)){w.hidden=false;w.textContent='Tarif terakhir dicek '+d+' hari lalu. Cocokkan lagi dengan Seller Centre.'}else w.hidden=true}
-var SGL={tp:'Tipe toko',fb:'Biaya proses pesanan',fl:'Nominal biaya proses',pb:'Biaya pembayaran (%)',pbc:'Batas biaya pembayaran',ad:'Admin manual (%)',ac:'Kategori administrasi',gc:'Kategori Gratis Ongkir XTRA',sz:'Ukuran Gratis Ongkir XTRA',gf:'Tarif Gratis Ongkir XTRA toko baru',gad:'Potongan tarif karena iklan',gm:'Gratis Ongkir XTRA manual (%)',px:'Promo XTRA (%)',vx:'Video XTRA (%)',lv:'Live XTRA (%)',pm:'Premi (%)',cg:'Batas Gratis Ongkir XTRA biasa',cgk:'Batas Gratis Ongkir XTRA khusus',cp:'Batas Promo XTRA',cvx:'Batas Video XTRA',clv:'Batas Live XTRA',tbl:'Tabel tarif'};
-function feeSig(){var s={};Object.keys(SGL).forEach(function(k){s[k]=JSON.stringify(k=='gf'?gfac():(A[k]===undefined?null:A[k]))});return s}
-function prodSig(R){return JSON.stringify([R.ad,R.gx,R.px,R.vx,R.lv,R.pm,R.cg,R.cp,R.cvx,R.clv,R.cpb])}
-function verStale(){var v=A.ver;if(!v||!v.ok)return null;if(!v.sg)return['pengaturan tarif (cek lama belum mencatat pengaturan)'];
- var c=feeSig(),d=Object.keys(SGL).filter(function(k){return c[k]!==v.sg[k]}).map(function(k){return SGL[k]});if(d.length)return d;
- var ml=v.ml||(v.ps?[{pn:v.pn,ps:v.ps}]:[]);for(var mi=0;mi<ml.length;mi++){var r=rows.filter(function(x){return(x.n||'')===ml[mi].pn})[0],o=r&&calc(r);if(o&&!o.err&&prodSig(o.R)!==ml[mi].ps)return['tarif khusus produk '+(ml[mi].pn||'(tanpa nama)')]}
- return null}
-var ADN={A:'Pakaian Muslim, Rumah Tangga, Mainan',B:'Peralatan RT, Buku, Olahraga',C:'Aksesoris Fashion, Ibu & Bayi, Makanan, Kecantikan',D:'Kesehatan, Komputer & Aksesoris',E:'Fotografi, Audio, Elektronik Besar',F:'Makanan Segar, Bahan Pokok',G:'Handphone & Tablet',H:'Logam Mulia, Emas, Perak',I:'Sepeda Motor, Mobil'};
-function refreshLabels(root){root=root||document;
- var ix=A.tp=='ml'?1:0;
- root.querySelectorAll('#ac option,select[data-o="ac"] option').forEach(function(o){var t=AD[o.value];if(!t)return;var p=o.parentNode.id=='ac';o.textContent=p?o.value+' ('+fmt(t[ix])+'%): '+ADN[o.value]:'Kategori '+o.value+' ('+fmt(t[ix])+'%)'});
- root.querySelectorAll('select[data-o="g2"] option').forEach(function(o){var t=GO2[o.value];if(!t)return;o.textContent=o.value+' · '+fmt(t[0])+'%'});
- root.querySelectorAll('#gc option,select[data-o="gc"] option').forEach(function(o){var t=GO[o.value];if(!t)return;var p=o.parentNode.id=='gc';o.textContent=p?'Kategori '+o.value+': '+fmt(t[0])+'% biasa / '+fmt(t[1])+'% khusus':o.value+' · '+fmt(t[0])+'%'})}
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+/*v9.30 (tahap 6c): tblSync, tbuild, fillT, tchk, verStale, ADN, refreshLabels (+ AD0/GO0) kini modul ES (js/tarif-ui.js; diimpor oleh loader js/legacy-app.js). Dulu deklarasi function yang di-hoist; kini var yang baru ada setelah baris ini. Pemakai saat muat sebelum baris ini: tidak ada (00-core, 10-calc). feeSig/calc/upd/fill/toast dibungkus karena nilainya baru ada/ditentukan di tempat lain. tchk dibungkus ulang di 80-cadangan-tema.js (tetap var legacy); verStale dan ADN kini privat di modul.*/
+var {tblSync,tbuild,fillT,tchk,refreshLabels}=createTarifUI({getA:function(){return A},getRows:function(){return rows},$:$,document:document,KDOM:KDOM,AD:AD,GO:GO,GO2:GO2,fmt:fmt,today:today,SGL:SGL,prodSig:prodSig,feeSig:function(){return feeSig()},calc:function(){return calc.apply(null,arguments)},upd:function(){return upd.apply(null,arguments)},fill:function(){return fill()},toast:function(m){return toast(m)}});
+/*v9.29 (tahap 6b): esc, dtx, uid, prodSig, SGL dan pembuat feeSig kini modul ES (js/helpers.js; diimpor oleh loader js/legacy-app.js). feeSig dipasang di sini (A dan gfac disuntikkan); dulu deklarasi function yang di-hoist, kini baru ada setelah baris ini. Tidak ada pemakai saat muat sebelum baris ini (00-core, 10-calc).*/
+var feeSig=createFeeSig({getA:function(){return A},gfac:gfac});
 function strip(r){return{id:r.id||'',n:r.n,m:r.m,d:r.d,p:r.p,t:r.t,o:r.o,c:!!r.c,cx:r.cx||0,q:r.q||0,s:r.s==null?null:r.s,sd:r.sd||'',mb:r.mb||0,mh:r.mh||[],ack:!!r.ack,live:!!r.live,sup:r.sup||'',sku:r.sku||'',lnk:r.lnk||'',ha:r.ha||0,hd:r.hd||0}}
 function fk(t,nv){var p=t.selectionStart||0,d=t.value.slice(0,p).replace(/\D/g,'').length;t.value=nv;var i=0,c=0;while(i<nv.length&&c<d){if(/\d/.test(nv[i]))c++;i++}try{t.setSelectionRange(i,i)}catch(e){}}
 function cardBody(r,e){
@@ -85,8 +64,6 @@ function warns(o,rev){
  if(pot>A.wp){lv=lv||'y';w.push('Total potongan tinggi ('+pc1(pot)+'% dari harga jual). Periksa tarif yang diisi.');sh.push('Potongan tinggi')}
  return{w:w,sh:sh,lv:lv,m:m,pot:pot}}
 function WN(x){return x.w.map(function(t){return '<div class="wn '+(x.lv=='r'&&x.w[0]==t?'r':'y')+'">&#9888; '+t+'</div>'}).join('')}
-function esc(t){return String(t).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function dtx(d){var p=String(d).split('-');return(+p[2])+' '+['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][p[1]-1]}
 function mchg(r,o){var h=r.mh&&r.mh.length&&r.mh[r.mh.length-1];if(!h||r.ack)return null;
  var old=calc(Object.assign({},r,{m:h.a}));if(!old||old.err)return null;
  var q=fwd(old.M,r,o.R),x=warns(q,true),up=h.b>h.a,lv='',t;
@@ -152,13 +129,10 @@ $('ff').onchange=flt;
 document.querySelectorAll('#tt3 [data-ft]').forEach(function(d){function go(){var v=d.dataset.ft;$('ff').value=v;$('q').value='';flt();var n=rows.filter(function(r){return !r.box.hidden}).length;toast(v=='all'?'Menampilkan semua produk ('+n+')':'Menampilkan '+n+' produk '+(v=='live'?'sudah live':'belum live'));var b=$('qb');if(b&&b.scrollIntoView)b.scrollIntoView({block:'start'})}d.onclick=go;d.onkeydown=function(e){if(e.key=='Enter'||e.key==' '){e.preventDefault();go()}}});
 $('so').onchange=function(){srt();flt();toast('Urutan diterapkan')};
 $('q').addEventListener('input',flt);
-var dfn=null,dprev=null;
-function inertBg(on){[document.querySelector('main'),document.querySelector('nav'),document.querySelector('header'),$('fab')].forEach(function(x){if(x)x.inert=on})}
-function ask(m,ok,fn){dprev=document.activeElement;$('dlgm').textContent=m;$('dy').textContent=ok;dfn=fn;$('dlg').hidden=false;inertBg(true);$('dn').focus()}
-function dclose(){$('dlg').hidden=true;dfn=null;inertBg(false);var p=dprev;dprev=null;if(p&&p.focus)try{p.focus()}catch(e){}}
-$('dn').onclick=dclose;$('dy').onclick=function(){var f=dfn;dclose();if(f)f()};
-$('dlg').addEventListener('keydown',function(e){if(e.key=='Escape')dclose();else if(e.key=='Tab'){var f=[$('dn'),$('dy')],i=f.indexOf(document.activeElement);e.preventDefault();f[(i+(e.shiftKey?-1:1)+2)%2].focus()}});$('dlg').addEventListener('click',function(e){if(e.target===this)dclose()});
-var toastT=null;function toast(m){var t=$('tt');t.textContent=m;t.className='toast on';clearTimeout(toastT);toastT=setTimeout(function(){t.className='toast'},1600)}
+/*v9.28 (tahap 6a): dialog konfirmasi (ask), inertBg, dan toast kini modul ES (js/ui.js; createUI diimpor oleh loader js/legacy-app.js).
+ getDprev/setDprev meneruskan dprev bersama ke dialog di js/voucher-panel.js (bagian 40). Semua pemakai ask/toast/inertBg ada di badan fungsi atau
+ di bagian setelah baris ini; tidak ada pemanggilan saat muat sebelum pemasangan ini.*/
+var {inertBg,ask,toast,getDprev,setDprev}=createUI({$:$,document:document});
 
 function setStock(r,v){r.s=v;if(v!=null)r.sd=today();else r.sd='';var i=r.box.querySelector('input[data-f="s"]');if(i)i.value=v==null?'':v.toLocaleString('id-ID');upd(true)}
 var ETU={},ETT={};

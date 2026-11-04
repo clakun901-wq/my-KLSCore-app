@@ -14,7 +14,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH') or None); ctx = b.new_context(service_workers='block'); pg = ctx.new_page(); errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
-        pg.goto(f'http://127.0.0.1:{PORT}/index.html'); pg.wait_for_function("typeof KStore!=='undefined' && document.querySelectorAll('nav button').length>=7", timeout=30000)
+        pg.goto(f'http://127.0.0.1:{PORT}/index.html'); pg.wait_for_function("typeof KStore!=='undefined' && document.querySelectorAll('nav button').length>=7 && document.querySelectorAll('#list > *').length>=1", timeout=30000)  # tunggu boot legacy selesai (klik tab sebelum itu = balapan, bukan bug aplikasi)
         backend = pg.evaluate("KStore.backend")
         print('backend aktif:', backend, '| wasm terpasang:', HAS_WASM)
         if not HAS_WASM:
@@ -26,6 +26,13 @@ try:
             pg.evaluate("KStore.setItem('e2e_kunci','nilai')"); pg.evaluate("KStore.flush()")
             check(pg.evaluate("KStore.getItem('e2e_kunci')") == 'nilai', 'tulis/baca lewat jurnal tetap berfungsi')
             check(pg.evaluate("navigator.storage.getDirectory().then(r=>r.getFileHandle('kalsara-backend.json')).then(()=>true).catch(()=>false)") is False, 'penanda SQLite tidak boleh dibuat bila SQLite tidak pernah terbuka')
+        if HAS_WASM:
+            # Bukti SQLite + OPFS nyata: tulis, muat ulang halaman, data harus bertahan dan backend tetap sqlite
+            check(backend == 'sqlite', 'dengan Wasm terpasang backend harus sqlite, dapat ' + str(backend))
+            pg.evaluate("KStore.setItem('e2e_sqlite','tahan-reload')"); pg.evaluate("KStore.flush()")
+            pg.reload(); pg.wait_for_function("typeof KStore!=='undefined' && document.querySelectorAll('#list > *').length>=1", timeout=30000)
+            check(pg.evaluate("KStore.backend") == 'sqlite', 'setelah reload backend tetap sqlite')
+            check(pg.evaluate("KStore.getItem('e2e_sqlite')") == 'tahan-reload', 'data harus bertahan di SQLite/OPFS setelah reload')
         # Tab ERP (laporan): tanpa SQLite harus memakai hitungan JS lama dan tetap tampil tanpa error
         pg.locator('#t6').click()
         pg.wait_for_function("document.getElementById('erpr') && document.getElementById('erpr').textContent.trim().length>0", timeout=15000)
