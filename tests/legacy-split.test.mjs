@@ -238,4 +238,26 @@ for (const f of legacyParts) ok(!/(?<![\w$.])(verStale|ADN|AD0|GO0)\b/.test(fs.r
   const boot = fs.readFileSync(new URL('95-boot.js', dir), 'utf8');
   ok(legacyParts.indexOf('95-boot.js') > legacyParts.indexOf('20-hitung-etalase.js') && /\btbuild\(\)/.test(boot), 'tbuild dipanggil di 95-boot.js, yang berjalan SETELAH bagian 20');
 }
-console.log(`Legacy split audit (tahap 6c): ${n} assertions passed total.`);
+// Tahap 6d (v9.31): peringatan stok/margin (pc1, skHi, stk, warns, WN, mchg) dipisahkan ke js/warnings.js.
+execFileSync(process.execPath, ['--check', new URL('../js/warnings.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/warnings.js'"), 'sw.js CORE harus menyebut js/warnings.js');
+ok(loaderImports('./warnings.js', 'createWarnings'), 'loader harus mengimpor createWarnings');
+const wrCode = fs.readFileSync(new URL('../js/warnings.js', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+ok(/export function createWarnings\(\{getA,calc,fwd,rp,fmt,today,dtx\}\)\{/.test(wrCode), 'warnings.js mengekspor createWarnings dengan tanda tangan yang disepakati');
+ok(/return \{pc1:pc1,skHi:skHi,stk:stk,warns:warns,WN:WN,mchg:mchg\};\n\}\n$/.test(wrCode), 'warnings.js mengembalikan enam fungsi');
+ok(!/\bwindow\.|globalThis\.|localStorage|KStore|\bsessionStorage\b|\bdocument\b/.test(wrCode), 'warnings.js tidak boleh membaca global tersembunyi');
+for (const fnName of ['skHi', 'stk', 'warns', 'mchg']) ok(new RegExp('function ' + fnName + '\\([^)]*\\)\\{var A=getA\\(\\);').test(wrCode), fnName + ' membaca A lewat getA() di dalam fungsinya (A bisa ditugaskan ulang saat restore)');
+ok(!/function (pc1|WN)\([^)]*\)\{[^}]*\bA\./.test(wrCode), 'pc1 dan WN murni: tidak memakai A');
+ok((wrCode.match(/\bA\s*=/g) || []).length === 4, 'A hanya ditugaskan empat kali (var A=getA() di empat fungsi), tidak ada salinan lain');
+const part20d = fs.readFileSync(new URL('20-hitung-etalase.js', dir), 'utf8');
+ok(/^var \{pc1,skHi,stk,warns,WN,mchg\}=createWarnings\(\{getA:function\(\)\{return A\},/m.test(part20d), '20-hitung-etalase.js memasang createWarnings dengan getA');
+for (const w of ['calc:function(){return calc.apply(null,arguments)}', 'fwd:function(){return fwd.apply(null,arguments)}', 'rp:rp,fmt:fmt,today:today,dtx:dtx']) ok(part20d.includes(w), 'pemasangan createWarnings: ' + w);
+for (const f of legacyParts) ok(!/^function (pc1|skHi|stk|warns|WN|mchg)\(/m.test(fs.readFileSync(new URL(f, dir), 'utf8')), f + ' tidak boleh mendefinisikan ulang fungsi peringatan yang kini di js/warnings.js');
+{ // Dulu function yang di-hoist; kini var. Tak boleh dipakai saat muat sebelum baris pemasangan (00-core, 10-calc, awal bagian 20).
+  const at = part20d.indexOf('var {pc1,skHi,stk,warns,WN,mchg}=createWarnings(');
+  const pre = fs.readFileSync(new URL('00-core.js', dir), 'utf8') + fs.readFileSync(new URL('10-calc.js', dir), 'utf8') + part20d.slice(0, at);
+  ok(at >= 0 && !/(?<![\w$.'"\-])(pc1|skHi|stk|warns|WN|mchg)\(/.test(pre.replace(/\/\*[\s\S]*?\*\//g, '')), 'pc1/skHi/stk/warns/WN/mchg tidak boleh dipanggil sebelum pemasangannya');
+  ok(legacyParts.indexOf('95-boot.js') > legacyParts.indexOf('20-hitung-etalase.js'), 'boot berjalan SETELAH bagian 20 (pemanggilan pertama terjadi sesudah pemasangan)');
+  ok(legacyParts.indexOf('50-promosi.js') > legacyParts.indexOf('20-hitung-etalase.js') && legacyParts.indexOf('60-tab-impor-sinkron.js') > legacyParts.indexOf('20-hitung-etalase.js'), 'pemakai di luar bagian 20 (50-promosi, 60-tab-impor-sinkron) dijalankan setelah pemasangan');
+}
+console.log(`Legacy split audit (tahap 6d): ${n} assertions passed total.`);

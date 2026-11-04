@@ -44,7 +44,8 @@ function createCalc(source, useIntegerMoney, DateImpl = FixedDate) {
   const voucherBlock = source.slice(promoStart, promoEnd);
   /* v9.25: pst kini di js/voucher-rules.js (dipasang lewat 10-calc.js); sumber v5.82 asli masih memilikinya sebagai fungsi legacy. */
   const promoFunctions = ['ptp','pst','actPromo','ppd','pkombo','phm','warns','WN','bis','pc1','rw','pinfo','esc'].filter(name => !(formatPrelude(source) !== '' && name === 'pst')).map(name => extractFunction(source, name)).join('\n');
-  vm.runInContext(formatPrelude(source) + executablePrefix(source) + voucherBlock + promoFunctions + `
+  /* v9.31: warns/pc1/WN kini ada di js/warnings.js dan membaca A lewat getA() (tahap 6d); harness vm menyediakan getA yang membaca A global. Sumber v5.82 asli tidak memanggilnya. */
+  vm.runInContext(formatPrelude(source) + executablePrefix(source) + voucherBlock + 'function getA(){return A}\n' + promoFunctions + `
     var __rvc=function(){if(typeof VoucherRules!=='undefined')VoucherRules.reset();else VCC=null};
     var CFG={pt:{n:'Promo Toko',c:'pt'},fs:{n:'Flash Sale Toko Saya',c:'pr'},kh:{n:'Kombo Hemat',c:'kh'},hm:{n:'Hadiah Min. Belanja',c:'hm'}};
     globalThis.__runPromo=(settings,promos,product,offer)=>{
