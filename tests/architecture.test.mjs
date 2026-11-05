@@ -35,7 +35,7 @@ for (const t of ['s', 'b', 'em', 'button', 'label', 'input', 'svg', 'path', 'rec
 ok(/var ROW_MAX=1000/.test(legacy), 'batas produk harus 1.000');
 ok(!/rows\.length>=100|slice\(0,100\)|100-rows\.length/.test(legacy), 'tidak boleh ada sisa batas 100 produk');
 ok(/function hyd\(r\)/.test(legacy) && /IntersectionObserver/.test(legacy) && /function cardBody\(r,e\)/.test(legacy), 'kartu Hitung harus dibangun malas (hyd + IntersectionObserver)');
-ok(/function updRow\(r\)/.test(legacy) && /function upd\(save,only\)/.test(legacy) && /r\._ag/.test(legacy), 'upd harus punya jalur cepat satu produk (updRow + cache agregat)');
+ok(/function updRow\(r\)/.test(legacy) && /createUpdater/.test(legacy) && /r\._ag/.test(read('js/kartu-update.js')), 'upd memakai jalur cepat satu produk (updRow + cache agregat) melalui modul');
 const cb = legacy.slice(legacy.indexOf('function cardBody(r,e){'), legacy.indexOf('/*v9.8: hidrasi malas.'));
 ok(!/upd\(true\)/.test(cb) && /upd\(true,r\)/.test(cb), 'edit di kartu harus memakai upd(true,r)');
 ok(/pc\.lz\{height:895px/.test(read('css/app.css')), 'cangkang kartu harus punya tinggi mendekati kartu asli');
