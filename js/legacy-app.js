@@ -11,7 +11,7 @@ const modules = [['./erp.js', 'createERP'], ['./xlsx-reader.js', 'createXlsxRead
   ['./backup-format.js', 'parseBackupText'], ['./backup.js', 'createBackup'], ['./format.js', 'rp, pf, num, fmt, PCT, today'],
   ['./tariff.js', 'GO, GO2, GO2D, AD, createTariff'], ['./pricing.js', 'createPricing'], ['./calc-cache.js', 'createCalcCache'], ['./voucher-rules.js', 'createVoucherRules'],
   ['./state.js', 'createState'], ['./penjualan.js', 'createPenjualan'], ['./voucher-panel.js', 'createVoucherPanel'], ['./ui.js', 'createUI'],
-  ['./helpers.js', 'esc, dtx, uid, prodSig, SGL, createFeeSig'], ['./tarif-ui.js', 'createTarifUI'], ['./warnings.js', 'createWarnings'], ['./hasil-view.js', 'createHasilView'], ['./kartu-update.js', 'createKartuUpdate']];
+  ['./helpers.js', 'esc, dtx, uid, prodSig, SGL, createFeeSig'], ['./tarif-ui.js', 'createTarifUI'], ['./warnings.js', 'createWarnings'], ['./hasil-view.js', 'createHasilView'], ['./kartu-update.js', 'createKartuUpdate'], ['./upd-fill.js', 'createUpdater, createFiller']];
 const preamble = modules.map(([file, names]) => 'import {' + names + '} from ' + JSON.stringify(new URL(file, import.meta.url).href) + ';\n').join('');
 const url = URL.createObjectURL(new Blob([preamble + texts.join('') + '\n//# sourceURL=kalsara-legacy-app.js'], { type: 'text/javascript' }));
 try { await import(url); } finally { URL.revokeObjectURL(url); }

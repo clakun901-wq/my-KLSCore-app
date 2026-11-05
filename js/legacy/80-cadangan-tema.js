@@ -1,4 +1,3 @@
-function fill(){tblSync();paSync();refreshLabels();document.querySelectorAll('[data-k]').forEach(function(el){el.value=fmt(A[el.dataset.k])});fillT();tlRender()}
 /*5.23: catatan perubahan tarif (disimpan di pengaturan dan ikut cadangan)*/
 function tlOk(x){return x&&/^\d{4}-\d{2}-\d{2}$/.test(x.d||'')&&typeof x.t=='string'&&x.t}
 function tlRender(){var L=(Array.isArray(A.tlog)?A.tlog:[]).filter(tlOk),e=$('tll');if(!e)return;

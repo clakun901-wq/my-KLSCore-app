@@ -58,17 +58,10 @@ document.addEventListener('click',function(e){var b=e.target.closest&&e.target.c
 /*v9.33 (tahap 6f): updRow (pembaruan isi kartu Hitung) kini modul ES (js/kartu-update.js; createKartuUpdate diimpor loader). Tetap function declaration di modul; wrapper global var mempertahankan pemakaian oleh upd. A dibaca segar lewat getA; acH/bdH/vnote/vscn late-bound karena didefinisikan pada bagian 50/60 setelah bagian 20.*/
 var {updRow}=createKartuUpdate({getA:function(){return A},KDOM:KDOM,fmt:fmt,gfac:gfac,goRate:goRate,adRate:adRate,esc:esc,dtx:dtx,rp:rp,pc1:pc1,stk:stk,calc:function(){return calc.apply(null,arguments)},impas:impas,warns:warns,mchg:mchg,CR:CR,sp:sp,revHtml:revHtml,errH:errH,pr:pr,tmod:tmod,acH:function(){return acH.apply(null,arguments)},bdH:function(){return bdH.apply(null,arguments)},vnote:function(){return vnote.apply(null,arguments)},vscn:function(){return vscn.apply(null,arguments)},WN:WN});
 
-function upd(save,only){CalcCache.invalidate();var light=CalcCache.prewarmStale(only);
- tblSync();refreshLabels();tchk();gwarn();vwarn();dep();
- $('gci').textContent=A.gc=='none'?'Tidak ikut Gratis Ongkir XTRA':'Tarif berlaku sekarang: '+fmt(goRate({o:{}}))+'% (ukuran '+(A.sz=='k'?'khusus':'biasa')+')';
- $('aci').textContent='Tarif berlaku sekarang: '+fmt(adRate({o:{}}))+'%';
- /*v9.8: upd(save,only) menghitung ulang HANYA produk 'only' (edit di kartu); produk lain memakai hasil tersimpan r._ag.*/
- if(light)rows.forEach(function(r){if(r.hy)updRow(r)});else if(only)updRow(only);else rows.forEach(updRow);
- var g={n:0,sm:0,su:0,nw:0,ns:0};rows.forEach(function(r){var q=r._ag;if(q){g.n+=q.n;g.sm+=q.sm;g.su+=q.su;g.nw+=q.nw;g.ns+=q.ns}});
- var n=g.n,sm=g.sm,su=g.su,nw=g.nw,ns=g.ns;
- $('s1').textContent=n;$('s2').textContent=n?rp(sm/n):'-';$('s3').textContent=n?rp(su):'-';$('s3').className=su<0?'neg':'';$('s4').textContent=nw;$('s5').textContent=ns;var tl=rows.filter(function(r){return r.live}).length;$('tp1').textContent=rows.length;$('tp2').textContent=tl;$('tp3').textContent=rows.length-tl;if(!light){flt();shop()}
- PSIG=psig();
- if(save)persist()}
+/*v9.34 tahap 6g: upd dipindah ke js/upd-fill.js. Semua dependensi yang dapat berubah/baru didefinisikan di bagian lain dipanggil late-bound. PSIG ditulis melalui setter agar tetap memakai binding legacy asli.*/
+var {upd}=createUpdater({getA:function(){return A},getRows:function(){return rows},CalcCache:CalcCache,tblSync:tblSync,refreshLabels:refreshLabels,tchk:function(){return tchk()},gwarn:function(){return gwarn()},vwarn:function(){return vwarn()},dep:function(){return dep()},$: $,fmt:fmt,goRate:goRate,adRate:adRate,rp:rp,updRow:updRow,flt:function(){return flt()},shop:function(){return shop()},psig:function(){return psig()},setPSIG:function(v){PSIG=v},persist:function(){return persist()}});
+var {fill}=createFiller({tblSync:tblSync,paSync:function(){return paSync()},refreshLabels:refreshLabels,document:document,fmt:fmt,getA:function(){return A},fillT:fillT,tlRender:function(){return tlRender()}});
+
 function flt(){var s=($('q').value||'').toLowerCase().trim(),f=$('ff').value;$('qb').hidden=rows.length<6&&!s&&f=='all'&&$('so').value=='0';
  rows.forEach(function(r){var h=!!s&&((r.n||'')+' '+(r.sup||'')+' '+(r.sku||'')).toLowerCase().indexOf(s)<0;if(f=='chk')h=h||!r.lv;if(f=='bad')h=h||r.lv!='r';if(f=='stk')h=h||!r.sl;if(f=='new')h=h||!!(r.ha>0||r.hd>0);if(f=='live')h=h||!r.live;if(f=='nlive')h=h||!!r.live;if(f=='gap')h=h||!(r.ay>0);if(f=='ok')h=h||r.u===undefined||!!r.lv;if(r.box.contains(document.activeElement))h=false;r.box.hidden=h});document.querySelectorAll('#tt3 [data-ft]').forEach(function(d){d.classList.toggle('on',d.dataset.ft==f&&f!='all')})}
 function srt(){var v=$('so').value,a=rows.slice(),K={us:function(r){return r.u},ub:function(r){return -r.u},mg:function(r){return r.mg},hl:function(r){return -r.M}};
