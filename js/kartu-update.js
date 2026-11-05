@@ -1,0 +1,25 @@
+/* v9.33 tahap 6f: updRow dipindah apa adanya dari js/legacy/20-hitung-etalase.js. */
+export function createKartuUpdate({getA,KDOM,fmt,gfac,goRate,adRate,esc,dtx,rp,pc1,stk,calc,impas,warns,mchg,CR,sp,revHtml,errH,pr,tmod,acH,bdH,vnote,vscn,WN}){
+function updRow(r){var A=getA();var H=!!r.hy,g=r._ag={n:0,sm:0,su:0,nw:0,ns:0};
+ if(H){
+  var lbn=r.box.querySelector('[data-lv]');if(lbn){lbn.classList.toggle('on',!!r.live);lbn.setAttribute('aria-pressed',!!r.live);lbn.textContent=r.live?'✓ Live di toko (ketuk untuk lepas)':'Tandai sudah listing / live di Shopee'}
+  r.box.querySelectorAll('input[data-o]').forEach(function(x){var k=x.dataset.o;x.placeholder=k=='gx'?fmt(gfac()>0?Math.round(goRate({o:Object.assign({},r.o,{gx:null})})*10000/gfac())/100:goRate({o:Object.assign({},r.o,{gx:null})})):k=='ad'?fmt(adRate({o:Object.assign({},r.o,{ad:null})})):k=='dv'&&A.pa=='no'?'Nonaktif':fmt(A[k])});
+  var th=r.box.querySelector('.tph');if(th){try{var gmn=r.o&&r.o.gx!==null&&r.o.gx!==undefined,amn=r.o&&r.o.ad!==null&&r.o.ad!==undefined;th.textContent='Dipakai sekarang: admin '+fmt(adRate(r))+'%'+(amn?' (manual)':'')+', Gratis Ongkir XTRA '+fmt(goRate(r))+'%'+(gmn?' (manual)':'')+(gfac()<100?' (sudah dikali keringanan '+fmt(gfac())+'%)':'')+'.'}catch(e){}}
+  var dl=r.box.querySelector('input[data-o="dv"]');if(dl&&dl.previousElementSibling)dl.previousElementSibling.textContent=(A.dm=='nom'?'Diskon coret (Rp)':'Diskon coret (%)')+(A.pa=='no'?' - Promo Toko nonaktif':'');
+  KDOM.setHTML(r.lkx, /^https?:\/\//i.test(r.lnk||'')?'<a href="'+esc(r.lnk)+'" target="_blank" rel="noopener noreferrer">Buka link supplier</a>':'');
+  KDOM.setHTML(r.mhl, (r.mh&&r.mh.length)?'<div class="stk">Riwayat modal</div>'+r.mh.slice().reverse().map(function(h){return'<div class="stk">'+dtx(h.d)+': '+rp(h.a)+' ke '+rp(h.b)+' ('+(h.b>=h.a?'+':'')+pc1((h.b-h.a)/h.a*100)+'%)</div>'}).join(''):'');
+ }
+  var kk=stk(r);r.sl=kk.lv;if(kk.lv)g.ns++;H&&KDOM.setHTML(r.sk, kk.h);r.u=undefined;r.lv='';var o=calc(r);H&&KDOM.setHTML(r.cxr, '');if(!o||o.err){H&&KDOM.setHTML(r.ac, acH(r,null));H&&KDOM.setHTML(r.bg, bdH(r,null))}
+  if(!o){H&&KDOM.setHTML(r.el, '<div class="empty">Isi modal supplier, hasil muncul otomatis di sini.</div>');H&&KDOM.setHTML(r.cs, '<div class="em">Isi modal supplier, hasil muncul otomatis di sini.</div>');if(r.cx>0)H&&KDOM.setHTML(r.cxr, '<div class="empty">Isi modal supplier dulu.</div>');return}
+  if(o.err){var eh=errH(o.err);H&&KDOM.setHTML(r.el, eh);H&&KDOM.setHTML(r.cs, '<div class="em">'+eh+'</div>');if(r.cx>0)H&&KDOM.setHTML(r.cxr, eh);return}
+  g.n++;g.sm+=o.M;g.su+=o.u;H&&KDOM.setHTML(r.ac, acH(r,o));H&&KDOM.setHTML(r.bg, bdH(r,o));
+  var okc=o.u>=r.t?'ok':'bad';
+  var wx=warns(o,false),im=impas(r,o.R);if(wx.lv)g.nw++;r.u=o.u;r.mg=wx.m;r.M=o.M;r.lv=wx.lv;var mc=mchg(r,o),vsn=vscn(r,o);H&&KDOM.setHTML(r.sk, kk.h+(mc?mc.h:'')+vsn.h);if(mc&&mc.lv&&!r.lv){r.lv=mc.lv;g.nw++}if(vsn.lv&&!r.lv){r.lv=vsn.lv;g.nw++}
+  H&&KDOM.setHTML(r.cs, '<div>Harga listing awal<b>'+rp(o.M)+'</b></div><div>Untung bersih<b class="'+okc+'">'+rp(o.u)+' ('+pc1(wx.m)+'%)</b></div>'+(wx.lv?'<div class="em wn '+wx.lv+'">&#9888; '+wx.sh.join(', ')+'</div>':''));
+  H&&KDOM.setHTML(r.el, '<div class="big"><div><span>Harga listing awal</span><b>'+rp(o.M)+'</b></div><div><span>Harga diskon coret</span><b>'+rp(o.L)+'</b></div></div><div class="pf '+okc+'"><span>Untung bersih<small>Margin '+pc1(wx.m)+'%</small></span><b>'+rp(o.u)+'</b></div>'+sp(o,r)+vnote(o,r)+WN(wx)+'<details class="det rd"'+(r.ro?' open':'')+'><summary>Lihat rincian biaya</summary>'+
+  (o.v?'<div class="rw">'+esc(o.vs||'Voucher toko')+'<b>- '+rp(o.v)+'</b></div><div class="rw">Harga setelah voucher<b>'+rp(o.P)+'</b></div>':'')+
+  CR('Tarif administrasi',o.R.ad,o.b.ad,o.b.ad)+CR('Tarif Gratis Ongkir XTRA',o.R.gx,o.b.gx,Math.round(o.R.gx/100*o.P))+CR('Tarif Promo XTRA',o.R.px,o.b.px,Math.round(o.R.px/100*o.P))+CR('Tarif Video XTRA',o.R.vx,o.b.vx,Math.round(o.R.vx/100*o.P))+CR('Tarif Live XTRA',o.R.lv,o.b.lv,Math.round(o.R.lv/100*o.P))+CR('Biaya pembayaran',A.pb,o.b.pay,pr(A.pb,o.P))+(o.b.fx?'<div class="rw">Biaya layanan pesanan<b>'+rp(o.b.fx)+'</b></div>':'')+'<div class="rw">Total Biaya Shopee<b>'+rp(o.sh)+'</b></div><div class="rw">Premi<b>'+rp(o.pm)+'</b></div><div class="rw">PPh 22<b>'+rp(o.tax)+'</b></div>'+(o.ads?'<div class="rw">Biaya iklan ('+fmt(o.R.ads)+'%)<b>'+rp(o.ads)+'</b></div>':'')+(o.rt?'<div class="rw">Cadangan retur ('+fmt(o.R.rt)+'%)<b>'+rp(o.rt)+'</b></div>':'')+(A.og?'<div class="rw">Ongkir ditanggung<b>'+rp(A.og)+'</b></div>':'')+
+  '<div class="rw">Saldo masuk toko<b>'+rp(o.s)+'</b></div><div class="rw">Modal + Management Partner + packing<b>'+rp(tmod(r))+'</b></div><div class="rw">Untung bersih<b class="'+okc+'">'+rp(o.u)+'</b></div><div class="rw">Margin (dari harga jual)<b>'+pc1(wx.m)+'%</b></div>'+(im===null?'':'<div class="rw">Harga impas (harga diskon coret)<b>'+rp(im)+'</b></div>')+'</details>');
+  if(r.cx>0)H&&KDOM.setHTML(r.cxr, revHtml(r,o,im))}
+return {updRow:updRow};
+}
