@@ -1,10 +1,10 @@
-# Status migrasi Kalsara v5.82 — paket v9.33
+# Status migrasi Kalsara v5.82 — paket v9.34
 
 Tanggal build: 2026-11-05
 
 ## CARA MELANJUTKAN (baca ini dulu di percakapan baru)
 **Berkas ini adalah arsip rinci (80 KB). Mulai dari `LANJUT-DI-SINI.md` (1 halaman: posisi, angka, langkah berikutnya); buka berkas ini hanya untuk detail tahap tertentu.**
-Unggah ZIP terbaru dan berkas ini. Posisi: **v9.33 = tahap 6f selesai pada tingkat pemisahan dan tes unit** (`updRow` sudah di `js/kartu-update.js`; E2E paket ini diblokir oleh kebijakan navigasi localhost). Langkah berikutnya 6g (`upd` + `fill`) menunggu E2E dapat dijalankan; rincian di bagian v9.33 dan `LANJUT-DI-SINI.md`. Memisahkan modul inti kalkulator, hitung/etalase, penjualan, voucher, dan promosi dilakukan bertahap. Jangan menghapus loader legacy sebelum semua pemanggil global dan E2E lintas tab terbukti aman.
+Unggah ZIP terbaru dan berkas ini. Posisi: **v9.34 = implementasi tahap 6g selesai pada tingkat pemisahan dan tes unit** (`updRow` di `js/kartu-update.js`; `upd` dan `fill` di `js/upd-fill.js`). E2E pasca-6g belum terbukti di lingkungan ini; ulangi melalui GitHub Actions; rincian di bagian v9.34 dan `LANJUT-DI-SINI.md`. Memisahkan modul inti kalkulator, hitung/etalase, penjualan, voucher, dan promosi dilakukan bertahap. Jangan menghapus loader legacy sebelum semua pemanggil global dan E2E lintas tab terbukti aman.
 - Sudah menjadi modul ES: ERP (`js/erp.js`), XLSX Reader (`js/xlsx-reader.js`), PWA (`js/pwa.js`), tema/mode (`js/theme.js`), parser teks cadangan murni (`js/backup-format.js`), serta (tahap 4-5) tarif, pipa harga, cache kalkulator, aturan voucher, jembatan state, tab Penjualan, dan panel Cek tarif (`js/voucher-panel.js`, v9.27), dialog konfirmasi/toast bersama (`js/ui.js`, v9.28), dan helper murni `esc/dtx/uid/prodSig/SGL/feeSig` (`js/helpers.js`, v9.29), serta logika tarif dan peringatan tarif (`js/tarif-ui.js`, v9.30).
 - Masih di legacy: alur UI backup/restore, `applyState`, penyimpanan/kuota, sinkronisasi, onboarding, catatan tarif, dan pengaturan tarif di `js/legacy/80-cadangan-tema.js`. Bagian ini mengubah state inti (`A`, `rows`, `SALES`, `PRM`, `TS`) yang bisa diganti ketika restore; perlu bridge getter/setter dua arah.
 - Tahap 4 (belum): modul inti (calc, hitung-etalase, penjualan/promosi, dst.), kemudian hapus loader setelah seluruh pemanggil global dihilangkan.
@@ -522,3 +522,13 @@ Variabel `MODE` hilang saat migrasi sehingga **tab ERP menampilkan "Penyimpanan 
 1. Migrasi v1->v2 dan laporan SQL pada **SQLite Wasm di browser nyata** (perangkat pengguna sudah v1 dan akan bermigrasi saat pertama dibuka). Logikanya terbukti di SQLite nyata lewat Node. Buat cadangan sebelum memperbarui.
 2. Kecepatan di handphone belum diukur.
 3. Normalisasi penuh (membuang payload JSON) dan pemecahan `legacy-app.js` per modul belum dikerjakan.
+
+
+## Perubahan v9.34 — tahap 6g (`upd` + `fill`)
+- `upd(save,only)` dipindah dari `js/legacy/20-hitung-etalase.js` ke `createUpdater` di `js/upd-fill.js`. Perilaku dipertahankan: invalidasi/pra-hitung cache, sinkronisasi tarif/peringatan, pembaruan kartu, agregat `_ag`, ringkasan, filter/etalase, pembaruan tanda tangan promosi `PSIG`, dan persist bersyarat. `PSIG` ditulis melalui setter ke binding legacy, bukan salinan.
+- `fill()` dipindah dari `js/legacy/80-cadangan-tema.js` ke `createFiller` di modul yang sama. Urutan tetap: `tblSync`, `paSync`, `refreshLabels`, isi `[data-k]`, `fillT`, `tlRender`.
+- Ketergantungan yang bisa berubah dibungkus late-bound: `tchk`, `gwarn`, `vwarn`, `dep`, `flt`, `shop`, `psig`, `persist`, `paSync`, `tlRender`; A dan rows diambil melalui getter. Ini mempertahankan penggantian objek A/rows saat restore. `updRow` tetap disuntikkan dari modul tahap 6f.
+- Loader `js/legacy-app.js` mengimpor `createUpdater/createFiller`; `sw.js` CORE memuat `js/upd-fill.js` dan cache dinaikkan ke `kalsara-v5.82-client-v9.34`; `package.json` versi `0.9.34`.
+- Pengukuran ulang setelah pemindahan: sisa `js/legacy/*.js` **107.642 byte**, pemisahan **44,3%** dari skrip inline v5.82 193.312 byte; `20-hitung-etalase.js` 26.469 byte; `80-cadangan-tema.js` 14.027 byte.
+- Tes baru `tests/upd-fill.test.mjs`: **15 runtime assertions** untuk agregat, mode satu produk, PSIG, persist, dan urutan pengisian setelan. Audit `legacy-split.test.mjs`: **438 assertions**. `npm test` lulus (exit 0), termasuk golden-master v5.82.
+- **E2E pasca-6g BELUM TERBUKTI.** `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e` gagal sebelum assertion pertama karena `net::ERR_BLOCKED_BY_ADMINISTRATOR` saat membuka localhost. Pengguna sebelumnya memperlihatkan GitHub Actions v9.33 hijau; bukti itu baseline sebelum perubahan 6g, bukan bukti v9.34. Jalankan ulang 13 E2E pada GitHub Actions setelah commit v9.34. Target 242 assertions. Jangan hapus loader legacy.

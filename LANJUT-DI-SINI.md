@@ -14,29 +14,32 @@ v9.32 = **tahap 6e selesai**: tampilan hasil kartu Hitung (`revHtml, CR, sp, err
 v9.33 = **tahap 6f selesai pada tingkat pemisahan dan tes unit**: `updRow` dipindah ke `js/kartu-update.js` (`createKartuUpdate`). `upd` dan `fill` TIDAK disentuh. Rincian dan batas bukti di `MIGRATION-STATUS.md` bagian "Perubahan v9.33".
 
 ## Angka saat ini
-| Ukuran | v9.32.1 (diukur ulang dari ZIP) | v9.33 |
+| Ukuran | v9.32.1 (diukur ulang dari ZIP) | v9.33 | v9.34 |
 |---|---:|---:|
-| Sisa kode legacy (`js/legacy/*.js`) | 111.935 byte | **108.050 byte** |
-| Pemisahan dari skrip inline v5.82 (193.312 byte) | 42,1% | **44,1%** |
-| `20-hitung-etalase.js` | 30.600 byte | **26.715 byte** |
-| Modul `js/kartu-update.js` | – | 5.008 byte |
-| Fixture `updRow` lama | – | 4.721 byte |
-| `npm test` | hijau (exit 0) | **hijau (exit 0)** |
-| Tes diferensial/sabotase baru | – | **48 assertion; 15 kontrol mutasi sumber** |
-| Audit struktural (`legacy-split.test.mjs`) | 404 | **429** |
-| E2E Chromium | 233 (v9.32.1) | **242 lulus (13 berkas, Chromium nyata)** |
+| Sisa kode legacy (`js/legacy/*.js`) | 111.935 byte | 108.050 byte | **107.642 byte** |
+| Pemisahan dari skrip inline v5.82 (193.312 byte) | 42,1% | 44,1% | **44,3%** |
+| `20-hitung-etalase.js` | 30.600 byte | 26.715 byte | **26.469 byte** |
+| Modul `js/kartu-update.js` | – | 5.008 byte | 5.008 byte |
+| Modul `js/upd-fill.js` | – | – | **2.060 byte** |
+| Fixture `updRow` lama | – | 4.721 byte | 4.721 byte |
+| `npm test` | hijau (exit 0) | hijau (exit 0) | **hijau (exit 0), termasuk 15 tes modul upd/fill** |
+| Tes diferensial/sabotase baru | – | **48 assertion; 15 kontrol mutasi sumber** | **15 runtime assertions upd/fill** |
+| Audit struktural (`legacy-split.test.mjs`) | 404 | 429 | **438** |
+| E2E Chromium | 233 (v9.32.1) | 242 target (run GitHub hijau) | **wajib ulang pasca-6g; target 242** |
 
 **Koreksi angka lama:** total legacy yang benar-benar diekstrak dari ZIP v9.32.1 adalah 111.935 byte, bukan 111.495 (selisih 440 byte). Persentase dihitung ulang dengan penyebut skrip inline v5.82 193.312 byte.
 
-**E2E v9.33:** 13 berkas sudah dicoba satu per satu, tetapi browser diblokir saat membuka localhost (`ERR_BLOCKED_BY_ADMINISTRATOR`). E2E baru `kartu-update.e2e.py` memiliki 9 assertion tetapi belum mencapai assertion. Jangan menyebut E2E v9.33 lulus. Total target bila seluruh E2E berhasil = 242.
+**E2E v9.33:** pengguna menjalankan GitHub Actions dan menunjukkan job `e2e` hijau dengan 13 E2E; screenshot tidak memperlihatkan rincian assertion. Bukti itu adalah baseline sebelum tahap 6g. **E2E v9.34 harus diulang setelah migrasi**; percobaan lokal diblokir (`ERR_BLOCKED_BY_ADMINISTRATOR`). Target 242 assertion.
 
-## Langkah berikutnya: tahap 6g = `upd` + `fill`
-- **Syarat E2E sudah terpenuhi (v9.33):** 13 berkas E2E = 242 asersi lulus di Chromium nyata (diulang dan dicek dengan sabotase `updRow` kosong: tes gagal). Dua asersi awal `kartu-update.e2e.py` salah tulis (nama produk ada di kolom isian `.nm`; "Dilepas dari tab Etalase" adalah toast, bukan label tombol) dan sudah diperbaiki; aplikasi tidak berubah. Tetap ulangi 13 E2E sebelum dan sesudah 6g.
-- `upd` masih di `js/legacy/20-hitung-etalase.js`; `fill` masih di `js/legacy/80-cadangan-tema.js`. Keduanya tetap utuh pada v9.33.
-- Daftar late-bound 6g dari catatan lama (WAJIB ukur ulang dengan grep): `gwarn, dep, flt, shop, vwarn, paSync, tlRender, persist, psig, tchk` + setter `PSIG`. `upd` menulis `PSIG` (dideklarasikan di `50-promosi.js`, dibaca `tab()` di `60-tab-impor-sinkron.js`), jadi butuh setter.
+## Langkah berikutnya: verifikasi tahap 6g v9.34
+- Implementasi `upd` dan `fill` sudah dipindah ke `js/upd-fill.js`; pemasangan dilakukan di bagian 20 dengan getter A/rows dan late-bound wrapper untuk `gwarn, dep, flt, shop, vwarn, paSync, tlRender, persist, psig, tchk`, serta setter `PSIG`.
+- `upd` dan `fill` tidak lagi didefinisikan di `js/legacy/*.js`; loader mengimpor dua factory dan Service Worker menyimpan modul baru.
+- `npm test` lulus; tes baru modul `upd/fill` memiliki 15 runtime assertions dan audit struktural tahap 6g 438 assertions.
+- **WAJIB:** jalankan ulang 13 E2E di GitHub Actions pada branch `main` setelah mengunggah v9.34. Target 242 assertions. Jangan menyatakan 6g terverifikasi sampai run pasca-migrasi ini hijau dan log E2E memuat seluruh jumlah assertion.
+- Dependensi late-bound yang sudah dipasang: `gwarn, dep, flt, shop, vwarn, paSync, tlRender, persist, psig, tchk`; setter `PSIG` mempertahankan binding `50-promosi.js` yang dibaca oleh `tab()` di `60-tab-impor-sinkron.js`.
 - Properti baris yang dipindah `updRow` tulis: `r._ag`, `r.sl`, `r.u`, `r.lv`, `r.mg`, `r.M`. `upd` membaca agregat/filter/pengurutan; jangan ubah kontraknya.
-- Sebelum 6g, ulangi 13 E2E: load 8, shelf 20, hitung 13, sqlite-fallback 8, voucher 31, penjualan 27, voucher-panel 39, dialog 19, tarif 19, peringatan 19, hasil 18, cadangan 12, kartu-update 9 (target total 242). Angka lama 233 hanya bukti v9.32.1.
-- Detail migrasi 6f dan koreksi byte ada di `MIGRATION-STATUS.md` bagian "Perubahan v9.33".
+- Setelah migrasi 6g, ulangi 13 E2E: load 8, shelf 20, hitung 13, sqlite-fallback 8, voucher 31, penjualan 27, voucher-panel 39, dialog 19, tarif 19, peringatan 19, hasil 18, cadangan 12, kartu-update 9 (target total 242). Angka lama 233 hanya bukti v9.32.1.
+- Detail migrasi 6f dan 6g ada di `MIGRATION-STATUS.md` bagian "Perubahan v9.33" dan "Perubahan v9.34".
 
 ## Jebakan yang sudah ketemu
 - Fungsi `function` di-hoist; setelah dipindah jadi `var` yang baru ada setelah baris pemasangan. Cek pemakaian saat muat; nilai yang belum ada diberikan lewat pembungkus `function(){return x()}`.
@@ -62,7 +65,7 @@ v9.33 = **tahap 6f selesai pada tingkat pemisahan dan tes unit**: `updRow` dipin
 ## Cara menjalankan tes
 1. `unzip` paket ke `/home/claude`, masuk ke `my-KLSCore-app-main`.
 2. `npm test` (harus exit 0).
-3. E2E satu per satu: `export CHROMIUM_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome` lalu `python3 tests/e2e/<nama>.e2e.py` untuk: load 8, shelf 20, hitung 13, sqlite-fallback 8, voucher 31, penjualan 27, voucher-panel 39, dialog 19, tarif 19, peringatan 19, hasil 18, cadangan 12 (total 233). Bila Chromium diblokir, jangan anggap E2E lulus.
+3. E2E satu per satu: `export CHROMIUM_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome` lalu `python3 tests/e2e/<nama>.e2e.py` untuk: load 8, shelf 20, hitung 13, sqlite-fallback 8, voucher 31, penjualan 27, voucher-panel 39, dialog 19, tarif 19, peringatan 19, hasil 18, cadangan 12 (target total 242, termasuk kartu-update 9). Bila Chromium diblokir, jangan anggap E2E lulus.
 
 ## Masih terbuka (belum terbukti)
 Uji offline Service Worker, uji di HP nyata, pemulihan ERP dengan data besar, berkas cadangan/ekspor ASLI milik pemilik (hanya tangkapan layar yang pernah dilihat), migrasi data v5.82 riil, backup/restore lintas perangkat, alur restore lewat UI lalu mengubah tarif. (Sejak v9.31 sudah terbukti: restore lewat teks tempel lalu peringatan stok memakai ambang hasil restore, di Chromium nyata. Sejak v9.32: restore lalu baris "Ongkir ditanggung" di hasil kartu Hitung memakai A hasil restore.) Paket ini **belum boleh menggantikan aplikasi produksi**.
