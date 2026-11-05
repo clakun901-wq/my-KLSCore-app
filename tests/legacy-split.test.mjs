@@ -263,7 +263,7 @@ for (const f of legacyParts) ok(!/^function (pc1|skHi|stk|warns|WN|mchg)\(/m.tes
 // Tahap 6e (v9.32): tampilan hasil kartu Hitung (revHtml, CR, sp, errH) dipisahkan ke js/hasil-view.js.
 execFileSync(process.execPath, ['--check', new URL('../js/hasil-view.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/hasil-view.js'"), 'sw.js CORE harus menyebut js/hasil-view.js');
-ok(sw.includes("client-v9.32"), 'sw.js harus memakai nama cache client-v9.32');
+ok(sw.includes("client-v9.33"), 'sw.js harus memakai nama cache client-v9.32');
 ok(loaderImports('./hasil-view.js', 'createHasilView'), 'loader harus mengimpor createHasilView');
 const hvCode = fs.readFileSync(new URL('../js/hasil-view.js', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 ok(/export function createHasilView\(\{getA,fmt,rp,esc,tmod,fwdL,warns,WN,pc1\}\)\{/.test(hvCode), 'hasil-view.js mengekspor createHasilView dengan tanda tangan yang disepakati');
@@ -330,4 +330,33 @@ function lateCaptures(texts) {
   const fx = JSON.parse(fs.readFileSync(new URL('./fixtures/cadangan-v5_82-dengan-erp.txt', import.meta.url), 'utf8'));
   ok(fx.A && Array.isArray(fx.rows) && fx.rows.length === 6 && fx.bv === 2 && fx.erp && fx.erp.n.opex === 2, 'fixture cadangan v5.82: A, 6 produk, bv=2, erp dengan 2 OpEx');
 }
-console.log(`Legacy split audit (tahap 6e + perbaikan v9.32.1): ${n} assertions passed total.`);
+// Tahap 6f (v9.33): updRow dipisahkan ke js/kartu-update.js; upd dan fill tetap legacy.
+execFileSync(process.execPath, ['--check', new URL('../js/kartu-update.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/kartu-update.js'"), 'sw.js CORE harus menyebut js/kartu-update.js');
+ok(loaderImports('./kartu-update.js', 'createKartuUpdate'), 'loader harus mengimpor createKartuUpdate');
+const kuCode=fs.readFileSync(new URL('../js/kartu-update.js',import.meta.url),'utf8');
+ok(/export function createKartuUpdate\(\{getA,KDOM,fmt,gfac,goRate,adRate,esc,dtx,rp,pc1,stk,calc,impas,warns,mchg,CR,sp,revHtml,errH,pr,tmod,acH,bdH,vnote,vscn,WN\}\)/.test(kuCode),'kartu-update.js mengekspor createKartuUpdate dengan dependensi eksplisit');
+ok(/function updRow\(r\)\{var A=getA\(\);/.test(kuCode),'updRow tetap deklarasi function dan membaca A terbaru melalui getA');
+ok(/return \{updRow:updRow\};/.test(kuCode),'factory mengembalikan updRow');
+ok(!/\b(?:window|globalThis|document|localStorage|sessionStorage)\b/.test(kuCode),'kartu-update.js tidak boleh membaca global tersembunyi');
+const part20f=fs.readFileSync(new URL('20-hitung-etalase.js',dir),'utf8');
+ok(/^var \{updRow\}=createKartuUpdate\(\{getA:function\(\)\{return A\},/m.test(part20f),'bagian 20 memasang createKartuUpdate dengan getA');
+for(const w of ['KDOM:KDOM','fmt:fmt,gfac:gfac,goRate:goRate,adRate:adRate','stk:stk','calc:function(){return calc.apply(null,arguments)}','acH:function(){return acH.apply(null,arguments)}','bdH:function(){return bdH.apply(null,arguments)}','vnote:function(){return vnote.apply(null,arguments)}','vscn:function(){return vscn.apply(null,arguments)}','CR:CR,sp:sp,revHtml:revHtml,errH:errH']) ok(part20f.includes(w),'pemasangan createKartuUpdate: '+w);
+ok(!/^function updRow\(/m.test(part20f),'bagian 20 tidak lagi mendefinisikan updRow');
+ok(/^function upd\(/m.test(part20f)&&/^function fill\(/m.test(fs.readFileSync(new URL('80-cadangan-tema.js',dir),'utf8')),'upd dan fill tetap berada di legacy (tahap 6g belum dikerjakan)');
+{
+ const at=part20f.indexOf('var {updRow}=createKartuUpdate('), ah=part20f.indexOf('var {CR,errH,sp,revHtml}=createHasilView(');
+ ok(ah>=0&&ah<at,'createKartuUpdate dipasang setelah createHasilView');
+ ok(legacyParts.indexOf('50-promosi.js')>legacyParts.indexOf('20-hitung-etalase.js')&&legacyParts.indexOf('60-tab-impor-sinkron.js')>legacyParts.indexOf('20-hitung-etalase.js'),'vnote/vscn/acH/bdH tersedia pada pemanggilan setelah bagian 20');
+ ok((part20f.replace(/\/\*[\s\S]*?\*\//g,'').match(/\bupdRow\s*\(/g)||[]).length===3,'updRow hanya dipanggil dari hyd/upd setelah fungsi dijalankan (bukan saat evaluasi muat)');
+}
+{
+ const all=legacyParts.map(f=>fs.readFileSync(new URL(f,dir),'utf8'));
+ const found=lateCaptures(all);
+ ok(found.length===0,'audit lateCaptures harus lulus setelah pemasangan kartu-update: '+found.join('; '));
+ const install=/^var \{updRow\}=createKartuUpdate\([^\n]*\);\n/m;
+ const broken=all.map(t=>{const m=t.match(install);return m?t.replace(install,'').replace('var {pc1,skHi,stk,warns,WN,mchg}=createWarnings(',m[0]+'var {pc1,skHi,stk,warns,WN,mchg}=createWarnings('):t});
+ ok(lateCaptures(broken).some(x=>/createKartuUpdate -> (pc1|stk|warns|WN|mchg)/.test(x)),'SABOTASE: audit menangkap pemasangan kartu-update sebelum createWarnings');
+}
+ok(fs.existsSync(new URL('./e2e/kartu-update.e2e.py',import.meta.url)),'E2E khusus updRow tersedia');
+console.log(`Legacy split audit (tahap 6f + perbaikan v9.32.1): ${n} assertions passed total.`);
