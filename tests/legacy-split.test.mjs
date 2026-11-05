@@ -286,4 +286,48 @@ ok(!/^(const|let)\s*\{[^}]*\b(CR|errH|sp|revHtml)\b/m.test(part20e), 'CR/errH/sp
   ok(part20e.indexOf('var A=') < 0 && legacyParts.indexOf('10-calc.js') < legacyParts.indexOf('20-hitung-etalase.js') && /var \{[^}]*\btmod\b[^}]*\bfwdL\b[^}]*\}=createPricing\(/.test(fs.readFileSync(new URL('10-calc.js', dir), 'utf8')), 'tmod dan fwdL sudah dipasang di 10-calc.js (sebelum bagian 20), jadi aman disuntikkan langsung');
   ok(legacyParts.indexOf('60-tab-impor-sinkron.js') > legacyParts.indexOf('20-hitung-etalase.js') && /\bCR\(/.test(fs.readFileSync(new URL('60-tab-impor-sinkron.js', dir), 'utf8')), 'CR masih dipakai 60-tab-impor-sinkron.js, yang berjalan setelah pemasangan');
 }
-console.log(`Legacy split audit (tahap 6e): ${n} assertions passed total.`);
+// v9.32.1: pemasangan createXxx({k:nilaiTelanjang}) menyalin nilai SAAT MUAT. Bila nilainya var yang baru ditugaskan di bagian/baris SESUDAH pemasangan, yang tersalin undefined
+// (bug ERP:ERP di createBackup sejak v9.18: cadangan penuh dan pulihkan cadangan ber-ERP error). Audit ini berlaku untuk SEMUA pemasangan.
+function lateCaptures(texts) {
+  const all = texts.join(''), strip = all.replace(/\/\*[\s\S]*?\*\//g, m => ' '.repeat(m.length)), out = [];
+  const imported = new Set(); for (const m of loader.matchAll(/\['\.\/[\w-]+\.js', '([^']+)'\]/g)) m[1].split(',').forEach(x => imported.add(x.trim()));
+  const globalsLuar = new Set(['KDOM', 'KStore', 'document', 'Math', 'JSON', 'Date', 'Object', 'Array', 'window', 'navigator', 'localStorage', 'globalThis', 'Promise', 'String', 'Number', 'undefined', 'null', 'true', 'false']);
+  for (const c of strip.matchAll(/\b(create[A-Z]\w*)\(\{/g)) {
+    const start = c.index + c[0].length - 1; let d = 0, j = start;
+    for (; j < strip.length; j++) { const ch = strip[j]; if ('{(['.includes(ch)) d++; else if ('})]'.includes(ch)) { d--; if (d === 0) break; } }
+    const args = []; let dd = 0, cur = '';
+    for (const ch of strip.slice(start + 1, j)) { if ('{(['.includes(ch)) dd++; if ('})]'.includes(ch)) dd--; if (ch === ',' && dd === 0) { args.push(cur); cur = ''; } else cur += ch; }
+    if (cur.trim()) args.push(cur);
+    for (const a of args) {
+      const m = a.match(/^\s*([\w$]+)\s*:\s*([\w$]+)\s*$/) || a.match(/^\s*([\w$]+)\s*$/); if (!m) continue;
+      const v = m[2] || m[1]; if (globalsLuar.has(v) || imported.has(v)) continue;
+      const ev = v.replace(/\$/g, '\\$');
+      if (new RegExp('(^|[^\\w$.])function\\s+' + ev + '\\s*\\(').test(strip)) continue;          // deklarasi function di-hoist: aman
+      const dm = new RegExp('(?:^|[;\\n}])\\s*(?:var|let|const)\\s+(?:[^;=]*?[,\\s{])?' + ev + '(?=[\\s,=};:])', 'm').exec(strip);
+      if (!dm || dm.index > c.index) out.push(c[1] + ' -> ' + (m[2] ? m[1] + ':' : '') + v);
+    }
+  }
+  return out;
+}
+{
+  const texts = legacyParts.map(f => fs.readFileSync(new URL(f, dir), 'utf8'));
+  const found = lateCaptures(texts);
+  ok(found.length === 0, 'tidak boleh ada nilai bare yang disalin ke createXxx sebelum nilainya ada: ' + found.join('; '));
+  const bkIdx = legacyParts.indexOf('80-cadangan-tema.js'), erpIdx = legacyParts.indexOf('90-erp.js');
+  ok(bkIdx >= 0 && erpIdx > bkIdx && /^var ERP=createERP\(/m.test(fs.readFileSync(new URL('90-erp.js', dir), 'utf8')), 'ERP dipasang di 90-erp.js, SESUDAH 80-cadangan-tema.js (alasan pembungkus late-bound)');
+  const t80 = fs.readFileSync(new URL('80-cadangan-tema.js', dir), 'utf8');
+  ok(/ERP:\{dump:function\(\)\{return ERP\.dump\.apply\(ERP,arguments\)\},check:function\(\)\{return ERP\.check\.apply\(ERP,arguments\)\},restore:function\(\)\{return ERP\.restore\.apply\(ERP,arguments\)\}\}/.test(t80), 'createBackup memakai pembungkus late-bound untuk ERP (dump/check/restore)');
+  // SABOTASE: versi lama (ERP:ERP) harus terdeteksi oleh audit yang sama; pemasangan lain (KDOM/KStore global, function hoisted) tidak boleh memicu alarm palsu.
+  const rusak = texts.map(t => t.replace(/ERP:\{dump:[^\n]*\},\n/, 'ERP:ERP,\n'));
+  ok(rusak.join('') !== texts.join(''), 'sabotase benar-benar mengubah teks 80-cadangan-tema.js');
+  ok(lateCaptures(rusak).some(x => /createBackup -> ERP:ERP/.test(x)), 'SABOTASE: audit harus mendeteksi ERP:ERP lama di createBackup');
+  const pasangHasil = /^var \{CR,errH,sp,revHtml\}=createHasilView\([^\n]*\);\n/m;   // pindahkan pemasangan createHasilView ke SEBELUM createWarnings
+  const rusak2 = texts.map(t => { const m = t.match(pasangHasil); return m ? t.replace(pasangHasil, '').replace('var {pc1,skHi,stk,warns,WN,mchg}=createWarnings(', m[0] + 'var {pc1,skHi,stk,warns,WN,mchg}=createWarnings(') : t; });
+  ok(rusak2.join('') !== texts.join(''), 'sabotase urutan benar-benar mengubah teks');
+  ok(lateCaptures(rusak2).some(x => /createHasilView -> (warns|WN|pc1)/.test(x)), 'SABOTASE: audit harus mendeteksi createHasilView yang dipasang SEBELUM createWarnings (warns/WN/pc1 belum ada)');
+  // v9.32.1: cadangan penuh dan pulihkan ber-ERP wajib punya E2E sendiri (tak ada tes lama yang menyentuhnya di browser)
+  ok(fs.existsSync(new URL('./e2e/cadangan.e2e.py', import.meta.url)) && fs.existsSync(new URL('./fixtures/cadangan-v5_82-dengan-erp.txt', import.meta.url)), 'ada E2E cadangan dan fixture cadangan asli v5.82');
+  const fx = JSON.parse(fs.readFileSync(new URL('./fixtures/cadangan-v5_82-dengan-erp.txt', import.meta.url), 'utf8'));
+  ok(fx.A && Array.isArray(fx.rows) && fx.rows.length === 6 && fx.bv === 2 && fx.erp && fx.erp.n.opex === 2, 'fixture cadangan v5.82: A, 6 produk, bv=2, erp dengan 2 OpEx');
+}
+console.log(`Legacy split audit (tahap 6e + perbaikan v9.32.1): ${n} assertions passed total.`);
