@@ -24,14 +24,14 @@ v9.33 = **tahap 6f selesai pada tingkat pemisahan dan tes unit**: `updRow` dipin
 | `npm test` | hijau (exit 0) | **hijau (exit 0)** |
 | Tes diferensial/sabotase baru | – | **48 assertion; 15 kontrol mutasi sumber** |
 | Audit struktural (`legacy-split.test.mjs`) | 404 | **429** |
-| E2E Chromium | 233 (v9.32.1) | **belum teruji pada v9.33** |
+| E2E Chromium | 233 (v9.32.1) | **242 lulus (13 berkas, Chromium nyata)** |
 
 **Koreksi angka lama:** total legacy yang benar-benar diekstrak dari ZIP v9.32.1 adalah 111.935 byte, bukan 111.495 (selisih 440 byte). Persentase dihitung ulang dengan penyebut skrip inline v5.82 193.312 byte.
 
 **E2E v9.33:** 13 berkas sudah dicoba satu per satu, tetapi browser diblokir saat membuka localhost (`ERR_BLOCKED_BY_ADMINISTRATOR`). E2E baru `kartu-update.e2e.py` memiliki 9 assertion tetapi belum mencapai assertion. Jangan menyebut E2E v9.33 lulus. Total target bila seluruh E2E berhasil = 242.
 
 ## Langkah berikutnya: tahap 6g = `upd` + `fill`
-- **Jangan kerjakan sebelum E2E v9.33 bisa dijalankan** di lingkungan Chromium yang mengizinkan localhost. Tes unit hijau tidak membuktikan pemasangan di browser.
+- **Syarat E2E sudah terpenuhi (v9.33):** 13 berkas E2E = 242 asersi lulus di Chromium nyata (diulang dan dicek dengan sabotase `updRow` kosong: tes gagal). Dua asersi awal `kartu-update.e2e.py` salah tulis (nama produk ada di kolom isian `.nm`; "Dilepas dari tab Etalase" adalah toast, bukan label tombol) dan sudah diperbaiki; aplikasi tidak berubah. Tetap ulangi 13 E2E sebelum dan sesudah 6g.
 - `upd` masih di `js/legacy/20-hitung-etalase.js`; `fill` masih di `js/legacy/80-cadangan-tema.js`. Keduanya tetap utuh pada v9.33.
 - Daftar late-bound 6g dari catatan lama (WAJIB ukur ulang dengan grep): `gwarn, dep, flt, shop, vwarn, paSync, tlRender, persist, psig, tchk` + setter `PSIG`. `upd` menulis `PSIG` (dideklarasikan di `50-promosi.js`, dibaca `tab()` di `60-tab-impor-sinkron.js`), jadi butuh setter.
 - Properti baris yang dipindah `updRow` tulis: `r._ag`, `r.sl`, `r.u`, `r.lv`, `r.mg`, `r.M`. `upd` membaca agregat/filter/pengurutan; jangan ubah kontraknya.
