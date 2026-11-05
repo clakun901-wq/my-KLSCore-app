@@ -1,4 +1,4 @@
-# LANJUT-DI-SINI — migrasi Kalsara (paket v9.32.1)
+# LANJUT-DI-SINI — migrasi Kalsara (paket v9.33)
 
 **Untuk AI di percakapan baru:** baca berkas ini saja dulu (1 halaman). Jangan membaca seluruh `MIGRATION-STATUS.md` (80 KB, arsip); buka hanya bagian tahap yang perlu. Kerjakan **satu langkah saja** per sesi, lalu perbarui berkas ini.
 
@@ -10,27 +10,33 @@
 ## Posisi
 **v9.32.1 = perbaikan darurat di atas v9.32** (bukan langkah migrasi): cadangan PENUH dan pulihkan cadangan ber-ERP error sejak v9.18 karena `createBackup({ERP:ERP})` menyalin `ERP` yang masih undefined (ERP dipasang di `90-erp.js`, sesudah `80-cadangan-tema.js`). Diperbaiki dengan pembungkus late-bound + E2E `cadangan.e2e.py` + audit permanen semua pemasangan `createXxx`. Rincian: `MIGRATION-STATUS.md` bagian "Perbaikan v9.32.1". Impor "modal Rp 1" dari ekspor Hitung BUKAN regresi (v5.82 asli sama; kolom ekspor beda dari kolom impor).
 
-v9.32 = **tahap 6e selesai**: tampilan hasil kartu Hitung (`revHtml, CR, sp, errH`) dipindah dari `js/legacy/20-hitung-etalase.js` ke `js/hasil-view.js` (`createHasilView`). Rincian di `MIGRATION-STATUS.md` bagian "Perubahan v9.32". (Penomoran: 6d = peringatan stok/margin; 6e = tampilan hasil; `updRow` dan `upd/fill` jadi 6f dan 6g.)
+v9.32 = **tahap 6e selesai**: tampilan hasil kartu Hitung (`revHtml, CR, sp, errH`) dipindah ke `js/hasil-view.js`.
+v9.33 = **tahap 6f selesai pada tingkat pemisahan dan tes unit**: `updRow` dipindah ke `js/kartu-update.js` (`createKartuUpdate`). `upd` dan `fill` TIDAK disentuh. Rincian dan batas bukti di `MIGRATION-STATUS.md` bagian "Perubahan v9.33".
 
 ## Angka saat ini
-| Ukuran | v9.31 | v9.32 | Target akhir |
-|---|---|---|---|
-| Sisa kode legacy (`js/legacy/*.js`) | 113.452 byte | **111.495 byte** | 0 (loader dihapus) |
-| Pemisahan dari skrip v5.82 (193,3 KB) | 41,3% | **42,3%** | 100% |
-| `20-hitung-etalase.js` | 32.557 byte | **30.600 byte** | habis dipecah |
-| `npm test` | hijau | **hijau (exit 0)** | hijau |
-| Asersi tes baru (`hasil-view.test.mjs`) | – | **17.052** (14 sabotase tertangkap) | – |
-| Audit struktural (`legacy-split.test.mjs`) | 363 | **404** | – |
-| E2E Chromium (12 berkas) | 203 | **233** (10 lama 203 + `hasil` 18 + `cadangan` 12) | semua hijau |
+| Ukuran | v9.32.1 (diukur ulang dari ZIP) | v9.33 |
+|---|---:|---:|
+| Sisa kode legacy (`js/legacy/*.js`) | 111.935 byte | **108.050 byte** |
+| Pemisahan dari skrip inline v5.82 (193.312 byte) | 42,1% | **44,1%** |
+| `20-hitung-etalase.js` | 30.600 byte | **26.715 byte** |
+| Modul `js/kartu-update.js` | – | 5.008 byte |
+| Fixture `updRow` lama | – | 4.721 byte |
+| `npm test` | hijau (exit 0) | **hijau (exit 0)** |
+| Tes diferensial/sabotase baru | – | **48 assertion; 15 kontrol mutasi sumber** |
+| Audit struktural (`legacy-split.test.mjs`) | 404 | **429** |
+| E2E Chromium | 233 (v9.32.1) | **belum teruji pada v9.33** |
 
-## Langkah berikutnya: tahap 6f = `updRow`
-- `updRow` (±4.721 B) memakai `acH, bdH, vnote, vscn` (belum modul: suntikkan lewat pembungkus late-bound), plus `pr, dtx, WN, stk, warns, mchg, pc1, CR, sp, revHtml, errH, calc, A` dan DOM kartu. **Ukur ulang dengan grep** sebelum menulis daftar injeksi (perkiraan sering meleset).
-- Setelah itu 6g = `upd` + `fill`. `fill` ada di `80-cadangan-tema.js` baris 1 (bukan bagian 20). `upd` MENULIS `PSIG` (dideklarasikan di `50-promosi.js` baris 10, dibaca `tab()` di `60-tab-impor-sinkron.js`), jadi butuh setter. Daftar late-bound 6g dari sesi lalu (belum diukur ulang): `gwarn, dep, flt, shop, vwarn, paSync, tlRender, persist, psig, tchk` + setter `PSIG`.
-- `updRow` kini memanggil `CR, sp, revHtml, errH` yang sudah modul (namanya tetap sama, global lewat `var {..}=createHasilView(..)`): aman. Pasang pembuat `updRow` SETELAH baris `createHasilView` bila nilai-nilai itu disuntikkan langsung.
-- Dua tes mengutip teks `updRow/upd` (`architecture.test.mjs:38`, `compatibility.test.mjs:26`); keduanya membaca legacy + `leafModuleSources`, jadi daftarkan modul baru di `tests/helpers/legacy-source.mjs`.
-- Pola yang dipakai (tiru `js/hasil-view.js` dan `tests/hasil-view.test.mjs`, yang meniru `warnings`): (1) bekukan teks lama ke `tests/fixtures/<nama>.pre_v9_33.js.txt`; (2) modul = teks lama + sisipan minimal (`var A=getA();`); (3) pasang `var {..}=createX({..})` di bagian 20 dengan pembungkus late-bound untuk nilai yang belum ada saat muat; (4) tes diferensial lama-vs-baru **plus sabotase** (rusak-kan tiap sisipan dan tiap perilaku; tes harus gagal; bila sabotase lolos, tiruan tes kurang kasus tepi); (5) audit di `legacy-split.test.mjs`; (6) `sw.js` (cache + CORE), `package.json` (versi + tes + `test:e2e`), `tests/helpers/legacy-source.mjs`, loader `js/legacy-app.js`; (7) cek apakah E2E lama benar-benar menyentuh fungsi yang dipindah (di 6e ternyata tidak, jadi ditambah `hasil.e2e.py`).
-- Antrean sesudahnya: kartu Hitung (`cardBody, card, hyd, ...`) → `shop()`/Etalase dan `setStock/etUn/etSet` → `50-promosi.js` (40 KB; `calcNV` memutasi `VNO`) → `60-tab-impor-sinkron.js` (22 KB) → sisa `80-cadangan-tema.js` (butuh jembatan dua arah untuk `A/rows/SALES/PRM/TS`) → hapus loader.
-- Temuan yang belum ditindak: `errH` (di `hasil-view.js`) dan `errModel` (bagian 20, ±baris 113) memuat peta pesan galat yang sama (4 pesan identik). Boleh disatukan di langkah tersendiri; jangan dicampur dengan 6f/6g.
+**Koreksi angka lama:** total legacy yang benar-benar diekstrak dari ZIP v9.32.1 adalah 111.935 byte, bukan 111.495 (selisih 440 byte). Persentase dihitung ulang dengan penyebut skrip inline v5.82 193.312 byte.
+
+**E2E v9.33:** 13 berkas sudah dicoba satu per satu, tetapi browser diblokir saat membuka localhost (`ERR_BLOCKED_BY_ADMINISTRATOR`). E2E baru `kartu-update.e2e.py` memiliki 9 assertion tetapi belum mencapai assertion. Jangan menyebut E2E v9.33 lulus. Total target bila seluruh E2E berhasil = 242.
+
+## Langkah berikutnya: tahap 6g = `upd` + `fill`
+- **Jangan kerjakan sebelum E2E v9.33 bisa dijalankan** di lingkungan Chromium yang mengizinkan localhost. Tes unit hijau tidak membuktikan pemasangan di browser.
+- `upd` masih di `js/legacy/20-hitung-etalase.js`; `fill` masih di `js/legacy/80-cadangan-tema.js`. Keduanya tetap utuh pada v9.33.
+- Daftar late-bound 6g dari catatan lama (WAJIB ukur ulang dengan grep): `gwarn, dep, flt, shop, vwarn, paSync, tlRender, persist, psig, tchk` + setter `PSIG`. `upd` menulis `PSIG` (dideklarasikan di `50-promosi.js`, dibaca `tab()` di `60-tab-impor-sinkron.js`), jadi butuh setter.
+- Properti baris yang dipindah `updRow` tulis: `r._ag`, `r.sl`, `r.u`, `r.lv`, `r.mg`, `r.M`. `upd` membaca agregat/filter/pengurutan; jangan ubah kontraknya.
+- Sebelum 6g, ulangi 13 E2E: load 8, shelf 20, hitung 13, sqlite-fallback 8, voucher 31, penjualan 27, voucher-panel 39, dialog 19, tarif 19, peringatan 19, hasil 18, cadangan 12, kartu-update 9 (target total 242). Angka lama 233 hanya bukti v9.32.1.
+- Detail migrasi 6f dan koreksi byte ada di `MIGRATION-STATUS.md` bagian "Perubahan v9.33".
 
 ## Jebakan yang sudah ketemu
 - Fungsi `function` di-hoist; setelah dipindah jadi `var` yang baru ada setelah baris pemasangan. Cek pemakaian saat muat; nilai yang belum ada diberikan lewat pembungkus `function(){return x()}`.
@@ -43,6 +49,7 @@ v9.32 = **tahap 6e selesai**: tampilan hasil kartu Hitung (`revHtml, CR, sp, err
 - **`kalkulasi target untung 0` tidak menghasilkan "Untung nol" di layar:** harga dibulatkan ke rupiah penuh sehingga untung ±Rp 36 -> "Untung tipis". Itu perilaku bawaan v5.82 (golden-master sama), bukan bug pemindahan. "Untung nol" persis hanya diuji di `warnings.test.mjs`.
 - **Playwright:** kartu di luar layar tidak dirender, jadi `inner_text()` kosong; pakai `text_content()` dan `scroll_into_view_if_needed()` sebelum klik. `#list` ada di tab Hitung (`#t1`/`#v1`), yang tersembunyi saat muat (tab awal = Etalase).
 
+- **(v9.33) `updRow` sekarang modul, tetapi pemanggilnya belum:** `updRow` dipasang sebagai `var` setelah `createHasilView`; pemanggil hanya berada di badan `hyd` dan `upd` (bukan dipanggil saat evaluasi bagian 20). `acH/bdH/vnote/vscn` dibungkus fungsi agar lookup tetap late-bound. E2E baru belum terbukti karena navigasi localhost diblokir; jangan lanjut ke 6g sampai browser E2E dapat dijalankan.
 - **(v9.32) `fwdL` dan `tmod` sudah modul** (`createPricing` di `10-calc.js`), bukan legacy; bisa disuntikkan langsung ke modul bagian 20 karena dipasang sebelumnya dan tak pernah ditugaskan ulang. Urutan pemasangan di bagian 20 penting: modul yang butuh `warns/WN/pc1` harus dipasang SETELAH baris `createWarnings`.
 - **(v9.32) Tiruan tes harus mencakup nilai tepi.** Sabotase `q.u<0` -> `q.u<=0` sempat lolos karena `fwdL` palsu tak pernah menghasilkan untung persis 0. Bila sabotase lolos, perbaiki tiruan, bukan sabotasenya.
 - **(v9.32) "E2E hijau" tidak berarti jalur itu teruji.** Sebelum 6e, tak ada E2E yang menyentuh `revHtml/CR/sp/errH`. Cek dengan grep teks keluarannya di `tests/e2e/*.py`. Target untung raksasa TIDAK memicu galat; galat nyata contohnya voucher toko 100% (`vm=pct`, `vv=100` lewat Pengaturan).
