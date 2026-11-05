@@ -47,7 +47,8 @@ function bpFail(m){if(!$('bpw').hidden)$('bpm').textContent=m;toast(m)}
 const Backup=createBackup({
  parseBackupText:parseBackupText,
  snapshotState:snapState,
- ERP:ERP,
+ /*v9.32.1: ERP baru dipasang di 90-erp.js (SESUDAH bagian ini). Dulu `ERP:ERP` menyalin nilai undefined saat muat, sehingga cadangan penuh (ERP.dump) dan pemulihan cadangan ber-ERP (ERP.check/restore) error sejak v9.18. Dibungkus late-bound: ERP dibaca saat dipanggil.*/
+ ERP:{dump:function(){return ERP.dump.apply(ERP,arguments)},check:function(){return ERP.check.apply(ERP,arguments)},restore:function(){return ERP.restore.apply(ERP,arguments)}},
  getSales:function(){return SALES},
  applyState:applyState,
  persist:persist,
