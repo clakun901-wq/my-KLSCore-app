@@ -1,6 +1,6 @@
 # Kalsara — migrasi client-side (basis Kalsara-v5.82)
 
-**Versi paket: v9.31 — pengembangan, belum disertifikasi untuk produksi.**
+**Versi paket: v9.32 — pengembangan, belum disertifikasi untuk produksi.**
 
 - **Melanjutkan pekerjaan (mulai dari sini):** baca [`LANJUT-DI-SINI.md`](./LANJUT-DI-SINI.md) — ringkas, berisi posisi terakhir, angka target, dan langkah berikutnya.
 
