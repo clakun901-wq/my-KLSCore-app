@@ -4,6 +4,8 @@ var {tblSync,tbuild,fillT,tchk,refreshLabels}=createTarifUI({getA:function(){ret
 var feeSig=createFeeSig({getA:function(){return A},gfac:gfac});
 /*v9.31 (tahap 6d): pc1, skHi, stk, warns, WN, mchg (peringatan stok/margin) kini modul ES (js/warnings.js; createWarnings diimpor oleh loader js/legacy-app.js). Dulu deklarasi function yang di-hoist; kini var yang baru ada setelah baris ini. Pemakai saat muat sebelum baris ini: tidak ada (semua pemakaian ada di badan fungsi, dipanggil setelah boot). calc dan fwd dibungkus (late-bound) agar tetap membaca nilai legacy terkini; A dibaca lewat getA di dalam fungsi.*/
 var {pc1,skHi,stk,warns,WN,mchg}=createWarnings({getA:function(){return A},calc:function(){return calc.apply(null,arguments)},fwd:function(){return fwd.apply(null,arguments)},rp:rp,fmt:fmt,today:today,dtx:dtx});
+/*v9.32 (tahap 6e): revHtml, CR, sp, errH (tampilan hasil kartu Hitung) kini modul ES (js/hasil-view.js; createHasilView diimpor oleh loader js/legacy-app.js). Dulu deklarasi function yang di-hoist; kini var yang baru ada setelah baris ini. Pemakai saat muat sebelum baris ini: tidak ada (semua pemakaian ada di badan updRow dan actRin di 60-tab-impor-sinkron.js, dipanggil setelah boot). fmt, rp, esc, tmod, fwdL, warns, WN, pc1 sudah ada saat pemasangan (bagian 10 dan baris di atas) dan tidak pernah ditugaskan ulang, jadi disuntikkan langsung; A dibaca lewat getA di dalam fungsi.*/
+var {CR,errH,sp,revHtml}=createHasilView({getA:function(){return A},fmt:fmt,rp:rp,esc:esc,tmod:tmod,fwdL:fwdL,warns:warns,WN:WN,pc1:pc1});
 function strip(r){return{id:r.id||'',n:r.n,m:r.m,d:r.d,p:r.p,t:r.t,o:r.o,c:!!r.c,cx:r.cx||0,q:r.q||0,s:r.s==null?null:r.s,sd:r.sd||'',mb:r.mb||0,mh:r.mh||[],ack:!!r.ack,live:!!r.live,sup:r.sup||'',sku:r.sku||'',lnk:r.lnk||'',ha:r.ha||0,hd:r.hd||0}}
 function fk(t,nv){var p=t.selectionStart||0,d=t.value.slice(0,p).replace(/\D/g,'').length;t.value=nv;var i=0,c=0;while(i<nv.length&&c<d){if(/\d/.test(nv[i]))c++;i++}try{t.setSelectionRange(i,i)}catch(e){}}
 function cardBody(r,e){
@@ -48,22 +50,10 @@ function dup(r){
  var nr=Object.assign({},strip(r),{id:uid(),s:null,sd:'',mh:[],ack:false,live:false,ha:0,hd:0,n:r.n?r.n+' (salinan)':'',o:Object.assign({},r.o||{}),c:false});
  rows.splice(rows.indexOf(r)+1,0,nr);card(nr);hyd(nr);$('list').insertBefore(nr.box,r.box.nextSibling);
  nr.box.scrollIntoView({block:'center'});upd(true);toast('Produk diduplikat')}
-function revHtml(r,o,im){
- var q=fwdL(r.cx,r,o.R),x=warns(q,true),d=im===null?null:r.cx-im,tm=tmod(r);
- return '<div class="rw">Harga jual yang dicek<b>'+rp(q.L)+'</b></div>'+
- (q.v?'<div class="rw">'+esc(q.vs||'Voucher toko')+'<b>- '+rp(q.v)+'</b></div><div class="rw">Harga setelah voucher<b>'+rp(q.P)+'</b></div>':'')+
- '<div class="rw">Total Biaya Shopee<b>'+rp(q.sh)+'</b></div><div class="rw">Premi + PPh 22<b>'+rp(q.pm+q.tax)+'</b></div>'+(q.ads?'<div class="rw">Biaya iklan<b>'+rp(q.ads)+'</b></div>':'')+(q.rt?'<div class="rw">Cadangan retur<b>'+rp(q.rt)+'</b></div>':'')+(A.og?'<div class="rw">Ongkir ditanggung<b>'+rp(A.og)+'</b></div>':'')+
- '<div class="rw">Saldo masuk toko<b>'+rp(q.s)+'</b></div><div class="rw">Modal + Management Partner + packing<b>'+rp(tm)+'</b></div>'+
- '<div class="rw">'+(q.u<0?'Rugi bersih':'Untung bersih')+'<b class="'+(q.u<0?'bad':q.u<A.wu||x.m<A.wm?'':'ok')+'">'+(q.u<0?'- ':'')+rp(Math.abs(q.u))+'</b></div>'+
- '<div class="rw">Margin (dari harga jual)<b>'+pc1(x.m)+'%</b></div>'+
- (d===null?'':'<div class="rw">Selisih dari harga impas<b>'+(d>=0?rp(d)+' di atas':rp(-d)+' di bawah')+'</b></div>')+WN(x)}
-function CR(l,p,v,raw){return p>0||l=='Tarif administrasi'?'<div class="rw">'+l+' ('+fmt(p)+'%)<b>'+rp(v)+(raw>v?' (kena batas)':'')+'</b></div>':''}
 function colL(){var b=$('col');if(b)b.textContent=(rows.length&&rows.every(function(r){return r.c}))?'Buka semua':'Ciutkan semua'}
 function dep(){var c={fl:A.fb=='yes',ad:A.ac=='man',gm:A.gc=='man',vv:A.vm!='none',vc:A.vm=='pct'};for(var k in c){var x=$(k);if(x)x.closest('.fl').hidden=!c[k]}colL()}
-function sp(o,r){var c=tmod(r),f=o.sh+o.pm+o.tax+o.ads+o.rt+A.og,u=Math.max(o.u,0),t=c+f+u;if(t<=0)return'';var w=function(v){return(v/t*100).toFixed(1)},q=function(v){return Math.round(v/t*100)};return'<div class="pg"><div class="pgh">Ke mana harga jual pergi</div><div class="bar"><i class="c1" style="width:'+w(c)+'%"></i><i class="c2" style="width:'+w(f)+'%"></i><i class="c3" style="width:'+w(u)+'%"></i></div><div class="lg"><span><s class="c1"></s>Modal '+q(c)+'%</span><span><s class="c2"></s>Potongan '+q(f)+'%</span><span><s class="c3"></s>Untung '+q(u)+'%</span></div></div>'}
 function gwarn(){var w=$('gw');if(A.gc!='none'&&A.gf<100&&!A.gfd){w.hidden=false;KDOM.setHTML(w, '&#9888; Gratis Ongkir XTRA dihitung '+fmt(A.gf)+'% dari tarif tabel tanpa tanggal berakhir. Jika Shopee sebenarnya menagih tarif penuh, harga jadi terlalu murah dan untung nyata di bawah target. <button class="lk" type="button" id="gwb">Pakai tarif penuh (100%)</button>')}else w.hidden=true}
 $('gw').addEventListener('click',function(e){if(!e.target.closest('#gwb'))return;A.gf=100;fill();upd(true);toast('Tarif Gratis Ongkir XTRA: penuh (100%)')});
-function errH(e){var m={'Voucher 100% tidak valid':['Voucher toko 100% membuat harga jadi nol. Turunkan nilainya.','vc','Buka Voucher'],'Diskon coret tidak valid':['Diskon coret 100% atau lebih tidak masuk akal. Turunkan nilainya.','pt','Buka Promosi'],'Total tarif 100% atau lebih':['Total tarif (admin, iklan, premi, dan lainnya) mencapai 100%. Periksa persen iklan dan tarif.','set','Buka Pengaturan'],'Target untung di luar batas pencarian harga':['Target untung belum tercapai dalam batas pencarian harga. Periksa target untung, modal, biaya, dan tarif; turunkan target atau periksa input biaya.','','']}[e];if(!m)return'<div class="empty">'+esc(e)+'</div>';return'<div class="wn r">&#9888; '+m[0]+(m[2]?' <button class="lk" type="button" data-go="'+m[1]+'">'+m[2]+'</button>':'')+'</div>'}
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(!b)return;var g=b.dataset.go;if(g=='set')tab(2);else{PSEL=g;tab(3)}});
 function updRow(r){var H=!!r.hy,g=r._ag={n:0,sm:0,su:0,nw:0,ns:0};
  if(H){
