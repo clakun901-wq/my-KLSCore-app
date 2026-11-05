@@ -260,4 +260,30 @@ for (const f of legacyParts) ok(!/^function (pc1|skHi|stk|warns|WN|mchg)\(/m.tes
   ok(legacyParts.indexOf('95-boot.js') > legacyParts.indexOf('20-hitung-etalase.js'), 'boot berjalan SETELAH bagian 20 (pemanggilan pertama terjadi sesudah pemasangan)');
   ok(legacyParts.indexOf('50-promosi.js') > legacyParts.indexOf('20-hitung-etalase.js') && legacyParts.indexOf('60-tab-impor-sinkron.js') > legacyParts.indexOf('20-hitung-etalase.js'), 'pemakai di luar bagian 20 (50-promosi, 60-tab-impor-sinkron) dijalankan setelah pemasangan');
 }
-console.log(`Legacy split audit (tahap 6d): ${n} assertions passed total.`);
+// Tahap 6e (v9.32): tampilan hasil kartu Hitung (revHtml, CR, sp, errH) dipisahkan ke js/hasil-view.js.
+execFileSync(process.execPath, ['--check', new URL('../js/hasil-view.js', import.meta.url).pathname]); n++;
+ok(sw.includes("'./js/hasil-view.js'"), 'sw.js CORE harus menyebut js/hasil-view.js');
+ok(sw.includes("client-v9.32"), 'sw.js harus memakai nama cache client-v9.32');
+ok(loaderImports('./hasil-view.js', 'createHasilView'), 'loader harus mengimpor createHasilView');
+const hvCode = fs.readFileSync(new URL('../js/hasil-view.js', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+ok(/export function createHasilView\(\{getA,fmt,rp,esc,tmod,fwdL,warns,WN,pc1\}\)\{/.test(hvCode), 'hasil-view.js mengekspor createHasilView dengan tanda tangan yang disepakati');
+ok(/return \{CR:CR,errH:errH,sp:sp,revHtml:revHtml\};\n\}\n$/.test(hvCode), 'hasil-view.js mengembalikan empat fungsi');
+ok(!/\bwindow\.|globalThis\.|localStorage|KStore|\bsessionStorage\b|\bdocument\b/.test(hvCode), 'hasil-view.js tidak boleh membaca global tersembunyi');
+for (const fnName of ['revHtml', 'sp']) ok(new RegExp('function ' + fnName + '\\([^)]*\\)\\{var A=getA\\(\\);').test(hvCode), fnName + ' membaca A lewat getA() di dalam fungsinya (A bisa ditugaskan ulang saat restore)');
+ok(!/function (CR|errH)\([^)]*\)\{[^}]*\bA\./.test(hvCode), 'CR dan errH murni: tidak memakai A');
+ok((hvCode.match(/\bA\s*=/g) || []).length === 2, 'A hanya ditugaskan dua kali (var A=getA() di dua fungsi), tidak ada salinan lain');
+const part20e = fs.readFileSync(new URL('20-hitung-etalase.js', dir), 'utf8');
+ok(/^var \{CR,errH,sp,revHtml\}=createHasilView\(\{getA:function\(\)\{return A\},/m.test(part20e), '20-hitung-etalase.js memasang createHasilView dengan getA (var, global bagi 60-tab-impor-sinkron.js)');
+for (const w of ['fmt:fmt,rp:rp,esc:esc', 'tmod:tmod,fwdL:fwdL', 'warns:warns,WN:WN,pc1:pc1']) ok(part20e.includes(w), 'pemasangan createHasilView: ' + w);
+for (const f of legacyParts) ok(!/^function (CR|errH|sp|revHtml)\(/m.test(fs.readFileSync(new URL(f, dir), 'utf8')), f + ' tidak boleh mendefinisikan ulang fungsi tampilan hasil yang kini di js/hasil-view.js');
+ok(!/^(const|let)\s*\{[^}]*\b(CR|errH|sp|revHtml)\b/m.test(part20e), 'CR/errH/sp/revHtml dipasang dengan var (global), bukan const/let');
+{ // Dulu function yang di-hoist; kini var. Tak boleh dipakai saat muat sebelum baris pemasangan (00-core, 10-calc, awal bagian 20).
+  const at = part20e.indexOf('var {CR,errH,sp,revHtml}=createHasilView(');
+  const pre = fs.readFileSync(new URL('00-core.js', dir), 'utf8') + fs.readFileSync(new URL('10-calc.js', dir), 'utf8') + part20e.slice(0, at);
+  ok(at >= 0 && !/(?<![\w$.'"\-])(CR|errH|sp|revHtml)\(/.test(pre.replace(/\/\*[\s\S]*?\*\//g, '')), 'CR/errH/sp/revHtml tidak boleh dipanggil sebelum pemasangannya');
+  const atW = part20e.indexOf('var {pc1,skHi,stk,warns,WN,mchg}=createWarnings(');
+  ok(atW >= 0 && atW < at, 'createHasilView dipasang SETELAH createWarnings (warns/WN/pc1 disuntikkan langsung)');
+  ok(part20e.indexOf('var A=') < 0 && legacyParts.indexOf('10-calc.js') < legacyParts.indexOf('20-hitung-etalase.js') && /var \{[^}]*\btmod\b[^}]*\bfwdL\b[^}]*\}=createPricing\(/.test(fs.readFileSync(new URL('10-calc.js', dir), 'utf8')), 'tmod dan fwdL sudah dipasang di 10-calc.js (sebelum bagian 20), jadi aman disuntikkan langsung');
+  ok(legacyParts.indexOf('60-tab-impor-sinkron.js') > legacyParts.indexOf('20-hitung-etalase.js') && /\bCR\(/.test(fs.readFileSync(new URL('60-tab-impor-sinkron.js', dir), 'utf8')), 'CR masih dipakai 60-tab-impor-sinkron.js, yang berjalan setelah pemasangan');
+}
+console.log(`Legacy split audit (tahap 6e): ${n} assertions passed total.`);
