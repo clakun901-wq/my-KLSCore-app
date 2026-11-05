@@ -263,7 +263,7 @@ for (const f of legacyParts) ok(!/^function (pc1|skHi|stk|warns|WN|mchg)\(/m.tes
 // Tahap 6e (v9.32): tampilan hasil kartu Hitung (revHtml, CR, sp, errH) dipisahkan ke js/hasil-view.js.
 execFileSync(process.execPath, ['--check', new URL('../js/hasil-view.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/hasil-view.js'"), 'sw.js CORE harus menyebut js/hasil-view.js');
-ok(sw.includes("client-v9.34"), 'sw.js harus memakai nama cache client-v9.32');
+ok(sw.includes("client-v9.35"), 'sw.js harus memakai nama cache client-v9.35');
 ok(loaderImports('./hasil-view.js', 'createHasilView'), 'loader harus mengimpor createHasilView');
 const hvCode = fs.readFileSync(new URL('../js/hasil-view.js', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 ok(/export function createHasilView\(\{getA,fmt,rp,esc,tmod,fwdL,warns,WN,pc1\}\)\{/.test(hvCode), 'hasil-view.js mengekspor createHasilView dengan tanda tangan yang disepakati');
@@ -369,4 +369,23 @@ ok(!/\b(?:window|globalThis|localStorage|sessionStorage)\b/.test(ufCode),'modul 
  ok(lateCaptures(broken).some(x=>/createKartuUpdate -> (pc1|stk|warns|WN|mchg)/.test(x)),'SABOTASE: audit menangkap pemasangan kartu-update sebelum createWarnings');
 }
 ok(fs.existsSync(new URL('./e2e/kartu-update.e2e.py',import.meta.url)),'E2E khusus updRow tersedia');
-console.log(`Legacy split audit (tahap 6g + perbaikan v9.32.1): ${n} assertions passed total.`);
+
+// Tahap 6h (v9.35): model Etalase dipisahkan ke js/etalase-view.js.
+{
+ const ev=fs.readFileSync(new URL('../js/etalase-view.js',import.meta.url),'utf8');
+ const p20=fs.readFileSync(new URL('20-hitung-etalase.js',dir),'utf8');
+ execFileSync(process.execPath,['--check',new URL('../js/etalase-view.js',import.meta.url).pathname]); n++;
+ ok(ev.includes('export function createEtalaseView({getRows,getA,getPRM,getCFG,getVUSE,getCurP,getVbest,getActL,'),'etalase-view mengekspor factory dengan getter state');
+ ok(sw.includes("'./js/etalase-view.js'"),'sw CORE memuat etalase-view.js');
+ ok(loaderImports('./etalase-view.js','createEtalaseView'),'loader mengimpor createEtalaseView');
+ ok(/var \{errModel,actNoteModel,shopChips,shopPrice,shop\}=createEtalaseView\(/.test(p20),'bagian 20 memasang factory Etalase');
+ for(const name of ['errModel','actNoteModel','shopChips','shopPrice','shop']) ok(!new RegExp('^function '+name+'\\(','m').test(p20),name+' tidak lagi didefinisikan di legacy');
+ ok(/getRows:function\(\)\{return rows\}/.test(p20)&&/getA:function\(\)\{return A\}/.test(p20)&&/getPRM:function\(\)\{return PRM\}/.test(p20)&&/getCFG:function\(\)\{return CFG\}/.test(p20),'state yang dapat diganti memakai getter late-bound');
+ ok(/getVUSE:function\(\)\{return VUSE\}/.test(p20)&&/getCurP:function\(\)\{return curP\}/.test(p20)&&/getVbest:function\(\)\{return vbest\}/.test(p20),'VUSE/curP/vbest yang dipasang belakangan memakai getter');
+ ok(/getActL:function\(\)\{return actL\}/.test(p20),'actL late-bound karena definisinya di bagian 60');
+ ok(!/\b(?:window|localStorage|sessionStorage|document)\b/.test(ev),'etalase-view tidak membaca global tersembunyi');
+ ok(fs.existsSync(new URL('./fixtures/etalase-view.pre_v9_35.js.txt',import.meta.url)),'fixture teks Etalase v9.34 tersedia');
+ ok(fs.readFileSync(new URL('./helpers/legacy-source.mjs',import.meta.url),'utf8').includes("'etalase-view.js'"),'harness sumber menyertakan modul Etalase');
+}
+
+console.log(`Legacy split audit (tahap 6h + seluruh audit sebelumnya): ${n} assertions passed total.`);
