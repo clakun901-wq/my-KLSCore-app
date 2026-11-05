@@ -18,9 +18,9 @@ try:
   pg.goto(f'http://127.0.0.1:{PORT}/index.html');pg.wait_for_selector('kalsara-product-card',timeout=20000);pg.wait_for_timeout(700)
   pg.click('#t1');pg.wait_for_selector('#list .pc',state='visible',timeout=10000);card=pg.locator('#list .pc').first
   card.scroll_into_view_if_needed();pg.wait_for_timeout(700)
-  check('Produk Uji updRow' in card.text_content(), 'kartu produk dibangun dan dihidrasi')
+  check(card.locator('.nm').input_value()=='Produk Uji updRow', 'kartu produk dibangun dan dihidrasi (nama ada di kolom isian)')
   live=card.locator('.lvb');before=live.text_content();check('Live di toko' in before,'updRow mengisi label tombol live awal')
-  live.click();pg.wait_for_timeout(500);after=live.text_content();check('Dilepas dari tab Etalase' in after,'klik live memicu updRow dan memperbarui status tombol')
+  live.click();pg.wait_for_timeout(500);after=live.text_content();check('Tandai sudah listing' in after and 'Live di toko' not in after,'klik live memicu updRow dan memperbarui label tombol')
   check('Untung bersih' in card.locator('.cs').text_content(),'updRow mengisi ringkasan hasil')
   check('Stok hampir habis' in card.locator('.sk').text_content(),'updRow mengisi peringatan stok kritis')
   res=card.locator('.res').text_content();check('Ke mana harga jual pergi' in res and 'Lihat rincian biaya' in res,'updRow mengisi hasil, bar ringkasan, dan rincian biaya')
