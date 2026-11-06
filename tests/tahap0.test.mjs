@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createBackup } from '../js/backup.js';
 import { parseBackupText } from '../js/backup-format.js';
+import { legacyPart } from './helpers/legacy-source.mjs';
 let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; }; const eq = (a, b, m) => { assert.equal(a, b, m); n++; };
 const tick = () => new Promise(r => setTimeout(r, 0));
 
@@ -120,7 +121,7 @@ eq(KStore.hasPending(), false, 'selesai restore tidak antre');
 console.warn = ow; console.error = oe;
 
 /* ---------- (d) bentuk kode ---------- */
-const leg = fs.readFileSync(new URL('../js/legacy/80-cadangan-tema.js', import.meta.url), 'utf8');
+const leg = legacyPart('80-cadangan-tema.js');
 ok(/function lflushDurable\(\)\{lflush\(\);return KStore\.flush\(\)\}/.test(leg), 'ada lflushDurable yang menunggu penyimpanan nyata');
 ok(/flush:lflushDurable/.test(leg), 'restore memakai lflushDurable');
 ok(/addEventListener\('beforeunload'[^]*KStore\.hasPending\(\)[^]*preventDefault/.test(leg), 'ada penjaga beforeunload');

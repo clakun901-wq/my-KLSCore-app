@@ -1,4 +1,5 @@
-/* Tes Tahap 1 (v9.37): peta ketergantungan global js/legacy/ (scripts/peta-global.mjs).
+/* Tes Tahap 1 (v9.37, disesuaikan v9.38): peta ketergantungan global js/app-core.js (scripts/peta-global.mjs).
+ * v9.38: bagian-bagian dibaca dari baris penanda BAGIAN di js/app-core.js (dulu dari js/legacy/parts.json); angka harus tetap sama.
  * Memastikan (a) skrip berjalan dan laporan konsisten dengan sumber, (b) angka dicek silang dengan cara independen,
  * (c) pemeriksa benar-benar menangkap kasus nyata lewat uji sabotase pada SALINAN SEMENTARA (kode aplikasi asli tidak disentuh),
  * (d) pemeriksa tidak pernah gagal diam-diam. */
@@ -19,9 +20,11 @@ const S = d.summary;
 const byName = new Map(d.globals.map(g => [g.name, g]));
 ok(S.total > 100 && S.total === d.globals.length, 'peta harus menemukan ratusan nama global (ditemukan ' + S.total + ')');
 ok(S.total === S.functions + S.variables, 'jumlah fungsi + variabel harus sama dengan total');
-ok(d.parts.length === JSON.parse(read('js/legacy/parts.json')).parts.length, 'jumlah bagian di peta harus sama dengan parts.json');
-const realBytes = d.parts.reduce((s, p) => s + fs.statSync(path.join(root, 'js/legacy', p.name)).size, 0);
-ok(S.totalBytes === realBytes, 'ukuran total di laporan harus sama dengan ukuran berkas sebenarnya (' + realBytes + ')');
+const coreRaw = read('js/app-core.js');
+ok(d.parts.length === (coreRaw.match(/^\/\* ===== BAGIAN [\w-]+ ===== \*\/$/gm) || []).length && d.parts.length >= 10, 'jumlah bagian di peta harus sama dengan jumlah baris penanda BAGIAN di js/app-core.js');
+// ukuran sebenarnya dihitung ulang tanpa memakai readSources: seluruh berkas dikurangi header (sebelum penanda pertama) dan baris-baris penanda
+const realBytes = Buffer.byteLength(coreRaw.slice(coreRaw.search(/^\/\* ===== BAGIAN /m)).replace(/^\/\* ===== BAGIAN [\w-]+ ===== \*\/\n/gm, ''), 'utf8');
+ok(S.totalBytes === realBytes, 'ukuran total di laporan harus sama dengan ukuran isi bagian sebenarnya (' + realBytes + ')');
 ok(d.perPart.reduce((s, p) => s + p.defined, 0) === d.globals.reduce((s, g) => s + g.definedIn.length, 0), 'jumlah per berkas harus cocok dengan total');
 ok(d.perPart.every(p => p.definedFunctions + p.definedVariables === p.defined), 'fungsi + variabel per berkas harus sama dengan jumlah didefinisikan');
 
@@ -94,7 +97,14 @@ function sandbox(mutate) {
   fs.copyFileSync(path.join(root, 'index.html'), path.join(dir, 'index.html'));
   const api = {
     dir,
-    append: (part, s) => fs.appendFileSync(path.join(dir, 'js/legacy', part), s),
+    // menambah teks di AKHIR sebuah bagian (tepat sebelum penanda bagian berikutnya, atau akhir berkas untuk bagian terakhir)
+    append: (part, s) => {
+      const f = path.join(dir, 'js/app-core.js'); const src = fs.readFileSync(f, 'utf8');
+      const marks = [...src.matchAll(/^\/\* ===== BAGIAN ([\w-]+) ===== \*\/\n/gm)];
+      const i = marks.findIndex(m => m[1] + '.js' === part); if (i < 0) throw new Error('bagian tidak ada: ' + part);
+      const at = i + 1 < marks.length ? marks[i + 1].index : src.length;
+      fs.writeFileSync(f, src.slice(0, at) + s + src.slice(at));
+    },
     write: (rel, s) => fs.writeFileSync(path.join(dir, rel), s),
     read: rel => fs.readFileSync(path.join(dir, rel), 'utf8')
   };
@@ -142,7 +152,7 @@ ok(render(analyze({ root: base.dir })) === md, 'salinan tak berubah harus mengha
 {
   const sb = sandbox(a => { a.append('00-core.js', 'function zzClick(){}\nfunction zzOther(){}\n'); a.append('95-boot.js', "var zzBtn='<button onclick=\"zzClick(1);zzNoSuch()\">x</button>';\n"); });
   const r = analyze({ root: sb.dir });
-  ok(r.htmlUse.some(h => h.name === 'zzClick' && h.files.includes('js/legacy/95-boot.js')), 'S5: onclick di dalam teks harus tertangkap');
+  ok(r.htmlUse.some(h => h.name === 'zzClick' && h.files.includes('js/app-core.js#95-boot.js')), 'S5: onclick di dalam teks harus tertangkap');
   ok(!r.htmlUse.some(h => h.name === 'zzOther' || h.name === 'zzNoSuch'), 'S5: nama yang tidak dipanggil/ tidak global tidak boleh ikut');
 }
 // S6: nama ganda, urutan muat, nama tak dikenal
@@ -160,16 +170,19 @@ ok(render(analyze({ root: base.dir })) === md, 'salinan tak berubah harus mengha
   const throwsIn = (mutate, re, msg) => { const sb = sandbox(mutate); assert.throws(() => analyze({ root: sb.dir }), re, msg); n++; };
   throwsIn(a => a.append('90-erp.js', 'function (\n'), /./, 'S7: sintaks rusak harus melempar galat');
   throwsIn(a => a.append('90-erp.js', "import x from './x.js';\n"), /./, 'S7: import di bagian legacy harus melempar galat');
-  throwsIn(a => a.write('js/legacy/zz-liar.js', 'var q=1;\n'), /parts\.json/, 'S7: berkas legacy yang tidak terdaftar harus melempar galat');
-  throwsIn(a => { const m = JSON.parse(a.read('js/legacy/parts.json')); m.parts.push('tidak-ada.js'); a.write('js/legacy/parts.json', JSON.stringify(m)); }, /./, 'S7: parts.json yang menyebut berkas hilang harus melempar galat');
-  throwsIn(a => { const f = path.join(a.dir, 'js/legacy/99-pwa.js'); fs.writeFileSync(f, fs.readFileSync(f, 'utf8').trimEnd()); }, /baris baru/, 'S7: berkas tanpa baris baru di akhir harus melempar galat');
-  throwsIn(a => a.write('js/legacy-app.js', 'const x = 1;\n'), /modules/, 'S7: loader tanpa larik modules harus melempar galat');
+  const core = a => a.read('js/app-core.js');
+  throwsIn(a => a.write('js/app-core.js', core(a) + '/* ===== BAGIAN zz liar ===== */\nvar q=1;\n'), /rusak/, 'S7: baris penanda BAGIAN yang bentuknya rusak harus melempar galat');
+  throwsIn(a => a.write('js/app-core.js', core(a) + '/* ===== BAGIAN 99-pwa ===== */\nvar q=1;\n'), /dobel/, 'S7: nama bagian dobel harus melempar galat');
+  throwsIn(a => a.write('js/app-core.js', core(a).replace(/^\/\* ===== BAGIAN [\w-]+ ===== \*\/\n/gm, '')), /penanda/, 'S7: app-core.js tanpa penanda bagian harus melempar galat');
+  throwsIn(a => a.write('js/app-core.js', core(a).trimEnd()), /baris baru/, 'S7: bagian terakhir tanpa baris baru di akhir harus melempar galat');
+  throwsIn(a => a.write('js/app-core.js', core(a).replace(/^import \{[^}]*\} from '[^']+';\n/gm, '')), /tidak memiliki import/, 'S7: header tanpa import harus melempar galat (daftar impor tidak boleh hilang diam-diam)');
+  throwsIn(a => a.write('js/app-core.js', core(a).replace(/^(\/\* ===== BAGIAN 00-core)/m, 'var zzHeader=1;\n$1')), /hanya boleh berisi import/, 'S7: kode selain import di header harus melempar galat');
   const empty = path.join(tmpBase, 'kosong'); fs.mkdirSync(empty); assert.throws(() => analyze({ root: empty })); n++;
   const cli = spawnSync(process.execPath, [path.join(root, 'scripts/peta-global.mjs'), '--root', empty], { encoding: 'utf8' });
   ok(cli.status !== 0, 'S7: baris perintah harus keluar dengan kode non-nol saat gagal');
 }
 // S8: nama dari modul ES yang disuntikkan bukan global legacy, tetapi tercatat sebagai impor
-ok(d.imports.length > 20 && d.externals.some(e => e.category === 'impor'), 'impor loader harus terbaca');
+ok(d.imports.length > 20 && d.externals.some(e => e.category === 'impor'), 'impor di header app-core.js harus terbaca');
 ok(!byName.has('createERP') && !byName.has('esc'), 'nama hasil impor tidak boleh dihitung sebagai global legacy');
 fs.rmSync(tmpBase, { recursive: true, force: true });
 console.log(`Peta global audit: ${n} assertions passed (${S.total} global, ${S.cross} lintas berkas, ${S.coreReassignDirect} penugasan ulang langsung variabel inti, ${S.htmlOnlyPlus} nama dipanggil via HTML).`);
