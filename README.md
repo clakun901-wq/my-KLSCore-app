@@ -1,10 +1,11 @@
 # Kalsara — migrasi client-side (basis Kalsara-v5.82)
 
-**Versi paket: v9.36 — pengembangan, belum disertifikasi untuk produksi.**
+**Versi paket: v9.37 (kode aplikasi sama dengan v9.36; hanya alat peta ditambah) — pengembangan, belum disertifikasi untuk produksi.**
 
 - **Melanjutkan pekerjaan (mulai dari sini):** baca [`LANJUT-DI-SINI.md`](./LANJUT-DI-SINI.md) — ringkas, berisi posisi terakhir, angka target, dan langkah berikutnya.
 
 - **Dashboard progres:** buka [`progress.html`](./progress.html) untuk melihat estimasi, hasil tes yang sudah terbukti, dan gerbang yang masih terbuka.
+- **Peta ketergantungan global legacy (Tahap 1):** [`laporan/PETA-GLOBAL.md`](./laporan/PETA-GLOBAL.md), dibuat ulang dengan `node scripts/peta-global.mjs` (alat pengembang, tidak ikut ke pengguna).
 - **Status teknis rinci:** lihat [`MIGRATION-STATUS.md`](./MIGRATION-STATUS.md).
 - **Aplikasi:** buka [`index.html`](./index.html) setelah di-host melalui HTTPS.
 
