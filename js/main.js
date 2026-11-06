@@ -103,7 +103,7 @@ async function migrateLegacyERP() {
 await migrateLegacyERP();
 globalThis.KStore=KStore;
 globalThis.KalsaraWorker={compute};
-await import('./legacy-app.js');
+await import('./app-core.js');
 
 // Optional permanent backup through the browser's File System Access API.
 // The original backup/restore UI remains intact; these helpers are also exposed for integration.

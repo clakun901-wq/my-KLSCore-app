@@ -1,13 +1,13 @@
-# Peta ketergantungan global js/legacy/ (dihasilkan otomatis)
+# Peta ketergantungan global js/app-core.js (dihasilkan otomatis)
 
 Dihasilkan oleh `node scripts/peta-global.mjs`. Jangan diedit tangan: jalankan ulang skrip itu. Tes `tests/peta-global.test.mjs` gagal bila berkas ini tidak sama dengan hasil terbaru.
 
 ## 1. Ringkasan (bahasa awam)
 
-Aplikasi ini masih memuat 12 potongan kode di `js/legacy/` yang digabung menjadi SATU program besar saat dijalankan. Karena digabung, sebuah potongan bisa memakai "nama" (fungsi atau variabel) milik potongan lain tanpa izin tertulis. Nama seperti itu disebut **global**. Makin banyak global yang dipakai lintas potongan, makin sulit potongan-potongan itu dipisah menjadi modul mandiri.
+Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berupa berkas terpisah di `js/legacy/`; sejak v9.38 disatukan menjadi satu modul, isinya tidak diubah) yang berbagi SATU lingkup nama besar saat dijalankan. Karena berbagi, sebuah potongan bisa memakai "nama" (fungsi atau variabel) milik potongan lain tanpa izin tertulis. Nama seperti itu disebut **global**. Makin banyak global yang dipakai lintas potongan, makin sulit potongan-potongan itu dipisah menjadi modul mandiri.
 
 - Jumlah seluruh nama global: **233** (125 fungsi, 108 variabel/konstanta).
-- Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **96** (36 fungsi, 60 variabel). **Inilah angka yang harus turun ke 0** agar `legacy/` bisa dihapus.
+- Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **96** (36 fungsi, 60 variabel). **Inilah angka yang harus turun ke 0** agar bagian-bagian `app-core.js` bisa dipisah menjadi modul fitur mandiri.
 - Nama yang hanya dipakai di berkasnya sendiri: 137 (ini mudah dipindah).
 - Lima variabel inti (`A`, `rows`, `SALES`, `PRM`, `TS`) diberi nilai baru langsung sebanyak **13** kali di luar jembatan `state.js` (ditambah 5 penugasan di dalam jembatan itu sendiri). Detailnya di bagian 2.
 - Nama yang dipanggil lewat teks HTML (mis. `onclick="..."`) dan karena itu tidak kelihatan sebagai pemanggilan biasa: **0** (bagian 5). Ini PERLU perhatian khusus saat fungsi dipindah ke modul.
@@ -456,7 +456,7 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 
 ## 5. Nama yang dipanggil lewat teks HTML (onclick="..." dan sejenisnya)
 
-Pembaca kode biasa tidak melihat pemanggilan ini karena tertulis di dalam teks. Bila fungsi-fungsi ini dipindah ke modul tanpa dipasang ke `window`, tombolnya mati. Pemeriksa mencari pola `on...="nama(...)"` di string js/legacy, js/*.js, components/*.js, dan index.html.
+Pembaca kode biasa tidak melihat pemanggilan ini karena tertulis di dalam teks. Bila fungsi-fungsi ini dipindah ke modul tanpa dipasang ke `window`, tombolnya mati. Pemeriksa mencari pola `on...="nama(...)"` di string js/app-core.js, js/*.js, components/*.js, dan index.html.
 
 Tidak ada.
 
@@ -472,7 +472,7 @@ Tidak ada.
 
 **Fungsi bersarang** (dideklarasikan di dalam fungsi lain, bukan global): `OM`, `go`, `draw`.
 
-### Nama dari luar legacy (tidak dideklarasikan di js/legacy/)
+### Nama dari luar legacy (tidak dideklarasikan di js/app-core.js)
 
 | Nama | Asal | Dibaca | Ditulis |
 |---|---|---:|---:|
