@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-/* Peta ketergantungan global js/legacy/ (Tahap 1, v9.37).
+/* Peta ketergantungan global js/app-core.js (Tahap 1, v9.37; disesuaikan v9.38 setelah js/legacy/ disatukan).
  *
  * ALAT PENGEMBANG. Tidak dimuat aplikasi, tidak ada di daftar cache sw.js, tidak dikirim ke pengguna.
- * Tidak mengubah kode aplikasi: hanya MEMBACA js/legacy/*.js, js/legacy-app.js, js/*.js, components/*.js, index.html
+ * Tidak mengubah kode aplikasi: hanya MEMBACA js/app-core.js, js/*.js, components/*.js, index.html
  * dan MENULIS satu berkas laporan (laporan/PETA-GLOBAL.md).
  *
- * Cara kerja: bagian-bagian legacy dijalankan loader sebagai SATU modul gabungan (urutan parts.json). Skrip ini
- * menggabungkan bagian-bagian itu dengan cara yang sama, membacanya dengan pembaca kode (parser acorn, salinan
+ * Cara kerja: js/app-core.js adalah SATU modul yang terdiri dari beberapa BAGIAN, masing-masing diawali baris penanda
+ * "BAGIAN nn-nama" (urutan = urutan eksekusi). Skrip ini memotong berkas itu menurut penanda (header import dipisahkan), membacanya dengan pembaca kode (parser acorn, salinan
  * utuh di scripts/vendor/, tanpa npm install), lalu menelusuri cakupan variabel (scope) sungguhan:
  *   - nama tingkat atas modul gabungan = "nama global" (di mata bagian-bagian lain),
  *   - tiap pemakaian dicatat sebagai baca / tulis, lengkap dengan berkas dan nomor barisnya,
@@ -65,42 +65,40 @@ function patternNames(p, out = []) {
 }
 
 /* ---------- pembacaan sumber ---------- */
+const CORE_FILE = ['js', 'app-core.js'];
+const MARK_RE = /^\/\* ===== BAGIAN ([\w-]+) ===== \*\/\n/gm;
+/* Memotong js/app-core.js menurut baris penanda. `text` = isi semua bagian digabung (tanpa header dan tanpa baris penanda),
+   persis sama dengan teks gabungan yang dulu dibangun dari js/legacy/*.js; posisi (start/end) dan nomor baris per bagian tetap sebanding dengan v9.37. */
 export function readSources(root) {
-  const dir = path.join(root, 'js', 'legacy');
-  const manifestPath = path.join(dir, 'parts.json');
-  if (!fs.existsSync(manifestPath)) throw new Error('parts.json tidak ditemukan di ' + dir);
-  const names = JSON.parse(fs.readFileSync(manifestPath, 'utf8')).parts;
-  if (!Array.isArray(names) || names.length === 0) throw new Error('parts.json tidak berisi daftar bagian');
-  const onDisk = fs.readdirSync(dir).filter(f => f.endsWith('.js')).sort();
-  if (JSON.stringify(onDisk) !== JSON.stringify([...names].sort())) throw new Error('Isi folder js/legacy/ tidak sama dengan parts.json');
+  const file = path.join(root, ...CORE_FILE);
+  if (!fs.existsSync(file)) throw new Error('js/app-core.js tidak ditemukan di ' + root);
+  const src = fs.readFileSync(file, 'utf8');
+  const marks = [...src.matchAll(MARK_RE)];
+  if (marks.length === 0) throw new Error('js/app-core.js tidak memiliki penanda BAGIAN');
+  const looseMarks = (src.match(/^\/\* ===== BAGIAN /gm) || []).length;
+  if (looseMarks !== marks.length) throw new Error('Ada baris penanda BAGIAN yang bentuknya rusak di js/app-core.js');
+  const names = marks.map(m => m[1] + '.js');
+  if (new Set(names).size !== names.length) throw new Error('Nama bagian dobel di js/app-core.js');
+  const header = src.slice(0, marks[0].index);
   const parts = []; let text = '';
-  for (const name of names) {
-    const src = fs.readFileSync(path.join(dir, name), 'utf8');
-    if (!src.endsWith('\n')) throw new Error(name + ' tidak diakhiri baris baru (penggabungan tidak aman)');
-    parts.push({ name, start: text.length, end: text.length + src.length, bytes: Buffer.byteLength(src, 'utf8'), lines: src.split('\n').length - 1 });
-    text += src;
-  }
-  return { parts, text };
+  marks.forEach((m, i) => {
+    const body = src.slice(m.index + m[0].length, i + 1 < marks.length ? marks[i + 1].index : src.length);
+    if (!body.endsWith('\n')) throw new Error(names[i] + ' tidak diakhiri baris baru (penggabungan tidak aman)');
+    parts.push({ name: names[i], start: text.length, end: text.length + body.length, bytes: Buffer.byteLength(body, 'utf8'), lines: body.split('\n').length - 1 });
+    text += body;
+  });
+  return { parts, text, header };
 }
 
-/* Daftar nama yang disuntikkan loader dari modul ES (js/legacy-app.js, larik `modules`). */
-export function readLoaderImports(root) {
-  const src = fs.readFileSync(path.join(root, 'js', 'legacy-app.js'), 'utf8');
-  const ast = acorn.parse(src, { ecmaVersion: 'latest', sourceType: 'module' });
-  const imports = new Map(); let found = false;
-  (function walk(n) {
-    if (!n || typeof n !== 'object') return;
-    if (Array.isArray(n)) return n.forEach(walk);
-    if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier' && n.id.name === 'modules' && n.init && n.init.type === 'ArrayExpression') {
-      found = true;
-      for (const el of n.init.elements) {
-        if (el.type !== 'ArrayExpression' || el.elements.length !== 2 || el.elements.some(x => x.type !== 'Literal' || typeof x.value !== 'string')) throw new Error('Bentuk larik modules di legacy-app.js tidak dikenal');
-        for (const nm of el.elements[1].value.split(',').map(s => s.trim()).filter(Boolean)) imports.set(nm, el.elements[0].value);
-      }
-    }
-    for (const k of Object.keys(n)) if (k !== 'loc') walk(n[k]);
-  })(ast);
-  if (!found) throw new Error('Larik `modules` tidak ditemukan di js/legacy-app.js');
+/* Daftar nama yang diimpor app-core.js dari modul ES lain (pengganti larik `modules` di legacy-app.js v9.37): dibaca dari baris `import` di header. */
+export function readLoaderImports(root, header = readSources(root).header) {
+  const ast = acorn.parse(header, { ecmaVersion: 'latest', sourceType: 'module' });
+  const imports = new Map();
+  for (const n of ast.body) {
+    if (n.type !== 'ImportDeclaration') throw new Error('Header js/app-core.js hanya boleh berisi import (ditemukan ' + n.type + ')');
+    for (const sp of n.specifiers) { if (sp.type !== 'ImportSpecifier') throw new Error('Bentuk import di js/app-core.js tidak dikenal (harus {nama})'); imports.set(sp.local.name, n.source.value); }
+  }
+  if (imports.size === 0) throw new Error('Header js/app-core.js tidak memiliki import');
   return imports;
 }
 
@@ -110,7 +108,7 @@ function readWindowProvided(root) {
   const files = [];
   for (const d of ['js', 'workers', 'components']) {
     const dir = path.join(root, d); if (!fs.existsSync(dir)) continue;
-    for (const f of fs.readdirSync(dir)) if (f.endsWith('.js')) files.push(path.join(dir, f));
+    for (const f of fs.readdirSync(dir)) if (f.endsWith('.js') && !(d === 'js' && f === 'app-core.js')) files.push(path.join(dir, f)); // app-core.js (kode legacy) sengaja tidak dihitung sebagai penyedia window
   }
   for (const f of files) {
     const s = fs.readFileSync(f, 'utf8');
@@ -133,15 +131,15 @@ function scanHtmlUse(root, globalNames) {
   const idx = path.join(root, 'index.html'); if (fs.existsSync(idx)) targets.push(['index.html', fs.readFileSync(idx, 'utf8'), 'html']);
   for (const d of ['js', 'components']) {
     const dir = path.join(root, d); if (!fs.existsSync(dir)) continue;
-    for (const f of fs.readdirSync(dir).sort()) if (f.endsWith('.js')) targets.push([d + '/' + f, fs.readFileSync(path.join(dir, f), 'utf8'), 'js']);
+    for (const f of fs.readdirSync(dir).sort()) if (f.endsWith('.js') && !(d === 'js' && f === 'app-core.js')) targets.push([d + '/' + f, fs.readFileSync(path.join(dir, f), 'utf8'), 'js']); // app-core.js ditelusuri per bagian lewat string AST
   }
   return { use, targets, add };
 }
 
 /* ---------- analisis utama ---------- */
 export function analyze({ root = DEFAULT_ROOT } = {}) {
-  const { parts, text } = readSources(root);
-  const imports = readLoaderImports(root);
+  const { parts, text, header } = readSources(root);
+  const imports = readLoaderImports(root, header);
   const windowProvided = readWindowProvided(root);
   const ast = acorn.parse(text, { ecmaVersion: 'latest', sourceType: 'module', locations: false });
 
@@ -228,7 +226,7 @@ export function analyze({ root = DEFAULT_ROOT } = {}) {
       case 'Literal': if (typeof node.value === 'string') strings.push({ value: node.value, ...loc(node) }); return;
       case 'TemplateLiteral': for (const q of node.quasis) strings.push({ value: q.value.cooked || '', ...loc(q) }); for (const e of node.expressions) visit(e, scope, ctx); return;
       case 'ImportDeclaration': case 'ExportNamedDeclaration': case 'ExportDefaultDeclaration': case 'ExportAllDeclaration': case 'ImportExpression':
-        throw new Error('Bagian legacy tidak boleh memakai import/export (ditemukan di bagian ' + parts[partOf(node.start)].name + ')');
+        throw new Error('Isi bagian app-core tidak boleh memakai import/export; import hanya di header (ditemukan di bagian ' + parts[partOf(node.start)].name + ')');
       case 'FunctionDeclaration': visitFunction(node, scope, ctx, node.id && node.id.name); return;
       case 'FunctionExpression': case 'ArrowFunctionExpression': visitFunction(node, scope, ctx, hint); return;
       case 'ClassDeclaration': case 'ClassExpression': {
@@ -343,7 +341,7 @@ export function analyze({ root = DEFAULT_ROOT } = {}) {
   // pemakaian lewat teks HTML
   const globalNames = new Set(globals.map(g => g.name));
   const html = scanHtmlUse(root, globalNames);
-  for (const s of strings) for (const c of handlerCalls(s.value)) html.add(c, 'js/legacy/' + partName(s.part));
+  for (const s of strings) for (const c of handlerCalls(s.value)) html.add(c, 'js/app-core.js#' + partName(s.part));
   for (const [file, src, kind] of html.targets) {
     if (kind === 'html') { for (const c of handlerCalls(src)) html.add(c, file); continue; }
     let a; try { a = acorn.parse(src, { ecmaVersion: 'latest', sourceType: 'module' }); } catch (e) { throw new Error('Berkas ' + file + ' tidak bisa dibaca pemeriksa: ' + e.message); }
@@ -399,16 +397,16 @@ export function render(d) {
   const P = i => d.parts[i].name; const S = d.summary; const L = [];
   const where = r => P(r.part) + ':' + r.line;
   const counts = (m) => Object.keys(m).map(Number).sort((a, b) => a - b).map(i => short(P(i)) + '×' + m[i]).join(', ') || '-';
-  L.push('# Peta ketergantungan global js/legacy/ (dihasilkan otomatis)');
+  L.push('# Peta ketergantungan global js/app-core.js (dihasilkan otomatis)');
   L.push('');
   L.push('Dihasilkan oleh `node scripts/peta-global.mjs`. Jangan diedit tangan: jalankan ulang skrip itu. Tes `tests/peta-global.test.mjs` gagal bila berkas ini tidak sama dengan hasil terbaru.');
   L.push('');
   L.push('## 1. Ringkasan (bahasa awam)');
   L.push('');
-  L.push('Aplikasi ini masih memuat 12 potongan kode di `js/legacy/` yang digabung menjadi SATU program besar saat dijalankan. Karena digabung, sebuah potongan bisa memakai "nama" (fungsi atau variabel) milik potongan lain tanpa izin tertulis. Nama seperti itu disebut **global**. Makin banyak global yang dipakai lintas potongan, makin sulit potongan-potongan itu dipisah menjadi modul mandiri.');
+  L.push('Aplikasi ini masih memuat ' + d.parts.length + ' bagian kode di `js/app-core.js` (sampai v9.37 berupa berkas terpisah di `js/legacy/`; sejak v9.38 disatukan menjadi satu modul, isinya tidak diubah) yang berbagi SATU lingkup nama besar saat dijalankan. Karena berbagi, sebuah potongan bisa memakai "nama" (fungsi atau variabel) milik potongan lain tanpa izin tertulis. Nama seperti itu disebut **global**. Makin banyak global yang dipakai lintas potongan, makin sulit potongan-potongan itu dipisah menjadi modul mandiri.');
   L.push('');
   L.push('- Jumlah seluruh nama global: **' + S.total + '** (' + S.functions + ' fungsi, ' + S.variables + ' variabel/konstanta).');
-  L.push('- Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **' + S.cross + '** (' + S.crossFunctions + ' fungsi, ' + S.crossVariables + ' variabel). **Inilah angka yang harus turun ke 0** agar `legacy/` bisa dihapus.');
+  L.push('- Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **' + S.cross + '** (' + S.crossFunctions + ' fungsi, ' + S.crossVariables + ' variabel). **Inilah angka yang harus turun ke 0** agar bagian-bagian `app-core.js` bisa dipisah menjadi modul fitur mandiri.');
   L.push('- Nama yang hanya dipakai di berkasnya sendiri: ' + S.local + ' (ini mudah dipindah).');
   L.push('- Lima variabel inti (`A`, `rows`, `SALES`, `PRM`, `TS`) diberi nilai baru langsung sebanyak **' + S.coreReassignDirect + '** kali di luar jembatan `state.js` (ditambah ' + (S.coreReassign - S.coreReassignDirect) + ' penugasan di dalam jembatan itu sendiri). Detailnya di bagian 2.');
   L.push('- Nama yang dipanggil lewat teks HTML (mis. `onclick="..."`) dan karena itu tidak kelihatan sebagai pemanggilan biasa: **' + S.htmlOnlyPlus + '** (bagian 5). Ini PERLU perhatian khusus saat fungsi dipindah ke modul.');
@@ -469,7 +467,7 @@ export function render(d) {
   L.push('');
   L.push('## 5. Nama yang dipanggil lewat teks HTML (onclick="..." dan sejenisnya)');
   L.push('');
-  L.push('Pembaca kode biasa tidak melihat pemanggilan ini karena tertulis di dalam teks. Bila fungsi-fungsi ini dipindah ke modul tanpa dipasang ke `window`, tombolnya mati. Pemeriksa mencari pola `on...="nama(...)"` di string js/legacy, js/*.js, components/*.js, dan index.html.');
+  L.push('Pembaca kode biasa tidak melihat pemanggilan ini karena tertulis di dalam teks. Bila fungsi-fungsi ini dipindah ke modul tanpa dipasang ke `window`, tombolnya mati. Pemeriksa mencari pola `on...="nama(...)"` di string js/app-core.js, js/*.js, components/*.js, dan index.html.');
   L.push('');
   if (d.htmlUse.length) { L.push('| Nama | Dipanggil dari teks di |'); L.push('|---|---|'); for (const h of d.htmlUse) L.push('| `' + h.name + '` | ' + h.files.join(', ') + ' |'); } else L.push('Tidak ada.');
   L.push('');
@@ -488,7 +486,7 @@ export function render(d) {
   L.push('');
   L.push('**Fungsi bersarang** (dideklarasikan di dalam fungsi lain, bukan global): ' + (d.nestedFunctions.length ? d.nestedFunctions.map(x => '`' + x.name + '`').join(', ') : 'tidak ada') + '.');
   L.push('');
-  L.push('### Nama dari luar legacy (tidak dideklarasikan di js/legacy/)');
+  L.push('### Nama dari luar legacy (tidak dideklarasikan di js/app-core.js)');
   L.push('');
   L.push('| Nama | Asal | Dibaca | Ditulis |');
   L.push('|---|---|---:|---:|');

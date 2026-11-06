@@ -244,5 +244,5 @@ export function anyCardEditing(container) {
   return [...container.querySelectorAll('kalsara-product-card')].some(c => c.isEditing());
 }
 
-/* legacy-app.js bukan modul ES; ia mengakses perender lewat global ini. */
+/* js/app-core.js mengakses perender lewat global ini. */
 globalThis.KShelf = Object.freeze({renderShelf, anyCardEditing});
