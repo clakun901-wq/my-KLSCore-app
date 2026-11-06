@@ -1,0 +1,2 @@
+acorn 8.18.0 (MIT), disalin utuh dari paket npm 'acorn' (dist/acorn.mjs) tanpa diubah.
+Hanya dipakai skrip pengembang scripts/peta-global.mjs. TIDAK ada di daftar cache sw.js dan tidak dimuat aplikasi.
