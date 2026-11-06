@@ -548,3 +548,9 @@ Variabel `MODE` hilang saat migrasi sehingga **tab ERP menampilkan "Penyimpanan 
 - Audit urutan pemasangan 6h: `pc1` terpasang (baris 6) dan `pst/fwdL` (di `10-calc.js`) sebelum baris pemasangan `createEtalaseView` (baris 10), jadi nilai yang disalin langsung tidak `undefined`; `calc/skHi/etUn/ptp` memang dibungkus.
 - Koreksi kecil: pesan galat di `tests/legacy-split.test.mjs` (cek nama cache `client-v9.35`) masih berbunyi "client-v9.32"; teks pesan diperbaiki (perilaku tes tidak berubah). Tidak ada perubahan kode aplikasi pada sesi review, sehingga `sw.js` dan `package.json` tetap v9.35.
 - Berikutnya: disarankan menjalankan job E2E GitHub Actions sekali sebagai konfirmasi lingkungan kedua; lalu tahap 6i (satu tahap per sesi). Jangan menghapus loader legacy.
+
+## Perubahan v9.40 - Tahap 4 (bagian 80-cadangan-tema dipindah)
+- Isi bagian 80 (15.766 byte) pindah ke `js/penyimpanan-cadangan.js` (`createPenyimpananCadangan`: penyimpanan, status, cadangan, pemulihan, pengingat) dan `js/pengaturan.js` (`createPengaturan`: catatan tarif, kolom pengaturan, reset, tema, onboarding, pengikat tab/Cek tarif). Teks fungsi disalin apa adanya; `tests/penyimpanan-cadangan.test.mjs` membuktikan 66 pernyataan sama dengan fixture `tests/fixtures/app-core.bagian80.pre_v9_40.js.txt` setelah enam suntingan yang disengaja (fasad ERP; `tab`/`tchk` dibungkus lewat `wrapTab`/`wrapTchk`).
+- Bagian 80 di app-core tinggal pemasangan + fungsi penerus (`persist`, `lflush`, `applyState`, `bkRemind`, `syLocal`, `tlOk`, `tlRender`, `syncVL`, `obInit`) yang tetap deklarasi function agar salinan awal di bagian 30/40 valid. Dihapus pada tahap pemindahan bagian pemakainya.
+- Angka: global 227 -> 194; global lintas bagian tetap 90 (pemakainya belum dipindah). Cache `kalsara-v5.82-client-v9.40`.
+- Tes baru: `penyimpanan-cadangan.test.mjs` (125 pernyataan) dan `tests/e2e/tahap4.e2e.py` (23 pernyataan; sabotase `wrapTab` dan `persist` tertangkap).
