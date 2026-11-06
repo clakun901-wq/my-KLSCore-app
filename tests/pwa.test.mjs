@@ -34,13 +34,15 @@ for (const m of index.matchAll(/<link rel="(?:icon|apple-touch-icon)"[^>]*href="
 
 const sw = read('sw.js').toString('utf8');
 ok(/addEventListener\('fetch'/.test(sw), 'Service Worker wajib punya handler fetch agar bisa dipasang');
-const optional = new Set([...(sw.match(/const OPTIONAL=\[([^\]]*)\]/)?.[1] || '').matchAll(/'\.\/([^']*)'/g)].map(m => m[1]));
+const optional = new Set();
 const core = [...sw.matchAll(/'\.\/([^']*)'/g)].map(m => m[1]).filter(f => f && !f.startsWith('kalsara') && !optional.has(f));
 for (const f of core) ok(fs.existsSync(path.join(root, f)), 'file di cache Service Worker tidak ada: ' + f);
-// Wasm SQLite bersifat opsional untuk instalasi (tidak boleh menggagalkan addAll), tetapi nama berkasnya harus sama dengan yang dimuat Worker.
-ok(/caches\.open\(CACHE\)\.then\(async c=>\{await c\.addAll\(CORE\);await Promise\.all\(OPTIONAL\.map\(u=>c\.add\(u\)\.catch\(\(\)=>\{\}\)\)\)/.test(sw), 'berkas opsional di-cache satu per satu dan kegagalannya tidak membatalkan instalasi');
+// v9.36 (Tahap 0): Wasm SQLite WAJIB di cache (bukan opsional). Kegagalan unduh harus menggagalkan instalasi SW dengan jelas, bukan lolos diam-diam.
+ok(!/OPTIONAL/.test(sw), 'tidak boleh ada daftar berkas opsional yang kegagalannya ditelan diam-diam');
+ok(/caches\.open\(CACHE\)\.then\(async c=>\{await c\.addAll\(CORE\);\}\)/.test(sw), 'seluruh berkas inti di-cache dengan addAll sehingga satu kegagalan membatalkan instalasi');
+ok(!/\.catch\(\(\)=>\{\}\)/.test(sw), 'sw.js tidak boleh menelan galat dengan catch kosong');
 const sqliteWorker = fs.readFileSync(path.join(root, 'workers/sqlite-store.worker.js'), 'utf8');
-for (const f of ['sqlite3.mjs', 'sqlite3.wasm']) ok(optional.has('vendor/sqlite-wasm/' + f), 'cache opsional harus memuat ' + f);
+for (const f of ['sqlite3.mjs', 'sqlite3.wasm']) ok(sw.includes('./vendor/sqlite-wasm/' + f) && fs.existsSync(path.join(root, 'vendor/sqlite-wasm/' + f)), 'cache wajib harus memuat berkas nyata ' + f);
 ok(sqliteWorker.includes("'../vendor/sqlite-wasm/sqlite3.mjs'"), 'Worker memuat Wasm dari vendor lokal');
 ok(!/cdn\.jsdelivr|unpkg|esm\.sh/.test(fs.readFileSync(path.join(root, 'js/storage.js'), 'utf8') + sqliteWorker), 'tidak ada lagi dependensi CDN untuk SQLite');
 // Bila vendor sudah dipasang, harus utuh (hash cocok dengan VERSION.json).
