@@ -6,11 +6,11 @@ Dihasilkan oleh `node scripts/peta-global.mjs`. Jangan diedit tangan: jalankan u
 
 Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berupa berkas terpisah di `js/legacy/`; sejak v9.38 disatukan menjadi satu modul, isinya tidak diubah) yang berbagi SATU lingkup nama besar saat dijalankan. Karena berbagi, sebuah potongan bisa memakai "nama" (fungsi atau variabel) milik potongan lain tanpa izin tertulis. Nama seperti itu disebut **global**. Makin banyak global yang dipakai lintas potongan, makin sulit potongan-potongan itu dipisah menjadi modul mandiri.
 
-- Jumlah seluruh nama global: **227** (125 fungsi, 102 variabel/konstanta).
+- Jumlah seluruh nama global: **194** (102 fungsi, 92 variabel/konstanta).
 - Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **90** (36 fungsi, 54 variabel). **Inilah angka yang harus turun ke 0** agar bagian-bagian `app-core.js` bisa dipisah menjadi modul fitur mandiri.
-- Nama yang hanya dipakai di berkasnya sendiri: 137 (ini mudah dipindah).
+- Nama yang hanya dipakai di berkasnya sendiri: 104 (ini mudah dipindah).
 - Lima data inti (`A`, `rows`, `SALES`, `PRM`, `TS`) kini disimpan langsung oleh modul `state.js`; kelimanya tidak lagi menjadi nama global di `app-core.js`. Akses tercatat di bagian 2.
-- Dibanding v9.38, jumlah global turun 6 (233 → 227) dan jumlah lintas bagian turun 6 (96 → 90). Enam nama yang hilang dari daftar global: `A`, `rows`, `SALES`, `PRM`, `TS`, dan `State` (jembatan lama). `State` kini merupakan impor modul, bukan variabel global bagian.
+- Dibanding v9.38, jumlah global turun 39 (233 → 194) dan jumlah lintas bagian turun 6 (96 → 90). Tahap 3 (v9.39) menghapus enam nama: `A`, `rows`, `SALES`, `PRM`, `TS`, dan `State` (jembatan lama; kini impor modul). Tahap 4 (v9.40) memindahkan seluruh isi bagian 80 ke `js/penyimpanan-cadangan.js` dan `js/pengaturan.js`; nama yang dulu hanya dipakai di dalam bagian itu kini bersarang di modulnya dan keluar dari daftar global.
 - Nama yang dipanggil lewat teks HTML (mis. `onclick="..."`) dan karena itu tidak kelihatan sebagai pemanggilan biasa: **0** (bagian 5). Ini PERLU perhatian khusus saat fungsi dipindah ke modul.
 - Nama yang didefinisikan lebih dari sekali: 0.
 - Nama yang tidak ditemukan di mana pun (kemungkinan salah ketik): 0.
@@ -27,11 +27,11 @@ Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berup
 | 50-promosi.js | 40.283 | 53 | 46 | 7 | 11 | 23 |
 | 60-tab-impor-sinkron.js | 22.109 | 30 | 28 | 2 | 10 | 27 |
 | 70-xlsx-reader.js | 171 | 0 | 0 | 0 | 0 | 8 |
-| 80-cadangan-tema.js | 15.766 | 47 | 32 | 15 | 11 | 22 |
+| 80-cadangan-tema.js | 2.023 | 14 | 9 | 5 | 11 | 22 |
 | 90-erp.js | 262 | 1 | 0 | 1 | 1 | 2 |
 | 95-boot.js | 449 | 1 | 0 | 1 | 0 | 12 |
 | 99-pwa.js | 44 | 0 | 0 | 0 | 0 | 3 |
-| **Jumlah** | **105.010** | **227** | **125** | **102** | **90** (nama unik) | |
+| **Jumlah** | **91.267** | **194** | **102** | **92** | **90** (nama unik) | |
 
 Cara membaca: "Dipakai berkas lain" = berapa nama buatan berkas ini yang dipakai berkas lain. "Memakai nama berkas lain" = berapa nama milik berkas lain yang dipakai di berkas ini. Berkas dengan angka keduanya kecil paling mudah dipindah lebih dulu.
 
@@ -60,47 +60,47 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 
 | Nama | Global di app-core? | Penugasan ulang langsung | Akses State baca / tulis |
 |---|---|---:|---:|
-| `A` | tidak | 0 | 81 / 3 |
-| `rows` | tidak | 0 | 60 / 6 |
-| `SALES` | tidak | 0 | 14 / 2 |
-| `PRM` | tidak | 0 | 25 / 2 |
-| `TS` | tidak | 0 | 1 / 2 |
+| `A` | tidak | 0 | 33 / 1 |
+| `rows` | tidak | 0 | 56 / 5 |
+| `SALES` | tidak | 0 | 2 / 0 |
+| `PRM` | tidak | 0 | 23 / 1 |
+| `TS` | tidak | 0 | 0 / 0 |
 
-**`A`** - bukan global. Akses `State.A` terdapat di: 00-core×1, 10-calc×3, 20-hitung-etalase×18, 50-promosi×7, 60-tab-impor-sinkron×5, 80-cadangan-tema×50.
+**`A`** - bukan global. Akses `State.A` terdapat di: 00-core×1, 10-calc×3, 20-hitung-etalase×18, 50-promosi×7, 60-tab-impor-sinkron×5.
 
-**`rows`** - bukan global. Akses `State.rows` terdapat di: 10-calc×1, 20-hitung-etalase×24, 50-promosi×19, 60-tab-impor-sinkron×14, 70-xlsx-reader×2, 80-cadangan-tema×5, 90-erp×1.
+**`rows`** - bukan global. Akses `State.rows` terdapat di: 10-calc×1, 20-hitung-etalase×24, 50-promosi×19, 60-tab-impor-sinkron×14, 70-xlsx-reader×2, 90-erp×1.
 
-**`SALES`** - bukan global. Akses `State.SALES` terdapat di: 60-tab-impor-sinkron×2, 80-cadangan-tema×14.
+**`SALES`** - bukan global. Akses `State.SALES` terdapat di: 60-tab-impor-sinkron×2.
 
-**`PRM`** - bukan global. Akses `State.PRM` terdapat di: 10-calc×2, 20-hitung-etalase×1, 50-promosi×21, 80-cadangan-tema×3.
+**`PRM`** - bukan global. Akses `State.PRM` terdapat di: 10-calc×2, 20-hitung-etalase×1, 50-promosi×21.
 
-**`TS`** - bukan global. Akses `State.TS` terdapat di: 80-cadangan-tema×3.
+**`TS`** - bukan global. Akses `State.TS` terdapat di: -.
 
 ## 3. Nama yang melintasi berkas (90)
 
 | Nama | Jenis | Didefinisikan di | Dibaca di | Ditulis ulang di | Juga dari HTML? |
 |---|---|---|---|---|---|
-| `$` | variabel | 00-core.js | 20-hitung-etalase×35, 30-penjualan×1, 40-voucher-panel×1, 50-promosi×18, 60-tab-impor-sinkron×52, 70-xlsx-reader×1, 80-cadangan-tema×76, 90-erp×1, 95-boot×4, 99-pwa×1 | - |  |
+| `$` | variabel | 00-core.js | 20-hitung-etalase×35, 30-penjualan×1, 40-voucher-panel×1, 50-promosi×18, 60-tab-impor-sinkron×52, 70-xlsx-reader×1, 80-cadangan-tema×2, 90-erp×1, 95-boot×4, 99-pwa×1 | - |  |
 | `CFG` | variabel | 50-promosi.js | 20-hitung-etalase×1, 30-penjualan×1 | - |  |
 | `CR` | variabel | 20-hitung-etalase.js | 60-tab-impor-sinkron×6 | - |  |
-| `CalcCache` | variabel | 10-calc.js | 20-hitung-etalase×1, 30-penjualan×1, 50-promosi×3, 80-cadangan-tema×2 | - |  |
+| `CalcCache` | variabel | 10-calc.js | 20-hitung-etalase×1, 30-penjualan×1, 50-promosi×3, 80-cadangan-tema×1 | - |  |
 | `DEF` | variabel | 00-core.js | 80-cadangan-tema×2 | - |  |
 | `ERP` | variabel | 90-erp.js | 80-cadangan-tema×6, 95-boot×1 | - |  |
 | `PSEL` | variabel | 50-promosi.js | - | 20-hitung-etalase×2 |  |
 | `PSIG` | variabel | 50-promosi.js | 60-tab-impor-sinkron×1 | 20-hitung-etalase×1 |  |
-| `ROW_MAX` | variabel | 20-hitung-etalase.js | 60-tab-impor-sinkron×4, 80-cadangan-tema×2 | - |  |
+| `ROW_MAX` | variabel | 20-hitung-etalase.js | 60-tab-impor-sinkron×4, 80-cadangan-tema×1 | - |  |
 | `SALES_MAX` | variabel | 80-cadangan-tema.js | 30-penjualan×1 | - |  |
 | `TO` | variabel | 80-cadangan-tema.js | 95-boot×1 | - |  |
 | `VNO` | variabel | 10-calc.js | - | 50-promosi×2 |  |
 | `VUSE` | variabel | 30-penjualan.js | 20-hitung-etalase×2 | - |  |
-| `VoucherRules` | variabel | 10-calc.js | 30-penjualan×1, 50-promosi×2, 80-cadangan-tema×2 | - |  |
+| `VoucherRules` | variabel | 10-calc.js | 30-penjualan×1, 50-promosi×2, 80-cadangan-tema×1 | - |  |
 | `WN` | variabel | 20-hitung-etalase.js | 50-promosi×7 | - |  |
 | `acH` | fungsi | 60-tab-impor-sinkron.js | 20-hitung-etalase×1 | - |  |
 | `actL` | fungsi | 60-tab-impor-sinkron.js | 20-hitung-etalase×1, 30-penjualan×1 | - |  |
 | `adRate` | variabel | 10-calc.js | 20-hitung-etalase×2 | - |  |
-| `add` | fungsi | 20-hitung-etalase.js | 60-tab-impor-sinkron×7, 70-xlsx-reader×1, 80-cadangan-tema×2, 95-boot×2 | - |  |
+| `add` | fungsi | 20-hitung-etalase.js | 60-tab-impor-sinkron×7, 70-xlsx-reader×1, 80-cadangan-tema×1, 95-boot×2 | - |  |
 | `applyState` | fungsi | 80-cadangan-tema.js | 95-boot×1 | - |  |
-| `ask` | variabel | 20-hitung-etalase.js | 30-penjualan×1, 50-promosi×1, 60-tab-impor-sinkron×4, 70-xlsx-reader×1, 80-cadangan-tema×3 | - |  |
+| `ask` | variabel | 20-hitung-etalase.js | 30-penjualan×1, 50-promosi×1, 60-tab-impor-sinkron×4, 70-xlsx-reader×1, 80-cadangan-tema×2 | - |  |
 | `bdH` | fungsi | 60-tab-impor-sinkron.js | 20-hitung-etalase×1 | - |  |
 | `bkRemind` | fungsi | 80-cadangan-tema.js | 95-boot×1 | - |  |
 | `calc` | variabel | 10-calc.js | 20-hitung-etalase×4, 30-penjualan×1, 40-voucher-panel×1, 50-promosi×8, 60-tab-impor-sinkron×1 | - |  |
@@ -111,11 +111,11 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 | `csv` | fungsi | 60-tab-impor-sinkron.js | 30-penjualan×1 | - |  |
 | `curP` | variabel | 30-penjualan.js | 20-hitung-etalase×1 | - |  |
 | `dd` | variabel | 10-calc.js | 50-promosi×1 | - |  |
-| `dl` | fungsi | 60-tab-impor-sinkron.js | 30-penjualan×1, 80-cadangan-tema×2 | - |  |
+| `dl` | fungsi | 60-tab-impor-sinkron.js | 30-penjualan×1, 80-cadangan-tema×1 | - |  |
 | `etAll` | fungsi | 20-hitung-etalase.js | 60-tab-impor-sinkron×1 | - |  |
 | `feeSig` | variabel | 20-hitung-etalase.js | 40-voucher-panel×1 | - |  |
 | `fees` | variabel | 10-calc.js | 40-voucher-panel×1, 50-promosi×1, 60-tab-impor-sinkron×1 | - |  |
-| `fill` | variabel | 20-hitung-etalase.js | 40-voucher-panel×1, 80-cadangan-tema×6, 95-boot×1 | - |  |
+| `fill` | variabel | 20-hitung-etalase.js | 40-voucher-panel×1, 80-cadangan-tema×2, 95-boot×1 | - |  |
 | `fk` | fungsi | 20-hitung-etalase.js | 50-promosi×1 | - |  |
 | `fwd` | variabel | 10-calc.js | 20-hitung-etalase×1 | - |  |
 | `fwdL` | variabel | 10-calc.js | 20-hitung-etalase×2, 30-penjualan×1, 50-promosi×11, 60-tab-impor-sinkron×3 | - |  |
@@ -155,15 +155,15 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 | `tlOk` | fungsi | 80-cadangan-tema.js | 40-voucher-panel×1 | - |  |
 | `tlRender` | fungsi | 80-cadangan-tema.js | 20-hitung-etalase×1, 40-voucher-panel×1 | - |  |
 | `tmod` | variabel | 10-calc.js | 20-hitung-etalase×2, 50-promosi×5, 60-tab-impor-sinkron×2 | - |  |
-| `toast` | variabel | 20-hitung-etalase.js | 30-penjualan×1, 40-voucher-panel×1, 50-promosi×6, 60-tab-impor-sinkron×33, 70-xlsx-reader×1, 80-cadangan-tema×25, 90-erp×1, 99-pwa×1 | - |  |
-| `upd` | variabel | 20-hitung-etalase.js | 10-calc×1, 40-voucher-panel×1, 60-tab-impor-sinkron×6, 70-xlsx-reader×1, 80-cadangan-tema×6, 95-boot×1 | - |  |
+| `toast` | variabel | 20-hitung-etalase.js | 30-penjualan×1, 40-voucher-panel×1, 50-promosi×6, 60-tab-impor-sinkron×33, 70-xlsx-reader×1, 80-cadangan-tema×2, 90-erp×1, 99-pwa×1 | - |  |
+| `upd` | variabel | 20-hitung-etalase.js | 10-calc×1, 40-voucher-panel×1, 60-tab-impor-sinkron×6, 70-xlsx-reader×1, 80-cadangan-tema×2, 95-boot×1 | - |  |
 | `vbest` | variabel | 10-calc.js | 20-hitung-etalase×1, 30-penjualan×1 | - |  |
 | `vcApply` | variabel | 10-calc.js | 50-promosi×2 | - |  |
 | `vcLab` | variabel | 10-calc.js | 50-promosi×2 | - |  |
 | `vcList` | variabel | 10-calc.js | 50-promosi×4 | - |  |
 | `vdisc` | variabel | 10-calc.js | 50-promosi×3 | - |  |
-| `vfKeep` | variabel | 40-voucher-panel.js | 80-cadangan-tema×2 | - |  |
-| `vgSync` | variabel | 40-voucher-panel.js | 80-cadangan-tema×2 | - |  |
+| `vfKeep` | variabel | 40-voucher-panel.js | 80-cadangan-tema×1 | - |  |
+| `vgSync` | variabel | 40-voucher-panel.js | 80-cadangan-tema×1 | - |  |
 | `vnote` | fungsi | 50-promosi.js | 20-hitung-etalase×1 | - |  |
 | `volt` | variabel | 10-calc.js | 40-voucher-panel×1 | - |  |
 | `vscn` | fungsi | 50-promosi.js | 20-hitung-etalase×1 | - |  |
@@ -173,20 +173,18 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 
 Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" / "Ditulis ulang di".
 
-## 4. Semua nama global (227)
+## 4. Semua nama global (194)
 
 | Nama | Jenis | Didefinisikan di (baris) | Dibaca | Ditulis ulang | Lintas berkas |
 |---|---|---|---:|---:|---|
-| `$` | variabel (nilai fungsi) | 00-core.js:4 | 190 | 0 | ya |
-| `BK_DAYS` | variabel | 80-cadangan-tema.js:83 | 1 | 0 |  |
-| `BK_KEY` | variabel | 80-cadangan-tema.js:83 | 2 | 0 |  |
-| `BK_SNZ` | variabel | 80-cadangan-tema.js:83 | 3 | 0 |  |
-| `Backup` | konstanta | 80-cadangan-tema.js:46 | 2 | 0 |  |
+| `$` | variabel (nilai fungsi) | 00-core.js:4 | 116 | 0 | ya |
+| `Atur` | variabel | 80-cadangan-tema.js:6 | 5 | 0 |  |
 | `CFG` | variabel | 50-promosi.js:3 | 13 | 0 | ya |
 | `CR` | variabel | 20-hitung-etalase.js:8 | 7 | 0 | ya |
-| `CalcCache` | variabel | 10-calc.js:10 | 8 | 0 | ya |
+| `CalcCache` | variabel | 10-calc.js:10 | 7 | 0 | ya |
 | `DEF` | variabel | 00-core.js:2 | 3 | 0 | ya |
 | `ERP` | variabel | 90-erp.js:2 | 7 | 0 | ya |
+| `ERPLate` | variabel | 80-cadangan-tema.js:4 | 1 | 0 |  |
 | `ETT` | variabel | 20-hitung-etalase.js:82 | 4 | 1 |  |
 | `ETU` | variabel | 20-hitung-etalase.js:82 | 4 | 1 |  |
 | `HD` | variabel | 60-tab-impor-sinkron.js:6 | 1 | 0 |  |
@@ -198,22 +196,18 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `PKS` | variabel | 50-promosi.js:161 | 2 | 2 |  |
 | `PKT` | variabel | 50-promosi.js:161 | 3 | 2 |  |
 | `PORD` | variabel | 50-promosi.js:2 | 1 | 0 |  |
-| `PRM_MAX` | variabel | 80-cadangan-tema.js:67 | 2 | 0 |  |
 | `PSEL` | variabel | 50-promosi.js:2 | 14 | 3 | ya |
 | `PSIG` | variabel | 50-promosi.js:11 | 1 | 1 | ya |
-| `ROW_MAX` | variabel | 20-hitung-etalase.js:44 | 10 | 0 | ya |
-| `SALES_DAYS` | variabel | 80-cadangan-tema.js:67 | 3 | 0 |  |
-| `SALES_MAX` | variabel | 80-cadangan-tema.js:67 | 3 | 0 | ya |
+| `ROW_MAX` | variabel | 20-hitung-etalase.js:44 | 9 | 0 | ya |
+| `SALES_MAX` | variabel | 80-cadangan-tema.js:21 | 1 | 0 | ya |
 | `SYK` | variabel | 60-tab-impor-sinkron.js:72 | 2 | 0 |  |
-| `TI` | variabel | 80-cadangan-tema.js:120 | 3 | 0 |  |
-| `TO` | variabel | 80-cadangan-tema.js:120 | 6 | 0 | ya |
+| `Simpan` | variabel | 80-cadangan-tema.js:5 | 6 | 0 |  |
+| `TO` | variabel | 80-cadangan-tema.js:21 | 1 | 0 | ya |
 | `VNO` | variabel | 10-calc.js:4 | 2 | 2 | ya |
 | `VUSE` | variabel | 30-penjualan.js:4 | 2 | 0 | ya |
-| `VoucherRules` | variabel | 10-calc.js:5 | 6 | 0 | ya |
+| `VoucherRules` | variabel | 10-calc.js:5 | 5 | 0 | ya |
 | `WN` | variabel | 20-hitung-etalase.js:6 | 9 | 0 | ya |
-| `_tab` | variabel | 80-cadangan-tema.js:120 | 1 | 0 |  |
 | `_tab6` | variabel | 95-boot.js:1 | 1 | 0 |  |
-| `_tchk` | variabel | 80-cadangan-tema.js:116 | 1 | 0 |  |
 | `acH` | fungsi | 60-tab-impor-sinkron.js:123 | 1 | 0 | ya |
 | `actL` | fungsi | 60-tab-impor-sinkron.js:118 | 5 | 0 | ya |
 | `actNote` | fungsi | 60-tab-impor-sinkron.js:114 | 0 | 0 |  |
@@ -221,21 +215,13 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `actPromo` | fungsi | 50-promosi.js:54 | 2 | 0 |  |
 | `actRin` | fungsi | 60-tab-impor-sinkron.js:138 | 1 | 0 |  |
 | `adRate` | variabel | 10-calc.js:2 | 3 | 0 | ya |
-| `add` | fungsi | 20-hitung-etalase.js:49 | 13 | 0 | ya |
+| `add` | fungsi | 20-hitung-etalase.js:49 | 12 | 0 | ya |
 | `anchorDl` | fungsi | 60-tab-impor-sinkron.js:23 | 1 | 0 |  |
-| `applyState` | fungsi | 80-cadangan-tema.js:102 | 2 | 0 | ya |
-| `ask` | variabel | 20-hitung-etalase.js:79 | 11 | 0 | ya |
+| `applyState` | fungsi | 80-cadangan-tema.js:14 | 1 | 0 | ya |
+| `ask` | variabel | 20-hitung-etalase.js:79 | 10 | 0 | ya |
 | `bdH` | fungsi | 60-tab-impor-sinkron.js:119 | 1 | 0 | ya |
 | `bis` | fungsi | 50-promosi.js:47 | 6 | 0 |  |
-| `bkAgo` | fungsi | 80-cadangan-tema.js:86 | 2 | 0 |  |
-| `bkDo` | fungsi | 80-cadangan-tema.js:21 | 3 | 0 |  |
-| `bkFull` | fungsi | 80-cadangan-tema.js:20 | 1 | 0 |  |
-| `bkLast` | fungsi | 80-cadangan-tema.js:84 | 2 | 0 |  |
-| `bkMark` | fungsi | 80-cadangan-tema.js:85 | 4 | 0 |  |
-| `bkRemind` | fungsi | 80-cadangan-tema.js:89 | 3 | 0 | ya |
-| `bkText` | fungsi | 80-cadangan-tema.js:18 | 0 | 0 |  |
-| `bpFail` | fungsi | 80-cadangan-tema.js:45 | 1 | 0 |  |
-| `bpInfo` | fungsi | 80-cadangan-tema.js:25 | 2 | 0 |  |
+| `bkRemind` | fungsi | 80-cadangan-tema.js:15 | 1 | 0 | ya |
 | `calc` | variabel | 10-calc.js:12 | 15 | 0 | ya |
 | `calcNV` | fungsi | 50-promosi.js:13 | 1 | 0 |  |
 | `calcSync` | variabel | 10-calc.js:7 | 1 | 0 |  |
@@ -245,14 +231,13 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `cbc` | variabel | 10-calc.js:6 | 1 | 0 | ya |
 | `clearMark` | fungsi | 20-hitung-etalase.js:93 | 2 | 0 | ya |
 | `colL` | fungsi | 20-hitung-etalase.js:55 | 4 | 0 | ya |
-| `copyBk` | fungsi | 80-cadangan-tema.js:34 | 2 | 0 |  |
 | `copySales` | fungsi | 60-tab-impor-sinkron.js:15 | 1 | 0 | ya |
 | `csv` | fungsi | 60-tab-impor-sinkron.js:22 | 4 | 0 | ya |
 | `csvSafe` | fungsi | 60-tab-impor-sinkron.js:21 | 2 | 0 |  |
 | `curP` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `dd` | variabel | 10-calc.js:6 | 1 | 0 | ya |
 | `dep` | fungsi | 20-hitung-etalase.js:56 | 1 | 0 |  |
-| `dl` | fungsi | 60-tab-impor-sinkron.js:24 | 5 | 0 | ya |
+| `dl` | fungsi | 60-tab-impor-sinkron.js:24 | 4 | 0 | ya |
 | `dup` | fungsi | 20-hitung-etalase.js:50 | 1 | 0 |  |
 | `errH` | variabel | 20-hitung-etalase.js:8 | 1 | 0 |  |
 | `errModel` | variabel | 20-hitung-etalase.js:10 | 0 | 0 |  |
@@ -261,7 +246,7 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `etUn` | fungsi | 20-hitung-etalase.js:83 | 4 | 0 |  |
 | `feeSig` | variabel | 20-hitung-etalase.js:4 | 2 | 0 | ya |
 | `fees` | variabel | 10-calc.js:7 | 3 | 0 | ya |
-| `fill` | variabel | 20-hitung-etalase.js:65 | 10 | 0 | ya |
+| `fill` | variabel | 20-hitung-etalase.js:65 | 6 | 0 | ya |
 | `fillT` | variabel | 20-hitung-etalase.js:2 | 1 | 0 |  |
 | `fk` | fungsi | 20-hitung-etalase.js:12 | 2 | 0 | ya |
 | `flt` | fungsi | 20-hitung-etalase.js:67 | 6 | 0 |  |
@@ -275,7 +260,6 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `goRate` | variabel | 10-calc.js:2 | 3 | 0 | ya |
 | `goT` | variabel | 10-calc.js:2 | 0 | 0 |  |
 | `gwarn` | fungsi | 20-hitung-etalase.js:57 | 1 | 0 |  |
-| `hasData` | fungsi | 80-cadangan-tema.js:87 | 1 | 0 |  |
 | `hrCol` | fungsi | 60-tab-impor-sinkron.js:149 | 1 | 0 |  |
 | `hrGo` | fungsi | 60-tab-impor-sinkron.js:171 | 1 | 0 |  |
 | `hrSync` | fungsi | 60-tab-impor-sinkron.js:155 | 2 | 0 |  |
@@ -288,16 +272,10 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `impGxStat` | fungsi | 60-tab-impor-sinkron.js:56 | 1 | 0 |  |
 | `impas` | variabel | 10-calc.js:7 | 4 | 0 | ya |
 | `inertBg` | variabel | 20-hitung-etalase.js:79 | 1 | 0 | ya |
-| `isQuota` | fungsi | 80-cadangan-tema.js:68 | 2 | 0 |  |
-| `lflush` | fungsi | 80-cadangan-tema.js:94 | 6 | 0 | ya |
-| `lflushDurable` | fungsi | 80-cadangan-tema.js:96 | 1 | 0 |  |
-| `lsave` | fungsi | 80-cadangan-tema.js:72 | 2 | 0 |  |
-| `lt` | variabel | 80-cadangan-tema.js:94 | 4 | 2 |  |
+| `lflush` | fungsi | 80-cadangan-tema.js:13 | 1 | 0 | ya |
 | `mchg` | variabel | 20-hitung-etalase.js:6 | 1 | 0 |  |
 | `migPt` | fungsi | 50-promosi.js:5 | 1 | 0 | ya |
-| `obDone` | fungsi | 80-cadangan-tema.js:110 | 2 | 0 |  |
-| `obInit` | fungsi | 80-cadangan-tema.js:111 | 1 | 0 | ya |
-| `openVerify` | fungsi | 80-cadangan-tema.js:118 | 2 | 0 |  |
+| `obInit` | fungsi | 80-cadangan-tema.js:20 | 1 | 0 | ya |
 | `paSync` | fungsi | 50-promosi.js:205 | 3 | 0 | ya |
 | `parseCsv` | fungsi | 60-tab-impor-sinkron.js:32 | 9 | 0 | ya |
 | `pc1` | variabel | 20-hitung-etalase.js:6 | 16 | 0 | ya |
@@ -306,7 +284,7 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `pdd` | fungsi | 50-promosi.js:137 | 1 | 0 |  |
 | `pdet` | fungsi | 50-promosi.js:119 | 3 | 0 |  |
 | `pds` | fungsi | 50-promosi.js:136 | 2 | 0 |  |
-| `persist` | fungsi | 80-cadangan-tema.js:97 | 21 | 0 | ya |
+| `persist` | fungsi | 80-cadangan-tema.js:12 | 20 | 0 | ya |
 | `pfCard` | fungsi | 50-promosi.js:195 | 1 | 0 |  |
 | `pgm` | fungsi | 50-promosi.js:55 | 1 | 0 |  |
 | `phm` | fungsi | 50-promosi.js:62 | 1 | 0 |  |
@@ -329,59 +307,48 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `prRender` | fungsi | 50-promosi.js:211 | 16 | 0 | ya |
 | `prRes` | fungsi | 50-promosi.js:204 | 3 | 0 |  |
 | `prTiles` | fungsi | 50-promosi.js:206 | 2 | 0 |  |
-| `pruneAge` | fungsi | 80-cadangan-tema.js:69 | 1 | 0 |  |
 | `psig` | fungsi | 50-promosi.js:12 | 2 | 0 | ya |
 | `pst` | variabel | 10-calc.js:6 | 7 | 0 | ya |
 | `ptc` | fungsi | 50-promosi.js:149 | 10 | 0 |  |
 | `ptp` | fungsi | 50-promosi.js:6 | 5 | 0 | ya |
 | `pun` | fungsi | 50-promosi.js:111 | 2 | 0 |  |
-| `push` | fungsi | 80-cadangan-tema.js:101 | 1 | 0 |  |
 | `pvoucher` | fungsi | 50-promosi.js:98 | 1 | 0 |  |
-| `qWarn` | variabel | 80-cadangan-tema.js:67 | 2 | 2 |  |
 | `rate` | variabel | 10-calc.js:2 | 1 | 0 |  |
-| `ref` | variabel | 80-cadangan-tema.js:93 | 2 | 0 |  |
 | `refreshLabels` | variabel | 20-hitung-etalase.js:2 | 3 | 0 |  |
-| `restoreText` | fungsi | 80-cadangan-tema.js:62 | 2 | 0 |  |
 | `revHtml` | variabel | 20-hitung-etalase.js:8 | 1 | 0 |  |
 | `rlAll` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `rpt` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `rw` | fungsi | 50-promosi.js:7 | 75 | 0 |  |
 | `salesRows` | fungsi | 60-tab-impor-sinkron.js:13 | 2 | 0 | ya |
-| `saveWarn` | fungsi | 80-cadangan-tema.js:71 | 1 | 0 |  |
 | `setDprev` | variabel | 20-hitung-etalase.js:79 | 1 | 0 | ya |
 | `setStock` | fungsi | 20-hitung-etalase.js:81 | 3 | 0 | ya |
 | `shop` | variabel | 20-hitung-etalase.js:10 | 5 | 0 | ya |
 | `shopChips` | variabel | 20-hitung-etalase.js:10 | 0 | 0 |  |
 | `shopPrice` | variabel | 20-hitung-etalase.js:10 | 0 | 0 |  |
-| `showBp` | fungsi | 80-cadangan-tema.js:32 | 3 | 0 |  |
 | `showCpBox` | fungsi | 60-tab-impor-sinkron.js:14 | 2 | 0 | ya |
 | `skHi` | variabel | 20-hitung-etalase.js:6 | 1 | 0 |  |
-| `snapState` | fungsi | 80-cadangan-tema.js:65 | 5 | 0 |  |
 | `sold` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `sp` | variabel | 20-hitung-etalase.js:8 | 1 | 0 |  |
 | `srt` | fungsi | 20-hitung-etalase.js:69 | 6 | 0 | ya |
 | `stk` | variabel | 20-hitung-etalase.js:6 | 1 | 0 |  |
 | `strip` | fungsi | 20-hitung-etalase.js:11 | 6 | 0 | ya |
-| `sy` | fungsi | 80-cadangan-tema.js:92 | 3 | 0 |  |
 | `syCol` | fungsi | 60-tab-impor-sinkron.js:77 | 1 | 0 |  |
 | `syGo` | fungsi | 60-tab-impor-sinkron.js:99 | 1 | 0 |  |
-| `syLocal` | fungsi | 80-cadangan-tema.js:88 | 3 | 0 | ya |
+| `syLocal` | fungsi | 80-cadangan-tema.js:16 | 1 | 0 | ya |
 | `sySync` | fungsi | 60-tab-impor-sinkron.js:81 | 2 | 0 |  |
 | `syUrl` | fungsi | 60-tab-impor-sinkron.js:73 | 2 | 0 |  |
-| `syncVL` | fungsi | 80-cadangan-tema.js:16 | 5 | 0 | ya |
+| `syncVL` | fungsi | 80-cadangan-tema.js:19 | 1 | 0 | ya |
 | `tab` | fungsi | 60-tab-impor-sinkron.js:1 | 17 | 2 | ya |
 | `tbl` | fungsi | 60-tab-impor-sinkron.js:7 | 2 | 0 |  |
 | `tblSync` | variabel | 20-hitung-etalase.js:2 | 2 | 0 |  |
 | `tbuild` | variabel | 20-hitung-etalase.js:2 | 1 | 0 | ya |
 | `tchk` | variabel | 20-hitung-etalase.js:2 | 2 | 1 | ya |
 | `tgl` | fungsi | 20-hitung-etalase.js:97 | 3 | 0 | ya |
-| `tlLast` | fungsi | 80-cadangan-tema.js:5 | 1 | 0 |  |
-| `tlOk` | fungsi | 80-cadangan-tema.js:2 | 5 | 0 | ya |
-| `tlRender` | fungsi | 80-cadangan-tema.js:3 | 4 | 0 | ya |
-| `tm` | variabel | 80-cadangan-tema.js:93 | 1 | 1 |  |
+| `tlOk` | fungsi | 80-cadangan-tema.js:17 | 1 | 0 | ya |
+| `tlRender` | fungsi | 80-cadangan-tema.js:18 | 2 | 0 | ya |
 | `tmod` | variabel | 10-calc.js:7 | 9 | 0 | ya |
-| `toast` | variabel | 20-hitung-etalase.js:79 | 83 | 0 | ya |
-| `upd` | variabel | 20-hitung-etalase.js:64 | 29 | 0 | ya |
+| `toast` | variabel | 20-hitung-etalase.js:79 | 60 | 0 | ya |
+| `upd` | variabel | 20-hitung-etalase.js:64 | 25 | 0 | ya |
 | `updRow` | variabel | 20-hitung-etalase.js:61 | 2 | 0 |  |
 | `vbest` | variabel | 10-calc.js:7 | 2 | 0 | ya |
 | `vcApply` | variabel | 10-calc.js:6 | 2 | 0 | ya |
@@ -394,8 +361,8 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `vcThr` | variabel | 10-calc.js:6 | 2 | 0 |  |
 | `vcWhy` | fungsi | 50-promosi.js:32 | 1 | 0 |  |
 | `vdisc` | variabel | 10-calc.js:6 | 3 | 0 | ya |
-| `vfKeep` | variabel | 40-voucher-panel.js:5 | 2 | 0 | ya |
-| `vgSync` | variabel | 40-voucher-panel.js:5 | 2 | 0 | ya |
+| `vfKeep` | variabel | 40-voucher-panel.js:5 | 1 | 0 | ya |
+| `vgSync` | variabel | 40-voucher-panel.js:5 | 1 | 0 | ya |
 | `vnote` | fungsi | 50-promosi.js:21 | 1 | 0 | ya |
 | `volt` | variabel | 10-calc.js:7 | 1 | 0 | ya |
 | `vsc` | fungsi | 50-promosi.js:14 | 2 | 0 |  |
@@ -419,7 +386,7 @@ Tidak ada.
 
 **Akses dinamis** (`window[...]`, `eval`, `new Function`): tidak ada.
 
-**Nama yang dibaca/ditulis lewat `window.` atau `globalThis.`** di legacy: `KShelf` (baca) di 20-hitung-etalase.js:10; `KalsaraMoney` (baca) di 00-core.js:6, 10-calc.js:7, 50-promosi.js:6, 50-promosi.js:46, 50-promosi.js:46, 50-promosi.js:46; `KalsaraWorker` (baca) di 10-calc.js:11; `addEventListener` (baca) di 80-cadangan-tema.js:98, 80-cadangan-tema.js:100; `fetch` (baca) di 60-tab-impor-sinkron.js:101, 60-tab-impor-sinkron.js:173; `scrollTo` (baca) di 60-tab-impor-sinkron.js:1.
+**Nama yang dibaca/ditulis lewat `window.` atau `globalThis.`** di legacy: `KShelf` (baca) di 20-hitung-etalase.js:10; `KalsaraMoney` (baca) di 00-core.js:6, 10-calc.js:7, 50-promosi.js:6, 50-promosi.js:46, 50-promosi.js:46, 50-promosi.js:46; `KalsaraWorker` (baca) di 10-calc.js:11; `fetch` (baca) di 60-tab-impor-sinkron.js:101, 60-tab-impor-sinkron.js:173; `scrollTo` (baca) di 60-tab-impor-sinkron.js:1.
 
 **Fungsi bersarang** (dideklarasikan di dalam fungsi lain, bukan global): `OM`, `go`, `draw`.
 
@@ -428,31 +395,28 @@ Tidak ada.
 | Nama | Asal | Dibaca | Ditulis |
 |---|---|---:|---:|
 | `AD` | impor (./tariff.js) | 1 | 0 |
-| `Array` | bawaan JS | 9 | 0 |
+| `Array` | bawaan JS | 3 | 0 |
 | `Blob` | peramban | 1 | 0 |
 | `Boolean` | bawaan JS | 9 | 0 |
-| `Date` | bawaan JS | 16 | 0 |
+| `Date` | bawaan JS | 4 | 0 |
 | `Event` | peramban | 1 | 0 |
-| `File` | peramban | 1 | 0 |
-| `FileReader` | peramban | 4 | 0 |
+| `FileReader` | peramban | 3 | 0 |
 | `GO` | impor (./tariff.js) | 1 | 0 |
 | `GO2` | impor (./tariff.js) | 1 | 0 |
 | `IntersectionObserver` | peramban | 2 | 0 |
-| `JSON` | bawaan JS | 6 | 0 |
-| `KDOM` | skrip lain (js/dom.js) | 22 | 0 |
-| `KStore` | skrip lain (js/main.js) | 18 | 0 |
+| `JSON` | bawaan JS | 2 | 0 |
+| `KDOM` | skrip lain (js/dom.js) | 18 | 0 |
+| `KStore` | skrip lain (js/main.js) | 6 | 0 |
 | `Map` | bawaan JS | 1 | 0 |
-| `Math` | bawaan JS | 70 | 0 |
+| `Math` | bawaan JS | 64 | 0 |
 | `NaN` | bawaan JS | 4 | 0 |
 | `Number` | bawaan JS | 3 | 0 |
-| `Object` | bawaan JS | 17 | 0 |
-| `PCT` | impor (./format.js) | 2 | 0 |
+| `Object` | bawaan JS | 15 | 0 |
 | `SGL` | impor (./helpers.js) | 1 | 0 |
-| `State` | impor (./state.js) | 198 | 0 |
-| `String` | bawaan JS | 34 | 0 |
+| `State` | impor (./state.js) | 123 | 0 |
+| `String` | bawaan JS | 31 | 0 |
 | `URL` | peramban | 2 | 0 |
-| `clearTimeout` | peramban | 5 | 0 |
-| `createBackup` | impor (./backup.js) | 1 | 0 |
+| `clearTimeout` | peramban | 2 | 0 |
 | `createCalcCache` | impor (./calc-cache.js) | 1 | 0 |
 | `createERP` | impor (./erp.js) | 1 | 0 |
 | `createEtalaseView` | impor (./etalase-view.js) | 1 | 0 |
@@ -461,37 +425,37 @@ Tidak ada.
 | `createHasilView` | impor (./hasil-view.js) | 1 | 0 |
 | `createKartuUpdate` | impor (./kartu-update.js) | 1 | 0 |
 | `createPWA` | impor (./pwa.js) | 1 | 0 |
+| `createPengaturan` | impor (./pengaturan.js) | 1 | 0 |
 | `createPenjualan` | impor (./penjualan.js) | 1 | 0 |
+| `createPenyimpananCadangan` | impor (./penyimpanan-cadangan.js) | 1 | 0 |
 | `createPricing` | impor (./pricing.js) | 1 | 0 |
 | `createTarifUI` | impor (./tarif-ui.js) | 1 | 0 |
 | `createTariff` | impor (./tariff.js) | 1 | 0 |
-| `createTheme` | impor (./theme.js) | 1 | 0 |
 | `createUI` | impor (./ui.js) | 1 | 0 |
 | `createUpdater` | impor (./upd-fill.js) | 1 | 0 |
 | `createVoucherPanel` | impor (./voucher-panel.js) | 1 | 0 |
 | `createVoucherRules` | impor (./voucher-rules.js) | 1 | 0 |
 | `createWarnings` | impor (./warnings.js) | 1 | 0 |
 | `createXlsxReader` | impor (./xlsx-reader.js) | 1 | 0 |
-| `document` | peramban | 44 | 0 |
-| `dtx` | impor (./helpers.js) | 6 | 0 |
-| `esc` | impor (./helpers.js) | 41 | 0 |
+| `document` | peramban | 36 | 0 |
+| `dtx` | impor (./helpers.js) | 4 | 0 |
+| `esc` | impor (./helpers.js) | 40 | 0 |
 | `fetch` | peramban | 2 | 0 |
-| `fmt` | impor (./format.js) | 28 | 0 |
+| `fmt` | impor (./format.js) | 27 | 0 |
 | `globalThis` | bawaan JS | 8 | 0 |
 | `isFinite` | bawaan JS | 1 | 0 |
-| `isNaN` | bawaan JS | 6 | 0 |
-| `navigator` | peramban | 15 | 0 |
+| `isNaN` | bawaan JS | 5 | 0 |
+| `navigator` | peramban | 10 | 0 |
 | `num` | impor (./format.js) | 21 | 0 |
-| `parseBackupText` | impor (./backup-format.js) | 1 | 0 |
-| `pf` | impor (./format.js) | 3 | 0 |
+| `pf` | impor (./format.js) | 2 | 0 |
 | `prodSig` | impor (./helpers.js) | 2 | 0 |
 | `requestAnimationFrame` | peramban | 2 | 0 |
 | `rp` | impor (./format.js) | 92 | 0 |
-| `setTimeout` | peramban | 9 | 0 |
-| `today` | impor (./format.js) | 22 | 0 |
+| `setTimeout` | peramban | 5 | 0 |
+| `today` | impor (./format.js) | 18 | 0 |
 | `uid` | impor (./helpers.js) | 4 | 0 |
-| `undefined` | bawaan JS | 22 | 0 |
-| `window` | peramban | 5 | 0 |
+| `undefined` | bawaan JS | 12 | 0 |
+| `window` | peramban | 3 | 0 |
 
 ## 7. Batas pemeriksa (yang TIDAK terlihat)
 

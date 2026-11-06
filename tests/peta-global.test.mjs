@@ -60,7 +60,9 @@ ok(JSON.stringify(d.core.map(c => c.name)) === JSON.stringify(CORE_NAMES), 'bagi
 for (const c of d.core) {
   ok(!c.global && !byName.has(c.name), c.name + ' tidak boleh lagi menjadi nama global app-core');
   ok(c.initCount === 0 && c.reassignTotal === 0 && c.reassignDirect === 0, c.name + ' tidak boleh punya deklarasi atau penugasan variabel langsung');
-  ok(c.stateReads > 0 && c.stateByPart && Object.keys(c.stateByPart).length > 0, c.name + ' harus dibaca lewat State');
+  /* v9.40: sebuah nama inti boleh tidak lagi disentuh app-core sama sekali (TS kini hanya dipakai modul penyimpanan-cadangan), asal masih dipakai lewat State di salah satu modul. */
+  const usedViaState = c.stateReads > 0 || fs.readdirSync(path.join(root, 'js')).some(f => f.endsWith('.js') && new RegExp('\\bState\\.' + c.name + '\\b').test(fs.readFileSync(path.join(root, 'js', f), 'utf8')));
+  ok(usedViaState, c.name + ' harus dibaca lewat State (di app-core atau di modul yang menerimanya)');
 }
 
 /* tidak ada nama tak dikenal, tidak ada nama global implisit */
