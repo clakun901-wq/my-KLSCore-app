@@ -1,6 +1,6 @@
 # Kalsara — migrasi client-side (basis Kalsara-v5.82)
 
-**Versi paket: v9.37 (kode aplikasi sama dengan v9.36; hanya alat peta ditambah) — pengembangan, belum disertifikasi untuk produksi.**
+**Versi paket: v9.38 (Tahap 2: folder `js/legacy/` dan loader `js/legacy-app.js` diganti satu modul ES `js/app-core.js`; logika tidak diubah) — pengembangan, belum disertifikasi untuk produksi.**
 
 - **Melanjutkan pekerjaan (mulai dari sini):** baca [`LANJUT-DI-SINI.md`](./LANJUT-DI-SINI.md) — ringkas, berisi posisi terakhir, angka target, dan langkah berikutnya.
 
@@ -17,7 +17,7 @@ Paket ini mempertahankan markup, stylesheet, dan logika bisnis v5.82 sebagai lap
 - `index.html` — markup dan navigasi asli.
 - `source/Kalsara-v5_82.html` — salinan sumber asli yang tidak diubah sebagai referensi/cadangan.
 - `css/app.css` — stylesheet asli, tidak didesain ulang.
-- `js/legacy-app.js` — loader kecil; logika bisnis asli ada di `js/legacy/*.js` (urutan di `js/legacy/parts.json`), dijalankan sebagai satu compatibility module.
+- `js/app-core.js` — modul ES inti (sejak v9.38; menggantikan loader `js/legacy-app.js` dan 12 berkas `js/legacy/*.js`). Isinya logika bisnis asli yang terbagi menjadi bagian berurutan, masing-masing diawali baris penanda `BAGIAN nn-nama`; modul lain diimpor eksplisit di bagian atas berkas. Dimuat oleh `js/main.js`.
 - `js/storage.js` — penyimpanan dengan dua mode: **SQLite** (Worker, OPFS SAH Pool) sebagai satu-satunya sumber data bila `vendor/sqlite-wasm/` tersedia; **jurnal OPFS** lama hanya sebagai jalur cadangan sebelum pernah beralih ke SQLite.
 - `js/sqlite-engine.js`, `js/sqlite-client.js`, `workers/sqlite-store.worker.js` — skema/transaksi SQLite (murni, diuji di SQLite nyata), proxy Worker, dan bootstrap Wasm lokal.
 - `scripts/fetch-sqlite-wasm.mjs` — memasang SQLite Wasm ke `vendor/sqlite-wasm/` (`npm run vendor:sqlite`) dan memverifikasinya (`npm run vendor:check`).
