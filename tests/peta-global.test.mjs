@@ -55,15 +55,12 @@ for (const name of original) {
 ok(asGlobal + movedOut === original.length && original.length === 271, 'seluruh 271 nama fungsi asli harus terhitung: ' + asGlobal + ' masih global + ' + movedOut + ' sudah pindah/bersarang');
 ok(asGlobal > 0 && asGlobal <= S.functions, 'fungsi asli yang masih global harus ada dan tidak melebihi jumlah fungsi global');
 
-/* lima nama inti: dicek silang dengan penghitung regex yang tidak memakai pembaca kode */
-ok(JSON.stringify(d.core.map(c => c.name)) === JSON.stringify(CORE_NAMES), 'bagian "lima nama inti" harus memuat A, rows, SALES, PRM, TS');
+/* Lima nama inti harus hilang dari lingkup global dan hanya muncul sebagai properti State. */
+ok(JSON.stringify(d.core.map(c => c.name)) === JSON.stringify(CORE_NAMES), 'bagian lima nama inti harus memeriksa A, rows, SALES, PRM, TS');
 for (const c of d.core) {
-  const nm = c.name.replace(/\$/g, '\\$');
-  const asg = [...text.matchAll(new RegExp('(?<![\\w$.])' + nm + '\\s*(?:\\*\\*|<<|>>>|>>|[-+*/%|&^])?=(?!=)', 'g'))].length;
-  const upd = [...text.matchAll(new RegExp('(?<![\\w$.])' + nm + '\\s*(?:\\+\\+|--)|(?:\\+\\+|--)' + nm + '(?![\\w$])', 'g'))].length;
-  ok(c.initCount + c.reassignTotal === asg + upd, c.name + ': jumlah penugasan peta (' + (c.initCount + c.reassignTotal) + ') harus sama dengan penghitung regex independen (' + (asg + upd) + ')');
-  ok(c.reassignDirect + c.reassignBridge === c.reassignTotal && c.direct.length === c.reassignDirect, c.name + ': penugasan langsung + jembatan harus sama dengan total');
-  ok(c.initCount === 1 && c.definedIn.length === 1, c.name + ' harus dideklarasikan tepat satu kali');
+  ok(!c.global && !byName.has(c.name), c.name + ' tidak boleh lagi menjadi nama global app-core');
+  ok(c.initCount === 0 && c.reassignTotal === 0 && c.reassignDirect === 0, c.name + ' tidak boleh punya deklarasi atau penugasan variabel langsung');
+  ok(c.stateReads > 0 && c.stateByPart && Object.keys(c.stateByPart).length > 0, c.name + ' harus dibaca lewat State');
 }
 
 /* tidak ada nama tak dikenal, tidak ada nama global implisit */
@@ -75,6 +72,7 @@ const md = render(d);
 ok(fs.existsSync(path.join(root, 'laporan/PETA-GLOBAL.md')), 'laporan/PETA-GLOBAL.md harus ada (jalankan: node scripts/peta-global.mjs)');
 ok(read('laporan/PETA-GLOBAL.md') === md, 'laporan/PETA-GLOBAL.md sudah usang. Jalankan: node scripts/peta-global.mjs');
 ok(md.indexOf('## 1. Ringkasan (bahasa awam)') > 0 && md.includes('**' + S.total + '**') && md.includes('**' + S.cross + '**'), 'ringkasan awam harus memuat total dan jumlah lintas berkas');
+ok(md.includes('233 → ' + S.total) && md.includes('96 → ' + S.cross) && ['A','rows','SALES','PRM','TS','State'].every(k => md.includes('`' + k + '`')), 'laporan harus menjelaskan penurunan enam nama: lima state inti dan jembatan State');
 for (const h of ['## 2. Lima nama inti', '## 3. Nama yang melintasi berkas', '## 4. Semua nama global', '## 5. Nama yang dipanggil lewat teks HTML', '## 6. Perhatian tambahan', '## 7. Batas pemeriksa']) ok(md.includes(h), 'laporan harus memuat bagian: ' + h);
 ok(md.split('\n').filter(l => /^\| `/.test(l)).length >= S.total, 'tabel semua global harus memuat setiap nama');
 
@@ -126,14 +124,20 @@ ok(render(analyze({ root: base.dir })) === md, 'salinan tak berubah harus mengha
   const cli = spawnSync(process.execPath, [path.join(root, 'scripts/peta-global.mjs'), '--check', '--root', sb.dir, '--out', path.join(root, 'laporan/PETA-GLOBAL.md')], { encoding: 'utf8' });
   ok(cli.status === 1 && /usang/.test(cli.stderr), 'S1: --check harus gagal (exit 1) bila laporan usang terhadap kode');
 }
-// S2: penugasan ulang baru ke variabel inti harus terhitung
+// S2: penggunaan nama inti langsung (tanpa State) harus terdeteksi sebagai nama tak dikenal.
 {
   const sb = sandbox(a => a.append('95-boot.js', 'function zzReset(){A=null;rows=[];}\n'));
   const r = analyze({ root: sb.dir });
-  const cA = r.core.find(c => c.name === 'A'), cR = r.core.find(c => c.name === 'rows'), c0A = d.core.find(c => c.name === 'A'), c0R = d.core.find(c => c.name === 'rows');
-  ok(cA.reassignDirect === c0A.reassignDirect + 1 && cR.reassignDirect === c0R.reassignDirect + 1, 'S2: penugasan ulang langsung A dan rows masing-masing harus bertambah 1');
-  ok(cA.direct.some(w => w.part === r.parts.length - 2 && w.fn === 'zzReset') && get(r, 'A').crossWriters.length === get(d, 'A').crossWriters.length + 1, 'S2: lokasi penulisan baru (berkas 95-boot, fungsi zzReset) harus tercatat');
-  ok(r.summary.coreReassignDirect === S.coreReassignDirect + 2, 'S2: ringkasan penugasan ulang inti bertambah 2');
+  const unknown = new Set(r.externals.filter(e => e.category === 'TIDAK DIKENAL').map(e => e.name));
+  ok(unknown.has('A') && unknown.has('rows'), 'S2: akses langsung A/rows tanpa State harus ditandai sebagai nama tak dikenal');
+  ok(!r.core.find(c => c.name === 'A').global && !r.core.find(c => c.name === 'rows').global, 'S2: referensi liar tidak boleh dianggap state resmi');
+}
+// S2b: menghidupkan kembali variabel global inti harus tertangkap oleh pemeriksa.
+{
+  const sb = sandbox(a => { a.append('00-core.js', 'var A={};\n'); a.append('95-boot.js', 'function zzStateSabotage(){return A;}\n'); });
+  const r = analyze({ root: sb.dir });
+  ok(r.core.find(c => c.name === 'A').global && r.core.find(c => c.name === 'A').stateReads > 0, 'S2b: peta menangkap A yang dihidupkan kembali sebagai global');
+  ok(r.globals.find(g => g.name === 'A').cross, 'S2b: pemakaian global A lintas bagian tertangkap');
 }
 // S3: variabel lokal/parameter senama TIDAK boleh dihitung sebagai pemakaian global (hindari alarm palsu)
 {

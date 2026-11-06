@@ -38,29 +38,32 @@ function formatPrelude(source) {
 }
 function createCalc(source, useIntegerMoney, DateImpl = FixedDate) {
   const context = vm.createContext({ Date: DateImpl, console, KalsaraMoney, document: { addEventListener() {} } });
-  const promoStart = source.indexOf('var PRM=[],PSEL=');
+  const promoStart = Math.max(source.indexOf('var PRM=[],PSEL='), source.indexOf('State.PRM=[];'));
   const promoEnd = source.indexOf('function vscT', promoStart);
   assert.ok(promoStart >= 0 && promoEnd > promoStart, 'Blok rule engine voucher harus ditemukan');
   const voucherBlock = source.slice(promoStart, promoEnd);
+  const stateAdapter = source.includes('State.A')
+    ? 'var A=State.A,PRM=State.PRM,rows=State.rows;\n'
+    : 'var State={};Object.defineProperties(State,{A:{get:function(){return A},set:function(v){A=v}},rows:{get:function(){return rows},set:function(v){rows=v}},PRM:{get:function(){return PRM},set:function(v){PRM=v}},SALES:{get:function(){return []},set:function(v){}},TS:{get:function(){return 0},set:function(v){}}});\n';
   /* v9.25: pst kini di js/voucher-rules.js (dipasang lewat 10-calc.js); sumber v5.82 asli masih memilikinya sebagai fungsi legacy. */
   const promoFunctions = ['ptp','pst','actPromo','ppd','pkombo','phm','warns','WN','bis','pc1','rw','pinfo','esc'].filter(name => !(formatPrelude(source) !== '' && name === 'pst')).map(name => extractFunction(source, name)).join('\n');
   /* v9.31: warns/pc1/WN kini ada di js/warnings.js dan membaca A lewat getA() (tahap 6d); harness vm menyediakan getA yang membaca A global. Sumber v5.82 asli tidak memanggilnya. */
-  vm.runInContext(formatPrelude(source) + executablePrefix(source) + voucherBlock + 'function getA(){return A}\n' + promoFunctions + `
+  vm.runInContext(formatPrelude(source) + executablePrefix(source) + stateAdapter + voucherBlock + 'function getA(){return State.A}\n' + promoFunctions + `
     var __rvc=function(){if(typeof VoucherRules!=='undefined')VoucherRules.reset();else VCC=null};
     var CFG={pt:{n:'Promo Toko',c:'pt'},fs:{n:'Flash Sale Toko Saya',c:'pr'},kh:{n:'Kombo Hemat',c:'kh'},hm:{n:'Hadiah Min. Belanja',c:'hm'}};
     globalThis.__runPromo=(settings,promos,product,offer)=>{
-      A=Object.assign({},DEF,settings);PRM=promos;__rvc();
+      A=Object.assign({},DEF,settings);PRM=promos;State.A=A;State.PRM=PRM;__rvc();
       const o=calc(product);
       const active=actPromo(product,o);
       const packageHtml=ppd(offer,product,o);
       return {active:active?{a:active.a,t:active.t}:null,packageHtml};
     };
     globalThis.__runPromoPrice=(promo,detail,marketPrice)=>ptp(promo,detail,marketPrice);
-    globalThis.__runCombo=(settings,promos,products,combo,gift)=>{A=Object.assign({},DEF,settings);PRM=promos;rows=products;__rvc();return {comboHtml:pkombo(combo),giftHtml:phm(gift)}};
-    globalThis.__runCalc=(settings,product)=>{A=Object.assign({},DEF,settings);return calc(product)};
-    globalThis.__runCalcPromo=(settings,promos,product)=>{A=Object.assign({},DEF,settings);PRM=promos;__rvc();VNO=0;return calc(product)};
+    globalThis.__runCombo=(settings,promos,products,combo,gift)=>{A=Object.assign({},DEF,settings);PRM=promos;rows=products;State.A=A;State.PRM=PRM;State.rows=rows;__rvc();return {comboHtml:pkombo(combo),giftHtml:phm(gift)}};
+    globalThis.__runCalc=(settings,product)=>{A=Object.assign({},DEF,settings);State.A=A;return calc(product)};
+    globalThis.__runCalcPromo=(settings,promos,product)=>{A=Object.assign({},DEF,settings);PRM=promos;State.A=A;State.PRM=PRM;__rvc();VNO=0;return calc(product)};
     globalThis.__runVoucher=(settings,promos,product,price)=>{
-      A=Object.assign({},DEF,settings);PRM=promos;__rvc();VNO=0;
+      A=Object.assign({},DEF,settings);PRM=promos;State.A=A;State.PRM=PRM;__rvc();VNO=0;
       const list=vcList().map(q=>({id:q.id,t:q.t,jt:q.jt||'toko',u:q.u,a:q.a,cp:q.cp||0,b:q.b||0,x:q.x||0,y:q.y||0,p:q.p||'',p2:q.p2||'',p3:q.p3||'',s:q.s||'',e:q.e||''}));
       const best=vcBest(price,product);
       return {list,best:best?{v:best.v,s:best.s,q:{id:best.q.id,t:best.q.t,jt:best.q.jt||'toko',u:best.q.u,a:best.q.a,b:best.q.b||0,x:best.q.x||0,y:best.q.y||0}}:null,thresholds:vcThr(product),invalid:vcBad(product)};

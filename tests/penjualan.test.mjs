@@ -83,9 +83,7 @@ function makeEnv() {
 function buildOld() { const E = makeEnv(); const i = makeOld(E); E.setImpl(i); return {E, impl: i}; }
 function buildNew() {
   const E = makeEnv();
-  let A = {}, rows = [], SALES = [], PRM = [], TS = 0;
-  const st = createState({A: {get: () => A, set: v => { A = v; }}, rows: {get: () => rows, set: v => { rows = v; }}, SALES: {get: () => SALES, set: v => { SALES = v; }},
-    PRM: {get: () => PRM, set: v => { PRM = v; }}, TS: {get: () => TS, set: v => { TS = v; }}});
+  const st = createState({A: {}, rows: [], SALES: [], PRM: [], TS: 0});
   const p = createPenjualan({st, $: E.$, esc: E.esc, today: E.today, rp: E.rp, num: E.num, toast: E.toast, ask: E.ask, uid: E.uid, KDOM: E.KDOM, calc: E.calc, fwdL: E.fwdL,
     vbest: E.vbest, actL: E.actL, ptp: E.ptp, getCFG: () => E.CFG, VoucherRules: E.VoucherRules, CalcCache: E.CalcCache, setStock: E.setStock, persist: E.persist,
     salesRows: E.salesRows, copySales: E.copySales, showCpBox: E.showCpBox, dl: E.dl, csv: E.csv, getSalesMax: () => E.SALES_MAX});

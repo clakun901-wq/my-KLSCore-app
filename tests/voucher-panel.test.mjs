@@ -100,11 +100,10 @@ const names = ['$', 'esc', 'num', 'rp', 'today', 'pr', 'KDOM', 'KStore', 'docume
 const makeOld = new Function('E', "'use strict';var {" + names.join(',') + '}=E.deps;var A=E.S.A,rows=E.S.rows,dprev=null;' + fixture +
   '\nreturn {vgSync:vgSync,vfKeep:vfKeep,setA:function(v){A=v},getA:function(){return A},setRows:function(v){rows=v},getRows:function(){return rows},getDprev:function(){return dprev},setDprev:function(v){dprev=v}};');
 function makeNew(E) {
-  const cur = {A: E.S.A, rows: E.S.rows, SALES: [], PRM: [], TS: 0, dprev: null};
-  const bind = k => ({get: () => cur[k], set: v => { cur[k] = v; }});
-  const st = createState({A: bind('A'), rows: bind('rows'), SALES: bind('SALES'), PRM: bind('PRM'), TS: bind('TS')});
+  const cur = {dprev: null};
+  const st = createState({A: E.S.A, rows: E.S.rows, SALES: [], PRM: [], TS: 0});
   const api = createVoucherPanel(Object.assign({st, getDprev: () => cur.dprev, setDprev: v => { cur.dprev = v; }}, E.deps));
-  return {vgSync: api.vgSync, vfKeep: api.vfKeep, setA: v => { cur.A = v; }, getA: () => cur.A, setRows: v => { cur.rows = v; }, getRows: () => cur.rows, getDprev: () => cur.dprev, setDprev: v => { cur.dprev = v; }, keys: Object.keys(api)};
+  return {vgSync: api.vgSync, vfKeep: api.vfKeep, setA: v => { st.A = v; }, getA: () => st.A, setRows: v => { st.rows = v; }, getRows: () => st.rows, getDprev: () => cur.dprev, setDprev: v => { cur.dprev = v; }, keys: Object.keys(api)};
 }
 
 /* ---- skenario acak: produk, A, operasi ---- */
