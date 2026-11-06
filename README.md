@@ -1,6 +1,6 @@
 # Kalsara — migrasi client-side (basis Kalsara-v5.82)
 
-**Versi paket: v9.38 (Tahap 2: folder `js/legacy/` dan loader `js/legacy-app.js` diganti satu modul ES `js/app-core.js`; logika tidak diubah) — pengembangan, belum disertifikasi untuk produksi.**
+**Versi paket: v9.39 (Tahap 3: lima data inti kini disimpan oleh modul `js/state.js`; kode inti mengaksesnya melalui objek `State`) — pengembangan, belum disertifikasi untuk produksi.**
 
 - **Melanjutkan pekerjaan (mulai dari sini):** baca [`LANJUT-DI-SINI.md`](./LANJUT-DI-SINI.md) — ringkas, berisi posisi terakhir, angka target, dan langkah berikutnya.
 
