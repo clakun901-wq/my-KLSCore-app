@@ -145,7 +145,7 @@ export function analyze({ root = DEFAULT_ROOT } = {}) {
 
   const partOf = off => { for (let i = 0; i < parts.length; i++) if (off >= parts[i].start && off < parts[i].end) return i; throw new Error('Posisi di luar bagian mana pun: ' + off); };
   const lineOf = off => { const p = parts[partOf(off)]; let n = 1; for (let i = p.start; i < off; i++) if (text.charCodeAt(i) === 10) n++; return n; };
-  const loc = (node) => { const i = partOf(node.start); return { part: i, line: lineOf(node.start) }; };
+  const loc = (node) => { const i = partOf(node.start); return { part: i, line: lineOf(node.start), start: node.start, end: node.end }; };
 
   const moduleScope = new Scope(null, true, true);
   const unresolved = new Map(); // nama -> [{kind,part,line}]
@@ -371,10 +371,15 @@ export function analyze({ root = DEFAULT_ROOT } = {}) {
 
   // inti
   const core = CORE_NAMES.map(n => {
-    const g = globals.find(x => x.name === n); if (!g) throw new Error('Nama inti tidak ditemukan sebagai global: ' + n);
+    const g = globals.find(x => x.name === n);
     const sa = stateAccess.filter(s => s.key === n);
-    const real = g.writes.filter(w => !w.bridge);
-    return { name: n, definedIn: g.definedIn, decls: g.decls, initCount: g.initCount, reassignTotal: g.writes.length, reassignBridge: g.writes.filter(w => w.bridge).length, reassignDirect: real.length, direct: real, bridge: g.writes.filter(w => w.bridge), readCount: g.readCount, readsByPart: g.readsByPart, writesByPart: g.writesByPart, stateReads: sa.filter(s => s.kind === 'baca').length, stateWrites: sa.filter(s => s.kind === 'tulis').length, stateByPart: sa.reduce((m, s) => (m[s.part] = (m[s.part] || 0) + 1, m), {}) };
+    const real = g ? g.writes.filter(w => !w.bridge) : [];
+    return { name: n, definedIn: g ? g.definedIn : [], decls: g ? g.decls : [], initCount: g ? g.initCount : 0,
+      reassignTotal: g ? g.writes.length : 0, reassignBridge: g ? g.writes.filter(w => w.bridge).length : 0,
+      reassignDirect: real.length, direct: real, bridge: g ? g.writes.filter(w => w.bridge) : [],
+      readCount: g ? g.readCount : 0, readsByPart: g ? g.readsByPart : {}, writesByPart: g ? g.writesByPart : {},
+      stateReads: sa.filter(s => s.kind === 'baca').length, stateWrites: sa.filter(s => s.kind === 'tulis').length,
+      stateByPart: sa.reduce((m, s) => (m[s.part] = (m[s.part] || 0) + 1, m), {}), global: !!g };
   });
 
   const topFunctions = globals.filter(g => g.kind === 'fungsi').map(g => g.name);
@@ -408,7 +413,8 @@ export function render(d) {
   L.push('- Jumlah seluruh nama global: **' + S.total + '** (' + S.functions + ' fungsi, ' + S.variables + ' variabel/konstanta).');
   L.push('- Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **' + S.cross + '** (' + S.crossFunctions + ' fungsi, ' + S.crossVariables + ' variabel). **Inilah angka yang harus turun ke 0** agar bagian-bagian `app-core.js` bisa dipisah menjadi modul fitur mandiri.');
   L.push('- Nama yang hanya dipakai di berkasnya sendiri: ' + S.local + ' (ini mudah dipindah).');
-  L.push('- Lima variabel inti (`A`, `rows`, `SALES`, `PRM`, `TS`) diberi nilai baru langsung sebanyak **' + S.coreReassignDirect + '** kali di luar jembatan `state.js` (ditambah ' + (S.coreReassign - S.coreReassignDirect) + ' penugasan di dalam jembatan itu sendiri). Detailnya di bagian 2.');
+  L.push('- Lima data inti (`A`, `rows`, `SALES`, `PRM`, `TS`) kini disimpan langsung oleh modul `state.js`; kelimanya tidak lagi menjadi nama global di `app-core.js`. Akses tercatat di bagian 2.');
+  L.push('- Dibanding v9.38, jumlah global turun 6 (233 → ' + S.total + ') dan jumlah lintas bagian turun 6 (96 → ' + S.cross + '). Enam nama yang hilang dari daftar global: `A`, `rows`, `SALES`, `PRM`, `TS`, dan `State` (jembatan lama). `State` kini merupakan impor modul, bukan variabel global bagian.');
   L.push('- Nama yang dipanggil lewat teks HTML (mis. `onclick="..."`) dan karena itu tidak kelihatan sebagai pemanggilan biasa: **' + S.htmlOnlyPlus + '** (bagian 5). Ini PERLU perhatian khusus saat fungsi dipindah ke modul.');
   L.push('- Nama yang didefinisikan lebih dari sekali: ' + S.duplicates + '.');
   const unk = d.externals.filter(e => e.category === 'TIDAK DIKENAL');
@@ -431,20 +437,16 @@ export function render(d) {
   L.push('');
   L.push('Kolom diberi awalan angka berkas pemilik (00 = 00-core.js, dst.). Satu nama yang didefinisikan di beberapa berkas dihitung di tiap pemilik.');
   L.push('');
-  L.push('## 2. Lima nama inti: A, rows, SALES, PRM, TS (jembatan js/state.js)');
+  L.push('## 2. Lima nama inti: A, rows, SALES, PRM, TS (penyimpanan resmi js/state.js)');
   L.push('');
-  L.push('Penugasan ulang = baris kode yang memberi nilai BARU (`A=...`, `rows=...`, termasuk `+=`, `++`) setelah deklarasi awal. "Lewat jembatan" = penugasan di dalam fungsi pemasang `createState({...})` (kode di `00-core.js` yang meneruskan `State.A = ...` ke variabel asli); "langsung" = semua penugasan lain.');
+  L.push('Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode aplikasi membaca dan menggantinya melalui `State.nama`. Kolom baca/tulis menunjukkan pemakaian objek state di setiap bagian.');
   L.push('');
-  L.push('| Nama | Didefinisikan di | Penugasan awal | Penugasan ulang langsung | Penugasan lewat jembatan | Dibaca (kali) | Akses `State.nama` baca / tulis |');
-  L.push('|---|---|---:|---:|---:|---:|---|');
-  for (const c of d.core) L.push('| `' + c.name + '` | ' + c.definedIn.map(P).join(', ') + ' | ' + c.initCount + ' | ' + c.reassignDirect + ' | ' + c.reassignBridge + ' | ' + c.readCount + ' | ' + c.stateReads + ' / ' + c.stateWrites + ' |');
+  L.push('| Nama | Global di app-core? | Penugasan ulang langsung | Akses State baca / tulis |');
+  L.push('|---|---|---:|---:|');
+  for (const c of d.core) L.push('| `' + c.name + '` | ' + (c.global ? 'ya (PERINGATAN)' : 'tidak') + ' | ' + c.reassignDirect + ' | ' + c.stateReads + ' / ' + c.stateWrites + ' |');
   L.push('');
   for (const c of d.core) {
-    L.push('**`' + c.name + '`** - dibaca di: ' + counts(c.readsByPart) + '. Akses lewat `State.' + c.name + '` di: ' + counts(c.stateByPart) + '.');
-    L.push('');
-    if (c.direct.length) { L.push('Penugasan ulang langsung (' + c.direct.length + '):'); L.push(''); for (const w of c.direct) L.push('- ' + where(w) + ' di dalam `' + w.fn + '` (' + w.op + ')'); }
-    else L.push('Tidak ada penugasan ulang langsung.');
-    if (c.bridge.length) { L.push(''); L.push('Lewat jembatan: ' + c.bridge.map(where).join(', ') + '.'); }
+    L.push('**`' + c.name + '`** - ' + (c.global ? 'MASIH menjadi global; perlu diperiksa.' : 'bukan global.') + ' Akses `State.' + c.name + '` terdapat di: ' + counts(c.stateByPart) + '.');
     L.push('');
   }
   L.push('## 3. Nama yang melintasi berkas (' + S.cross + ')');
