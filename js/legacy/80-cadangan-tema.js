@@ -54,18 +54,23 @@ const Backup=createBackup({
  ask:ask,
  toast:toast,
  onFailure:bpFail,
- onRestored:function(){ $('bpw').hidden=true;$('bpt').value='';$('bpm').textContent=''; }
+ onRestored:function(){ $('bpw').hidden=true;$('bpt').value='';$('bpm').textContent=''; },
+ flush:lflushDurable,
+ /*batas dibaca saat dipanggil (getter): SALES_MAX/PRM_MAX baru diisi di bagian bawah berkas ini*/
+ limits:{get rows(){return ROW_MAX},get promos(){return PRM_MAX},get sales(){return SALES_MAX}}
 });
 function restoreText(txt){Backup.restoreText(txt)}
 $('rs').onclick=function(){$('bf').click()};
 $('bf').onchange=function(){var f=this.files[0];this.value='';if(!f)return;var fr=new FileReader();fr.onload=function(){restoreText(fr.result)};fr.onerror=function(){toast('File tidak bisa dibaca')};fr.readAsText(f)};
 function snapState(){return{A:A,rows:rows.map(strip),pr:PRM,sl:SALES,ts:TS}}
 /*v5.14: manajemen kuota. SALES_DAYS = usia maksimum riwayat penjualan (hari; 0 = nonaktif). Bila browser menolak simpan (QuotaExceededError), 10% riwayat terlama dibuang lalu simpan diulang.*/
-var SALES_MAX=5000,SALES_DAYS=730,qWarn=0;
+var SALES_MAX=5000,PRM_MAX=300,SALES_DAYS=730,qWarn=0;
 function isQuota(e){return !!e&&(e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014)}
 function pruneAge(){if(!(SALES_DAYS>0)||!SALES.length)return 0;var cut=ymd(new Date(Date.now()-SALES_DAYS*864e5)),n=SALES.length;SALES=SALES.filter(function(s){return !s.d||s.d>=cut});return n-SALES.length}
+/*v9.36 (Tahap 0): KStore.setItem hanya MENGANTRIKAN penulisan; kegagalan penulisan sungguhan terjadi belakangan dan dilaporkan lewat KStore.flush() dan peristiwa kalsara-storage-error. try/catch di sini hanya menangkap galat sinkron (mis. penyimpanan belum siap), jadi return true berarti 'diterima antrean', BUKAN 'sudah tersimpan'. Untuk kepastian tersimpan pakai lflushDurable().*/
+function saveWarn(e){if(Date.now()-qWarn>30000){qWarn=Date.now();if(typeof toast=='function')toast('Perubahan belum tersimpan: '+((e&&e.message)||'penyimpanan gagal')+'. Buat cadangan sekarang.')}}
 function lsave(){var K='kalsara_v3';
- try{KStore.setItem(K,JSON.stringify(snapState()));return true}catch(e){if(!isQuota(e))return false}
+ try{KStore.setItem(K,JSON.stringify(snapState()));return true}catch(e){if(!isQuota(e)){saveWarn(e);return false}}
  /*kuota penuh: coba simpan dengan riwayat terpangkas (10% terlama per putaran); SALES asli baru dipangkas bila penyimpanan terbukti berhasil*/
  var keep=SALES.length;
  for(var t=0;t<12&&keep>0;t++){keep=Math.max(0,keep-Math.max(200,Math.ceil(keep*.1)));
@@ -87,13 +92,17 @@ function bkRemind(){var b=$('bkr');if(!b)return;var t=bkLast(),age=t?(Date.now()
 function sy(t){$('sy').textContent=t}
 var ref=null,tm=null;
 var lt=null;function lflush(){if(lt!==null){clearTimeout(lt);lt=null;lsave()}}
+/*v9.36: simpan sekarang lalu tunggu sampai benar-benar tertulis di penyimpanan tetap; menolak (reject) bila gagal.*/
+function lflushDurable(){lflush();return KStore.flush()}
 function persist(){VoucherRules.reset();CalcCache.invalidate();TS=Date.now();clearTimeout(lt);lt=setTimeout(lflush,350);clearTimeout(tm);tm=setTimeout(push,700)}
 document.addEventListener('visibilitychange',function(){if(document.hidden)lflush()});window.addEventListener('pagehide',lflush);
+/*v9.36: bila masih ada penulisan yang belum selesai saat halaman akan ditutup, minta konfirmasi (peramban menampilkan peringatan standarnya).*/
+window.addEventListener('beforeunload',function(e){if(lt!==null)lflush();if(KStore.hasPending()){e.preventDefault();e.returnValue=''}});
 function push(){if(!ref)return;sy('Menyimpan...');ref.set({json:JSON.stringify(snapState())}).then(function(){sy('Tersinkron ke akun Anda')},function(){syLocal()})}
 function applyState(d){
  var a=d.A||{};if(a.vx===undefined&&a.vd!==undefined){a.vx=a.vd;a.lv=0}if(a.cvx===undefined&&a.cv!==undefined){a.cvx=a.cv;a.clv=a.cv}delete a.vd;delete a.cv;
  (d.rows||[]).forEach(function(x){if(x.o&&x.o.vd!==undefined){if(x.o.vx===undefined)x.o.vx=x.o.vd;delete x.o.vd}});
- if(a.vp===undefined)a.vp=a.vx>0?'man':'no';if(a.lp===undefined)a.lp=a.lv>0?'man':'no';if(a.pp==='no'&&a.px>0)a.pp='man';if(a.sh===undefined){a.sh=5;if(!(a.sl>=10))a.sl=10}A=Object.assign({},DEF,a);TS=d.ts||0;SALES=Array.isArray(d.sl)?d.sl.slice(-SALES_MAX):[];var pa=pruneAge();if(pa&&typeof toast=='function')setTimeout(function(){toast(pa+' catatan penjualan lebih dari '+Math.round(SALES_DAYS/365)+' tahun dibersihkan otomatis')},1200);VoucherRules.reset();CalcCache.invalidate();PRM=(Array.isArray(d.pr)?d.pr.slice(0,300):[]).map(migPt);rows=[];KDOM.setHTML($('list'), '');
+ if(a.vp===undefined)a.vp=a.vx>0?'man':'no';if(a.lp===undefined)a.lp=a.lv>0?'man':'no';if(a.pp==='no'&&a.px>0)a.pp='man';if(a.sh===undefined){a.sh=5;if(!(a.sl>=10))a.sl=10}A=Object.assign({},DEF,a);TS=d.ts||0;SALES=Array.isArray(d.sl)?d.sl.slice(-SALES_MAX):[];var pa=pruneAge();if(pa&&typeof toast=='function')setTimeout(function(){toast(pa+' catatan penjualan lebih dari '+Math.round(SALES_DAYS/365)+' tahun dibersihkan otomatis')},1200);VoucherRules.reset();CalcCache.invalidate();PRM=(Array.isArray(d.pr)?d.pr.slice(0,PRM_MAX):[]).map(migPt);rows=[];KDOM.setHTML($('list'), '');
  (d.rows||[]).slice(0,ROW_MAX).forEach(function(x){add(x)});if(!rows.length)add();
  fill();upd(false);prRender();lsave()}
 createTheme({$,KStore,KDOM,toast,document});

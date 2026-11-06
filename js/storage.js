@@ -21,6 +21,8 @@ const cache = new Map();
 const durableCache = new Map();
 const writeVersions = new Map();
 const failedWrites = new Map();
+// Jumlah penulisan yang sudah diantrekan tetapi belum selesai (dipakai untuk peringatan saat halaman ditutup).
+let pendingWrites = 0;
 // Mode SQLite: baris ERP per entitas domain (id -> baris). Tabel SQLite adalah sumber kebenaran di disk.
 const erpMaps = new Map();
 
@@ -175,6 +177,7 @@ export async function initStorage(options = {}) {
 function enqueueTask(key, run, rollback) {
   const version = (writeVersions.get(key) || 0) + 1;
   writeVersions.set(key, version);
+  pendingWrites++;
   chain = chain.then(async () => {
     await run();
     failedWrites.delete(key);
@@ -186,7 +189,7 @@ function enqueueTask(key, run, rollback) {
     }
     console.error('Gagal menyimpan perubahan Kalsara.',error);
     dispatchStorageError(error.message);
-  });
+  }).finally(() => { pendingWrites--; });
 }
 function enqueue(k,v,del) {
   const entity = sqliteErpEntity(k);
@@ -289,9 +292,11 @@ export const KStore = {
   },
   key(i) { return allKeys()[i] ?? null; },
   get length() { return allKeys().length; },
+  /* true bila masih ada penulisan yang belum selesai ke penyimpanan tetap. */
+  hasPending() { return pendingWrites > 0; },
   async flush() {
     await chain;
-    if (failedWrites.size) { const [key,error] = failedWrites.entries().next().value; throw new Error('Data '+key+' belum tersimpan: '+error.message); }
+    if (failedWrites.size) { const [key,error] = failedWrites.entries().next().value; throw new Error('Data '+key+' belum tersimpan: '+error.message, {cause:error}); }
   },
   async exportSnapshot() {
     await this.flush();
@@ -304,6 +309,7 @@ export const KStore = {
     if (!obj || typeof obj!=='object' || Array.isArray(obj)) throw new Error('Cadangan tidak valid');
     await chain; // A restore may recover from an earlier failed key write.
     const snapshot = Object.fromEntries(Object.entries(obj).map(([k,v])=>[k,String(v)]));
+    pendingWrites++;
     const task = chain.then(async () => {
       if (backend) {
         // Satu transaksi SQLite: restore bersifat semua-atau-tidak-sama-sekali.
@@ -316,7 +322,7 @@ export const KStore = {
       }
       failedWrites.clear();
     });
-    chain = task.catch(() => {});
+    chain = task.catch(() => {}).finally(() => { pendingWrites--; });
     await task;
   }
 };
