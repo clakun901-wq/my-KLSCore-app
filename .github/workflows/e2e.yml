@@ -26,10 +26,10 @@ jobs:
       - name: Tes unit (npm test)
         run: npm test
 
-      - name: Jalankan 13 E2E satu per satu
+      - name: Jalankan 14 E2E satu per satu
         run: |
           fail=0
-          for f in load shelf hitung sqlite-fallback voucher penjualan voucher-panel dialog tarif peringatan hasil cadangan kartu-update; do
+          for f in load shelf hitung sqlite-fallback voucher penjualan voucher-panel dialog tarif peringatan hasil cadangan kartu-update tahap0; do
             echo "=== $f ==="
             if python tests/e2e/$f.e2e.py; then
               echo "LULUS: $f"
