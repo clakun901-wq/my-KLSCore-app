@@ -70,3 +70,9 @@ Catatan: percobaan E2E di sandbox tidak berhasil memulai navigasi localhost kare
 - Tes `tests/promosi-data.test.mjs` diperkuat: `CFG` dan `PORD` kini dibandingkan dengan baseline v9.43b. Sebelumnya hanya 15 fungsi yang dibandingkan. Isi `CFG` dan `PORD` terbukti identik; tidak ada perubahan kode aplikasi.
 - Ditambahkan `state_tracker.txt` (sebelumnya tidak ada di ZIP).
 - Status E2E v9.44 tetap: belum diuji di browser. Menunggu GitHub Actions pemilik.
+
+## Hasil GitHub Actions v9.44 dan perbaikan (sesi koreksi 2)
+
+- Pemilik melaporkan: workflow gagal hanya di skrip `tahap7b` (tes menunggu elemen yang "tidak terlihat" lalu timeout). Skrip lain sebelum `tahap7b` tidak dilaporkan gagal.
+- Dugaan penyebab: tes `tahap7b.e2e.py` mengklik `#t2`/`#bp`/`#bpt` secara langsung, padahal panel cadangan ada di dalam `<details>` tertutup. Tes lain (`tahap0`, `cadangan`) memakai klik/isi lewat DOM. Ini kesalahan alur tes, bukan bukti logika promosi rusak.
+- Perbaikan: `tahap7b.e2e.py` kini mengikuti alur `tahap0.e2e.py`. Belum dijalankan di browser; menunggu GitHub Actions pemilik.

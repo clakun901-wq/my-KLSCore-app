@@ -3,6 +3,6 @@ Tahap 7a: SELESAI - v9.43b (GitHub Actions pemilik: npm test exit 0, E2E 18/18)
 Tahap 7b: SELESAI DI KODE - v9.44
   npm test: LULUS di sandbox (44 skrip, exit 0), termasuk golden-master.
   Koreksi review: tes promosi-data kini juga membandingkan CFG dan PORD dengan baseline v9.43b (sebelumnya tidak).
-  E2E 19/19: MENUNGGU HASIL GitHub Actions pemilik (belum dijalankan di browser mana pun).
+  E2E: tahap7b GAGAL di GitHub Actions (alur klik tes salah, sudah diperbaiki, belum dijalankan ulang). Menunggu 19/19.
   Uji manual (restore Promo Toko format lama, muat ulang): BELUM DILAKUKAN.
 Tahap 8: BELUM DIMULAI. Jangan mulai sebelum 7b lulus E2E dan uji manual.
