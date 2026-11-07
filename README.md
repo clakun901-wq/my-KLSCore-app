@@ -1,6 +1,6 @@
 # Kalsara — migrasi client-side (basis Kalsara-v5.82)
 
-**Versi paket: v9.40 (Tahap 4: isi bagian 80 pindah ke `js/penyimpanan-cadangan.js` dan `js/pengaturan.js`; sebelumnya Tahap 3: lima data inti di `js/state.js`) — pengembangan, belum disertifikasi untuk produksi.**
+**Versi paket: v9.41 (Tahap 5: bagian 60-tab-impor-sinkron pindah ke `js/tab-impor-sinkron.js`; sebelumnya Tahap 4: bagian 80 pindah ke modul fitur) — pengembangan, belum disertifikasi untuk produksi.**
 
 - **Melanjutkan pekerjaan (mulai dari sini):** baca [`LANJUT-DI-SINI.md`](./LANJUT-DI-SINI.md) — ringkas, berisi posisi terakhir, angka target, dan langkah berikutnya.
 

@@ -1,22 +1,37 @@
-# LANJUT-DI-SINI (v3, paket v9.40)
+# LANJUT-DI-SINI (v4, paket v9.41)
 
-**Untuk AI di percakapan baru:** berkas ini menggantikan `LANJUT-DI-SINI-v2.md`. Baca berkas ini dulu; jangan membaca seluruh `MIGRATION-STATUS.md` (arsip). Rencana, aturan pemilik, cara wasit, aturan berhenti, definisi selesai, uji manual, dan format laporan TETAP seperti di v2 (Bagian 1-3 dan 5-10 dokumen itu); hanya posisi di bawah yang berubah. Kerjakan SATU tahap per sesi.
+**Panduan sesi:** aturan pemilik, cara kerja, definisi selesai, uji manual, format laporan, dan aturan berhenti tetap seperti `LANJUT-DI-SINI-v2.md` (Bagian 1-3 dan 5-10). Posisi terbaru di bawah menggantikan posisi v3. Kerjakan SATU tahap per sesi.
 
 ## Posisi saat ini
-Tahap 0, 1, 2, 3 selesai (v9.36-v9.39). **Tahap 4 selesai di v9.40** (kode, `npm test`, 15 E2E di sandbox sesi pembuat; GitHub Actions milik pemilik BELUM).
+
+Tahap 0-4 selesai (v9.36-v9.40). **Tahap 5 sudah dipindahkan secara kode ke v9.41, tetapi BELUM boleh dinyatakan selesai** karena E2E browser belum berhasil dijalankan di sandbox sesi ini dan belum ada hasil GitHub Actions pemilik.
 
 | Ukuran | Nilai |
 |---|---:|
-| Nama global di `js/app-core.js` | 194 (sebelumnya 227) |
-| Nama global lintas bagian | **90** (belum turun; turun saat bagian 20/30/50/60/95 dipindah) |
-| Bagian 80 | tinggal pemasangan + 9 fungsi penerus |
-| Modul baru | `js/penyimpanan-cadangan.js` 10.689 B, `js/pengaturan.js` 6.912 B |
-| `npm test` | exit 0 |
-| E2E | 14 skrip lama + `tahap4.e2e.py` (23) lulus di sandbox |
+| Versi paket | v9.41 (`package.json` 0.9.41; cache SW v9.41) |
+| Global di `js/app-core.js` | 177 |
+| Global lintas bagian | 90 (sebelumnya 90; penghubung yang diperlukan masih ada) |
+| `npm test` | exit 0; tes Tahap 5: 61 assertion |
+| Kesetaraan bagian 60 | 51 pernyataan sama dengan fixture v9.40 |
+| E2E Tahap 5 | Belum diuji: Chromium memblokir akses `127.0.0.1` di sandbox sesi |
 
-## Berikutnya: Tahap 5 (`60-tab-impor-sinkron`, 22 KB)
-Pola yang terbukti di Tahap 4: (1) petakan pernyataan tingkat atas dengan acorn (`scripts/vendor/acorn.mjs`); (2) salin teks apa adanya ke `createXxx({dependensi})`; (3) nama yang dipakai bagian lain tetap tersedia sebagai deklarasi function penerus (bagian 30/40 menyalin nilai saat muat; `lateCaptures` di `legacy-split.test.mjs` akan menolak bila tidak); (4) fixture teks asli + tes kesetaraan pernyataan seperti `penyimpanan-cadangan.test.mjs`; (5) E2E untuk bagian yang hanya hidup di browser; (6) sabotase.
-Catatan: `tab` dan `tchk` dibungkus ulang di beberapa tempat; bagian 60 mendefinisikan `tab` (dibungkus oleh `wrapTab`), jadi hati-hati saat memindahkannya.
+## Tahap 5 (`60-tab-impor-sinkron`)
 
-## Belum terbukti
-E2E di GitHub Actions milik pemilik; uji HP nyata; offline Service Worker; uji manual Bagian 7 v2; data toko asli. Paket belum boleh menggantikan aplikasi produksi.
+Isi 51 pernyataan asli bagian 60 dipindahkan ke `js/tab-impor-sinkron.js` dalam factory `createTabImporSinkron`. `State` dan `KStore` diimpor langsung; fungsi yang masih dipakai bagian lain tersedia lewat penerus kompatibilitas. `parseCsv.bad` diteruskan melalui getter/setter karena bagian XLSX lama membaca status parser itu. Modul sudah didaftarkan di `sw.js`.
+
+Bukti otomatis yang sudah dijalankan:
+- `npm test`: LULUS (termasuk golden-master uang, peta global, tes kompatibilitas, dan tes Tahap 5).
+- `node --check` untuk `js/app-core.js` dan `js/tab-impor-sinkron.js`: LULUS.
+- `python -m py_compile tests/e2e/tahap5.e2e.py`: LULUS.
+- `node scripts/peta-global.mjs`: 177 global, 90 lintas bagian, 0 penugasan ulang langsung variabel inti.
+
+## Berikutnya (masih Tahap 5, jangan mulai Tahap 6)
+
+1. Unggah ZIP v9.41 ke repositori GitHub.
+2. Buka Actions → **Uji E2E Browser** → Run workflow.
+3. Workflow kini menjalankan 16 skrip E2E, termasuk `tahap4` dan `tahap5`.
+4. Laporkan hasil dan nama skrip yang gagal. Jika ada satu kegagalan, berhenti dan perbaiki Tahap 5; jangan lanjut ke Tahap 6.
+
+## Risiko dan hal belum terbukti
+
+E2E Tahap 5, E2E GitHub Actions, uji HP nyata, offline Service Worker, dan uji manual Bagian 7 v2 belum terbukti. Paket v9.41 belum boleh menggantikan aplikasi produksi atau data toko asli.
