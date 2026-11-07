@@ -49,3 +49,15 @@ ok(!/cdn\.jsdelivr|unpkg|esm\.sh/.test(fs.readFileSync(path.join(root, 'js/stora
 if (fs.existsSync(path.join(root, 'vendor/sqlite-wasm/sqlite3.wasm'))) { const { check } = await import('../scripts/fetch-sqlite-wasm.mjs'); const problems = check(); ok(problems.length === 0, 'vendor/sqlite-wasm tidak utuh: ' + problems.join('; ')); }
 for (const ic of manifest.icons) ok(sw.includes('./' + ic.src), 'ikon belum masuk cache Service Worker: ' + ic.src);
 console.log(`PWA installability audit: ${n} assertions passed`);
+
+// v9.43-koreksi: tidak ada modul runtime yang boleh memuat kode dari internet (aturan A5/B1)
+{
+  const dirs = ['js', 'workers', 'components'];
+  const bad = [];
+  for (const d of dirs) for (const f of fs.readdirSync(path.join(root, d))) {
+    if (!/\.(m?js|cjs)$/.test(f)) continue;
+    const src = fs.readFileSync(path.join(root, d, f), 'utf8');
+    if (/cdn\.jsdelivr|unpkg\.com|esm\.sh|cdnjs\.cloudflare|import\s*\(\s*['"]https?:/.test(src)) bad.push(d + '/' + f);
+  }
+  ok(bad.length === 0, 'tidak ada pemuatan kode dari CDN di modul runtime: ' + bad.join(', '));
+}

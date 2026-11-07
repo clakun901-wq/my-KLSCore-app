@@ -12,6 +12,8 @@ const originalBlock = [...originalHTML.matchAll(/<script>([\s\S]*?)<\/script>/g)
 assert.ok(originalBlock, 'Skrip bisnis utama v5.82 harus tersedia');
 import {readLegacySource} from './helpers/legacy-source.mjs';
 const migratedSource = readLegacySource();
+const promoPanelSource = fs.readFileSync(new URL('../js/promosi-panel.js', import.meta.url), 'utf8').replace(/^export /gm, '');
+const movedPromoFunctions = new Set(['ppd','pkombo','phm','rw','pinfo']);
 
 function fixedDate(iso) {
   return class FixedDate extends Date {
@@ -26,6 +28,7 @@ function executablePrefix(source) {
   return source.slice(0, end);
 }
 function extractFunction(source, name) {
+  if (name === 'actPromo') { const at=source.indexOf('function actPromo('); const end=source.indexOf('\n',at); assert.ok(at>=0&&end>at,'Fungsi actPromo harus ditemukan'); return source.slice(at,end); }
   const match = source.match(new RegExp('function ' + name + '\\([\\s\\S]*?(?=\\nfunction )'));
   assert.ok(match, `Fungsi ${name} harus ditemukan`);
   return match[0];
@@ -46,7 +49,7 @@ function createCalc(source, useIntegerMoney, DateImpl = FixedDate) {
     ? 'var A=State.A,PRM=State.PRM,rows=State.rows;\n'
     : 'var State={};Object.defineProperties(State,{A:{get:function(){return A},set:function(v){A=v}},rows:{get:function(){return rows},set:function(v){rows=v}},PRM:{get:function(){return PRM},set:function(v){PRM=v}},SALES:{get:function(){return []},set:function(v){}},TS:{get:function(){return 0},set:function(v){}}});\n';
   /* v9.25: pst kini di js/voucher-rules.js (dipasang lewat 10-calc.js); sumber v5.82 asli masih memilikinya sebagai fungsi legacy. */
-  const promoFunctions = ['ptp','pst','actPromo','ppd','pkombo','phm','warns','WN','bis','pc1','rw','pinfo','esc'].filter(name => !(formatPrelude(source) !== '' && name === 'pst')).map(name => extractFunction(source, name)).join('\n');
+  const promoFunctions = ['ptp','pst','actPromo','ppd','pkombo','phm','warns','WN','bis','pc1','rw','pinfo','esc'].filter(name => !(formatPrelude(source) !== '' && name === 'pst')).map(name => (movedPromoFunctions.has(name) ? extractFunction(promoPanelSource, name).replace(/\bD\./g, '') : extractFunction(source, name))).join('\n');
   /* v9.31: warns/pc1/WN kini ada di js/warnings.js dan membaca A lewat getA() (tahap 6d); harness vm menyediakan getA yang membaca A global. Sumber v5.82 asli tidak memanggilnya. */
   vm.runInContext(formatPrelude(source) + executablePrefix(source) + stateAdapter + voucherBlock + 'function getA(){return State.A}\n' + promoFunctions + `
     var __rvc=function(){if(typeof VoucherRules!=='undefined')VoucherRules.reset();else VCC=null};

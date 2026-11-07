@@ -1,7 +1,0 @@
-var dfn=null,dprev=null;
-function inertBg(on){[document.querySelector('main'),document.querySelector('nav'),document.querySelector('header'),$('fab')].forEach(function(x){if(x)x.inert=on})}
-function ask(m,ok,fn){dprev=document.activeElement;$('dlgm').textContent=m;$('dy').textContent=ok;dfn=fn;$('dlg').hidden=false;inertBg(true);$('dn').focus()}
-function dclose(){$('dlg').hidden=true;dfn=null;inertBg(false);var p=dprev;dprev=null;if(p&&p.focus)try{p.focus()}catch(e){}}
-$('dn').onclick=dclose;$('dy').onclick=function(){var f=dfn;dclose();if(f)f()};
-$('dlg').addEventListener('keydown',function(e){if(e.key=='Escape')dclose();else if(e.key=='Tab'){var f=[$('dn'),$('dy')],i=f.indexOf(document.activeElement);e.preventDefault();f[(i+(e.shiftKey?-1:1)+2)%2].focus()}});$('dlg').addEventListener('click',function(e){if(e.target===this)dclose()});
-var toastT=null;function toast(m){var t=$('tt');t.textContent=m;t.className='toast on';clearTimeout(toastT);toastT=setTimeout(function(){t.className='toast'},1600)}
