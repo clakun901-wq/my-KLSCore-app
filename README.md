@@ -1,10 +1,12 @@
 # Kalsara - Micro-ERP e-commerce, 100% di sisi klien (basis Kalsara v5.82)
 
-**Versi paket: v9.49 (Tahap 9C: percepatan aksi di tab Hitung, Promosi, dan Etalase; v9.48 lulus 21 E2E di GitHub Actions).** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (21 E2E) dan uji manual lulus.
+**Versi paket: v9.49 (Tahap 9C: percepatan aksi di tab Hitung, Promosi, dan Etalase). Lulus di GitHub Actions pemilik: npm test dan 21 E2E (`fail=0`).** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (21 E2E) dan uji manual lulus.
 
 Aplikasi berjalan penuh di peramban: tanpa server, tanpa build tool, tanpa CDN saat berjalan. Logika bisnis dan hasil hitung identik dengan v5.82 (dibuktikan tes golden-master dan diferensial).
 
 ## Mulai dari mana
+- Urutan baca untuk yang meneruskan setelah lama ditinggal: README -> `LANJUT-DI-SINI.md` -> `state_tracker.txt` -> [`CHANGELOG.md`](./CHANGELOG.md) -> [`docs/PANDUAN-PERAWATAN.md`](./docs/PANDUAN-PERAWATAN.md) (peta modul, arti fixture, skrip, daftar periksa rilis).
+- Aturan dokumentasi: setiap sesi yang mengubah paket menambah entri CHANGELOG dan memperbarui LANJUT-DI-SINI, state_tracker, README, progress.html; `npm test` menolak dokumentasi yang usang.
 - Posisi terakhir dan langkah berikutnya: [`LANJUT-DI-SINI.md`](./LANJUT-DI-SINI.md) dan `state_tracker.txt`.
 - Dashboard ringkas: [`progress.html`](./progress.html).
 - Sejarah teknis lama (arsip, tidak perlu dibaca): [`arsip/MIGRATION-STATUS.md`](./arsip/MIGRATION-STATUS.md).
@@ -27,6 +29,6 @@ Aplikasi berjalan penuh di peramban: tanpa server, tanpa build tool, tanpa CDN s
 - Aturan: satu tes gagal = berhenti dan perbaiki; jangan melemahkan tes agar lulus.
 
 ## Batasan yang masih terbuka
-- E2E v9.49 belum dijalankan di GitHub Actions (v9.48 lulus 21/21); uji HP nyata, uji offline pada perangkat nyata, pemulihan data besar/asli, dan cadangan lintas perangkat belum dilakukan.
+- Uji manual Bagian 7 pada salinan data, uji HP nyata, uji offline pada perangkat nyata, pemulihan data besar/asli, dan cadangan lintas perangkat belum dilakukan.
 - `js/app-core.js` masih satu modul perakitan yang berisi beberapa bagian; memecahnya lagi adalah pekerjaan opsional.
 - Simpan cadangan data secara berkala; lakukan semua uji pada salinan data, bukan data toko asli.

@@ -1,9 +1,10 @@
 # LANJUT-DI-SINI (v10) - posisi setelah Tahap 9C (v9.49)
 
-Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`. Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
+Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat perubahan ada di `CHANGELOG.md`, peta modul/fixture/skrip/daftar periksa rilis di `docs/PANDUAN-PERAWATAN.md`. WAJIB memperbarui CHANGELOG dan dokumen ini di setiap sesi yang mengubah paket (dijaga `tests/dokumentasi.test.mjs`). Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
 
 ## Posisi
-- Tahap 0-8 selesai. Tahap 9A/9B (v9.48, kinerja 1.000 produk) selesai dan LULUS di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21 E2E lulus, `fail=0`.
+- Tahap 0-8 selesai. Tahap 9A/9B (v9.48) dan 9C (v9.49, aksi tab Hitung/Promosi/Etalase lebih cepat) selesai dan LULUS di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21 E2E lulus, `fail=0`. Paket terbaru: v9.49.
+- Sisa kinerja yang diketahui (kerjakan hanya bila HP pemilik masih berat): buka aplikasi 1.000 produk (~5 dtk pada simulasi x4), `refreshLabels()` per `upd()`, hitungan promo di `money.js` (rumus dibekukan).
 - Tahap berikutnya BELUM ada. Langkah 3 (Hitung berhalaman) dan langkah 4 (`upd` per ketikan) hanya dikerjakan bila angka/kesan dari HP pemilik menunjukkan masih berat. Bila sudah lancar, keduanya dilewati. Jangan membuat tahap baru tanpa permintaan pemilik.
 
 ## Yang dikerjakan di Tahap 8
@@ -55,4 +56,4 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`. Jangan mem
 - Promosi: daftar "Ganti produk..." di tiap baris promo berisi SEMUA produk (30 baris x 1.000 = 30.000 opsi). Kini diisi saat pertama disentuh/difokus (`itswFill` di js/promosi-panel.js). Menambah produk ke Promo Toko: sekitar 9 dtk -> 2 dtk (x4). Sisa waktu ada di hitungan promo (money.js `percentUnits`), TIDAK disentuh (rumus dibekukan).
 - Penyimpangan sadar dari fixture: tests/promosi-panel.test.mjs (dua pernyataan baru + satu penggantian teks, diturunkan dari fixture sehingga perubahan lain tetap tertangkap) dan tests/hitung-etalase.test.mjs (satu penyesuaian, total 8). Tes baru: etalase-halaman (tandaiKotor) dan 2 pernyataan E2E di tahap7a (daftar kosong sebelum disentuh, terisi saat dibuka).
 - Belum dikerjakan: boot 1.000 produk (sekitar 5 dtk, satu tugas panjang 2 dtk pada x4), `refreshLabels()` yang menyisir seluruh dokumen tiap `upd()`, `percentUnits`. Menunggu angka HP pemilik.
-- Terbukti di sandbox sesi: `npm test` exit 0, 21 E2E lulus (`fail=0`). Belum terbukti: GitHub Actions v9.49, HP asli.
+- TERBUKTI di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21/21 E2E, `fail=0`. Belum terbukti: HP asli.

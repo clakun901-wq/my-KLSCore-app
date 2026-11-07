@@ -9,7 +9,8 @@ Tahap 8: SELESAI DI KODE - v9.47
   Tidak ada perubahan rumus, hasil hitung, atau fitur.
   GitHub Actions v9.47: npm test lulus; E2E tahap8 GAGAL (salah alur tes: menunggu kartu produk padahal tanpa data; sudah diperbaiki). Dijalankan ulang di v9.48: lulus.
   Uji manual Bagian 7 (tutup cepat, restore lalu muat ulang, >1.000 produk, offline, profil kosong): BELUM DILAKUKAN.
-Tahap 9C (v9.49): percepatan aksi tab Hitung/Promosi/Etalase (upd tidak membangun Etalase tersembunyi; rp() satu Intl; daftar Ganti produk lazy). Sandbox: npm test + 21 E2E lulus; GitHub Actions v9.49 menunggu.
+Tahap 9C (v9.49): percepatan aksi tab Hitung/Promosi/Etalase (upd tidak membangun Etalase tersembunyi; rp() satu Intl; daftar Ganti produk lazy). GitHub Actions pemilik (8 Nov 2026): npm test lulus, 21/21 E2E, fail=0. HP asli belum diuji.
+  Dokumentasi: ditambah CHANGELOG.md, docs/PANDUAN-PERAWATAN.md, tests/dokumentasi.test.mjs (menolak dokumentasi usang).
 Tahap 9A/9B (kinerja 1.000 produk, v9.48): SELESAI (GitHub Actions pemilik 8 Nov 2026: npm test lulus, 21/21 E2E, fail=0; HP asli belum diuji).
   Riwayat: dikerjakan (diminta pemilik 8 Nov 2026 setelah ZIP v9.47: hampir semua tab freeze dengan 1.000 produk di laptop dan HP).
   Keputusan pemilik: pembagian halaman (bukan virtualisasi); mulai langkah 1 (9A pengukur) dan 2 (penanda data-berubah di tab() + pembagian halaman Etalase). Langkah 3 (Hitung berhalaman) dan 4 (upd() per ketikan) menunggu angka ukur dari HP pemilik.
