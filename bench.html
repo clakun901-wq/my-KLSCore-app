@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><title>Bench kartu Etalase</title>
+<style>:root{--card:#fff;--ink:#111;--mute:#666;--line:#ddd;--soft:#eee;--ok:#0a7;--bad:#c33;--warn:#a60;--badbg:#fdd;--warnbg:#fed;--accent:#111;--onacc:#fff;--inp:#fff;--inpl:#ccc;--sh:0 1px 3px #0002}body{font-family:sans-serif;margin:12px}</style>
+<div id="shl"></div>
+<script type="module">
+import {renderShelf} from '../../components/product-card.js';
+const make = (n, tweak) => Array.from({length: n}, (_, i) => ({kind: 'card', key: 'c-' + i, model: {
+  index: i, name: 'Produk ' + i, rawName: 'Produk ' + i, chips: [{kind: 'a', text: 'Voucher Toko Rp 2.000 · Berjalan'}],
+  price: {kind: 'priced', main: 'Rp ' + (50000 + i + (tweak || 0)), strike: 'Rp 80.000', pct: '-30%', label: 'Harga aktual', actual: true,
+          notes: [[{text: 'Harga awal Shopee Rp 80.000. '}, {text: 'Untung Rp 9.000', tone: 'ok', bold: true}, {text: ' · margin 11%'}]]},
+  voucher: null, stock: {value: String(10 + i % 40), label: '', tone: '', unlocked: false}}}));
+window.bench = () => {
+  const c = document.getElementById('shl');
+  const t0 = performance.now(); renderShelf(c, make(1000)); const first = performance.now() - t0;
+  const nodes = c.children.length, first0 = c.firstElementChild;
+  const t1 = performance.now(); renderShelf(c, make(1000, 1)); const update = performance.now() - t1;
+  const reused = first0 === c.firstElementChild;
+  const t2 = performance.now(); renderShelf(c, make(1000, 1).reverse()); const reorder = performance.now() - t2;
+  return {first: Math.round(first), update: Math.round(update), reorder: Math.round(reorder), nodes, reused};
+};
+window.ready = true;
+</script>
