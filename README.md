@@ -1,6 +1,6 @@
 # Kalsara — migrasi client-side (basis Kalsara-v5.82)
 
-**Versi paket: v9.42 (Tahap 6: bagian 20-hitung-etalase pindah ke `js/hitung-etalase.js`; sebelumnya Tahap 5: bagian 60 pindah ke `js/tab-impor-sinkron.js`, Tahap 4: bagian 80 pindah ke modul fitur) — pengembangan, belum disertifikasi untuk produksi.**
+**Versi paket: v9.43 (Tahap 7a: panel dan tampilan promosi pindah ke `js/promosi-panel.js`; Tahap 6: bagian 20-hitung-etalase pindah ke `js/hitung-etalase.js`; sebelumnya Tahap 5: bagian 60 pindah ke `js/tab-impor-sinkron.js`, Tahap 4: bagian 80 pindah ke modul fitur) — pengembangan, belum disertifikasi untuk produksi.**
 
 - **Melanjutkan pekerjaan (mulai dari sini):** baca [`LANJUT-DI-SINI.md`](./LANJUT-DI-SINI.md) — ringkas, berisi posisi terakhir, angka target, dan langkah berikutnya.
 
@@ -17,6 +17,7 @@ Paket ini mempertahankan markup, stylesheet, dan logika bisnis v5.82 sebagai lap
 - `index.html` — markup dan navigasi asli.
 - `source/Kalsara-v5_82.html` — salinan sumber asli yang tidak diubah sebagai referensi/cadangan.
 - `css/app.css` — stylesheet asli, tidak didesain ulang.
+- `js/promosi-panel.js` — panel dan tampilan promosi (Tahap 7a); logika data dan voucher tetap di `app-core.js` untuk Tahap 7b.
 - `js/app-core.js` — modul ES inti (sejak v9.38; menggantikan loader `js/legacy-app.js` dan 12 berkas `js/legacy/*.js`). Isinya logika bisnis asli yang terbagi menjadi bagian berurutan, masing-masing diawali baris penanda `BAGIAN nn-nama`; modul lain diimpor eksplisit di bagian atas berkas. Dimuat oleh `js/main.js`.
 - `js/storage.js` — penyimpanan dengan dua mode: **SQLite** (Worker, OPFS SAH Pool) sebagai satu-satunya sumber data bila `vendor/sqlite-wasm/` tersedia; **jurnal OPFS** lama hanya sebagai jalur cadangan sebelum pernah beralih ke SQLite.
 - `js/sqlite-engine.js`, `js/sqlite-client.js`, `workers/sqlite-store.worker.js` — skema/transaksi SQLite (murni, diuji di SQLite nyata), proxy Worker, dan bootstrap Wasm lokal.
@@ -57,7 +58,7 @@ Gunakan HTTPS atau localhost (OPFS dan module imports memerlukan secure context)
 - Kalkulator harga inti, pencarian harga, kombinasi tarif, threshold voucher/promosi, dan sejumlah operasi margin masih memiliki jalur `Number`. Helper persentase dan diskon serta agregasi ERP sudah memakai BigInt, tetapi belum seluruh rumus bisnis.
 - Worker sudah menangani CSV, XLSX, parsing laporan Shopee, detail pesanan, dan agregasi ERP. Kalkulator harga, tarif, promosi, dan sebagian pemetaan HPP masih di main thread.
 - SQLite memiliki tabel materialisasi domain ERP, tetapi adapter CRUD ERP masih menulis JSON per-koleksi ke OPFS journal. Tabel domain belum menjadi sumber query/CRUD aktif.
-- SQLite Wasm masih diambil dari CDN; untuk operasi offline sejak instalasi pertama, library Wasm harus dibundel lokal.
+- (Diperbarui v9.43a) SQLite Wasm sudah dibundel lokal di `vendor/sqlite-wasm/` dan terdaftar wajib di cache Service Worker. Tidak ada lagi pemuatan dari CDN (Signals juga memakai mesin lokal).
 - Preact Signals dan Web Component tersedia sebagai fondasi; belum semua tampilan produk dipindahkan ke komponen Shadow DOM.
 - Sinkron supplier/Google Sheets masih merupakan koneksi eksternal browser ke URL yang diberikan pengguna; tinjau kembali kebutuhan dan izin aksesnya.
 - Pengujian unit dan static audit sudah tersedia. Browser end-to-end belum dinyatakan lulus; Chromium headless di lingkungan build berhenti sebelum merender DOM, bahkan pada halaman HTML sederhana. Migrasi localStorage/IndexedDB perlu diuji terhadap salinan data browser nyata.
@@ -150,7 +151,7 @@ Tanggal build: 2026-11-02
 
 ### Batasan yang belum tertutup
 - Ini **integrasi Worker bertahap**, bukan penghapusan penuh kalkulasi sinkron: jalur sinkron tetap dipakai sebagai fallback dan untuk operasi kompatibilitas seperti panel perbandingan. Browser UI perlu diuji nyata untuk mengukur bahwa hasil Worker benar-benar terpakai pada interaksi normal.
-- SQLite Wasm belum dapat dibundel lokal pada build ini karena artefak paket tidak tersedia di lingkungan build dan akses registry terhenti. `storage.js` masih mencoba CDN, lalu jatuh kembali ke jurnal OPFS. Karena itu first-run/offline SQLite belum lulus.
+- SQLite Wasm belum dapat dibundel lokal pada build ini karena artefak paket tidak tersedia di lingkungan build dan akses registry terhenti. (Catatan lama, sudah usang: sejak v9.3x Wasm dibundel lokal dan CDN tidak dipakai lagi; uji offline di perangkat nyata tetap belum dibuktikan.)
 - Chromium headless yang tersedia pada lingkungan build timeout bahkan pada halaman HTML `data:` statis; E2E browser dan pemeriksaan visual desktop/mobile belum dinyatakan lulus.
 - Tabel domain tetap merupakan indeks/materialisasi yang dibangun dari jurnal OPFS, bukan satu-satunya sumber kebenaran. Ini disengaja agar write-ahead recovery tetap aman; klaim bahwa SQLite menjadi satu-satunya storage aktif belum tepat.
 
