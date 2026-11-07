@@ -1,0 +1,30 @@
+/* Logika tarif dan peringatan tarif Kalsara (v9.30, tahap 6c): tblSync, tbuild, fillT, tchk, verStale, ADN, refreshLabels (+ salinan tarif bawaan AD0/GO0).
+ * Dipindah APA ADANYA dari js/legacy/20-hitung-etalase.js (bagian 1-23 lama). Perubahan teks hanya: `var A=getA();` (dan `rows=getRows()` di verStale) di awal fungsi
+ * (dan di awal dua pendengar tbuild) karena kode legacy menugaskan ulang A/rows saat restore, sehingga nilainya HARUS dibaca ulang setiap dipakai.
+ * Ketergantungan lain disuntikkan: $, document, KDOM, AD, GO, GO2, fmt, today, SGL, prodSig, feeSig, calc, upd, fill, toast.
+ * Pemasangan di legacy memakai pembungkus (late-bound) untuk feeSig, calc, upd, fill, toast karena nilainya baru ada setelah baris pemasangan atau didefinisikan di bagian lain.
+ * tchk TETAP dibungkus ulang oleh js/legacy/80-cadangan-tema.js (`var _tchk=tchk;tchk=function(){...}`): karena itu tchk dipasang sebagai `var` legacy yang boleh ditugaskan ulang. */
+export function createTarifUI({getA,getRows,$,document,KDOM,AD,GO,GO2,fmt,today,SGL,prodSig,feeSig,calc,upd,fill,toast}){
+var AD0=JSON.parse(JSON.stringify(AD)),GO0=JSON.parse(JSON.stringify(GO));
+function tblSync(){var A=getA();Object.keys(AD0).forEach(function(k){AD[k]=(A.tbl&&A.tbl.AD&&A.tbl.AD[k])?A.tbl.AD[k].slice():AD0[k].slice()});Object.keys(GO0).forEach(function(k){GO[k]=(A.tbl&&A.tbl.GO&&A.tbl.GO[k])?A.tbl.GO[k].slice():GO0[k].slice()})}
+function tbuild(){var h='',NM=['Admin','Admin Mall','Ongkir biasa','Ongkir khusus'];'ABCDEFGHI'.split('').forEach(function(c){h+='<div class="tb"><b>Kategori '+c+'</b>'+[['AD',0],['AD',1],['GO',0],['GO',1]].map(function(x,ix){if(x[0]=='GO'&&!GO0[c])return'';return'<label><span>'+NM[ix]+' (%)</span><input inputmode="decimal" aria-label="Kategori '+c+' '+NM[ix]+'" data-t="'+x[0]+'|'+x[1]+'|'+c+'"></label>'}).join('')+'</div>'});
+ KDOM.setHTML($('tbl'), h);
+ $('tbl').addEventListener('input',function(e){var A=getA();var t=e.target,p=(t.dataset.t||'').split('|');if(p.length<3)return;var v=(t.value.trim()===''?NaN:Number(t.value.replace(',','.')));if(isNaN(v)||v<0)return;if(v>100){v=100;t.value='100'}
+  A.tbl=A.tbl||{AD:{},GO:{}};var src=p[0]=='AD'?AD:GO,arr=(A.tbl[p[0]][p[2]]||src[p[2]]).slice();arr[+p[1]]=v;A.tbl[p[0]][p[2]]=arr;upd(true)});
+ $('tr').onclick=function(){var A=getA();A.tbl=null;fill();upd(true);toast('Tabel tarif dikembalikan')}}
+function fillT(){document.querySelectorAll('[data-t]').forEach(function(t){var p=t.dataset.t.split('|'),a=(p[0]=='AD'?AD:GO)[p[2]];t.value=a?fmt(a[+p[1]]):''})}
+function tchk(){var A=getA();var w=$('tw');if(A.ver&&!A.ver.ok&&!A.ver.ig){w.hidden=false;w.textContent='Cek pesanan nyata ('+A.ver.d+') menemukan selisih pada: '+A.ver.bad.join(', ')+'. Perbaiki di tab Tarif, lalu cek ulang.';return}var sd=verStale();if(sd){w.hidden=false;w.textContent='Tarif berubah sejak cek pesanan nyata ('+A.ver.d+'): '+sd.slice(0,4).join(', ')+(sd.length>4?', dan '+(sd.length-4)+' lainnya':'')+'. Cek ulang dengan pesanan nyata.';return}var d=A.tchk?Math.floor((new Date(today()+'T00:00')-new Date(A.tchk+'T00:00'))/864e5):null;
+ if(d===null){w.hidden=false;w.textContent='Tanggal pengecekan tarif belum diisi. Cocokkan tabel tarif dengan Seller Centre di tab Tarif, lalu isi tanggalnya.'}
+ else if(d>(A.tcd>0?A.tcd:30)){w.hidden=false;w.textContent='Tarif terakhir dicek '+d+' hari lalu. Cocokkan lagi dengan Seller Centre.'}else w.hidden=true}
+function verStale(){var A=getA(),rows=getRows();var v=A.ver;if(!v||!v.ok)return null;if(!v.sg)return['pengaturan tarif (cek lama belum mencatat pengaturan)'];
+ var c=feeSig(),d=Object.keys(SGL).filter(function(k){return c[k]!==v.sg[k]}).map(function(k){return SGL[k]});if(d.length)return d;
+ var ml=v.ml||(v.ps?[{pn:v.pn,ps:v.ps}]:[]);for(var mi=0;mi<ml.length;mi++){var r=rows.filter(function(x){return(x.n||'')===ml[mi].pn})[0],o=r&&calc(r);if(o&&!o.err&&prodSig(o.R)!==ml[mi].ps)return['tarif khusus produk '+(ml[mi].pn||'(tanpa nama)')]}
+ return null}
+var ADN={A:'Pakaian Muslim, Rumah Tangga, Mainan',B:'Peralatan RT, Buku, Olahraga',C:'Aksesoris Fashion, Ibu & Bayi, Makanan, Kecantikan',D:'Kesehatan, Komputer & Aksesoris',E:'Fotografi, Audio, Elektronik Besar',F:'Makanan Segar, Bahan Pokok',G:'Handphone & Tablet',H:'Logam Mulia, Emas, Perak',I:'Sepeda Motor, Mobil'};
+function refreshLabels(root){var A=getA();root=root||document;
+ var ix=A.tp=='ml'?1:0;
+ root.querySelectorAll('#ac option,select[data-o="ac"] option').forEach(function(o){var t=AD[o.value];if(!t)return;var p=o.parentNode.id=='ac';o.textContent=p?o.value+' ('+fmt(t[ix])+'%): '+ADN[o.value]:'Kategori '+o.value+' ('+fmt(t[ix])+'%)'});
+ root.querySelectorAll('select[data-o="g2"] option').forEach(function(o){var t=GO2[o.value];if(!t)return;o.textContent=o.value+' · '+fmt(t[0])+'%'});
+ root.querySelectorAll('#gc option,select[data-o="gc"] option').forEach(function(o){var t=GO[o.value];if(!t)return;var p=o.parentNode.id=='gc';o.textContent=p?'Kategori '+o.value+': '+fmt(t[0])+'% biasa / '+fmt(t[1])+'% khusus':o.value+' · '+fmt(t[0])+'%'})}
+return {tblSync:tblSync,tbuild:tbuild,fillT:fillT,tchk:tchk,verStale:verStale,refreshLabels:refreshLabels};
+}
