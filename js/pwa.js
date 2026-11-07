@@ -1,4 +1,4 @@
-export function createPWA({ $, toast, lflush, APPV = '5.82' }) {
+export function createPWA({ $, toast, lflush, APPV }) {
 
 /*5.71: filter Hitung memakai tanda live yang sama dengan kartu atas (Sudah live, Belum live); kartu Total produk, Sudah live, Belum live bisa diketuk untuk menyaring daftar. Produk baru diberi keterangan (harga Shopee kosong). Hanya tampilan dan penyaringan; rumus tidak berubah.*/
 /*5.70: panel Tarif produk ini dirapikan: tiga bagian (kategori resmi, persen manual, biaya lain), label diperjelas, ringkasan Dipakai sekarang. Hanya tampilan; data-o dan rumus tidak berubah.*/
@@ -6,7 +6,7 @@ export function createPWA({ $, toast, lflush, APPV = '5.82' }) {
 /*5.68: perbaikan: tab Hitung kini dihitung ulang saat dibuka bila isi Promosi atau tanggal berubah (sebelumnya baru terbaca setelah refresh).*/
 /*5.67: perbaikan: id kartu Total produk diganti tp1 sampai tp3 karena bentrok dengan id tombol menu t1 sampai t3.*/
 /*5.66: kartu Total produk, Sudah live, Belum live di tab Hitung.*/
-/*5.64: dapat dipasang ke layar utama, jalan tanpa internet, dan tombol muat versi terbaru. APPV harus sama dengan VERSI di sw.js.*/
+/*5.64: dapat dipasang ke layar utama, jalan tanpa internet, dan tombol muat versi terbaru. APPV kini dari js/version.js (satu sumber, sama dengan nama cache sw.js).*/
 var dip=null,swReg=null,swHad=false;
 function swOK(){return !!(navigator.serviceWorker&&navigator.serviceWorker.controller)}
 function isSA(){try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}}

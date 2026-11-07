@@ -30,8 +30,8 @@ Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berup
 | 80-cadangan-tema.js | 2.026 | 14 | 9 | 5 | 11 | 22 |
 | 90-erp.js | 262 | 1 | 0 | 1 | 1 | 2 |
 | 95-boot.js | 449 | 1 | 0 | 1 | 0 | 12 |
-| 99-pwa.js | 44 | 0 | 0 | 0 | 0 | 3 |
-| **Jumlah** | **13.098** | **121** | **50** | **71** | **90** (nama unik) | |
+| 99-pwa.js | 68 | 0 | 0 | 0 | 0 | 3 |
+| **Jumlah** | **13.122** | **121** | **50** | **71** | **90** (nama unik) | |
 
 Cara membaca: "Dipakai berkas lain" = berapa nama buatan berkas ini yang dipakai berkas lain. "Memakai nama berkas lain" = berapa nama milik berkas lain yang dipakai di berkas ini. Berkas dengan angka keduanya kecil paling mudah dipindah lebih dulu.
 
@@ -313,7 +313,7 @@ Tidak ada.
 
 **Akses dinamis** (`window[...]`, `eval`, `new Function`): tidak ada.
 
-**Nama yang dibaca/ditulis lewat `window.` atau `globalThis.`** di legacy: `Blob` (baca) di 60-tab-impor-sinkron.js:1; `FileReader` (baca) di 60-tab-impor-sinkron.js:1; `KalsaraMoney` (baca) di 00-core.js:6, 10-calc.js:7; `KalsaraWorker` (baca) di 10-calc.js:11; `URL` (baca) di 60-tab-impor-sinkron.js:1; `fetch` (baca) di 60-tab-impor-sinkron.js:1, 60-tab-impor-sinkron.js:1; `setTimeout` (baca) di 50-promosi.js:62, 60-tab-impor-sinkron.js:1.
+**Nama yang dibaca/ditulis lewat `window.` atau `globalThis.`** di legacy: `Blob` (baca) di 60-tab-impor-sinkron.js:1; `FileReader` (baca) di 60-tab-impor-sinkron.js:1; `KALSARA_VERSION` (baca) di 99-pwa.js:1; `KalsaraMoney` (baca) di 00-core.js:6, 10-calc.js:7; `KalsaraWorker` (baca) di 10-calc.js:11; `URL` (baca) di 60-tab-impor-sinkron.js:1; `fetch` (baca) di 60-tab-impor-sinkron.js:1, 60-tab-impor-sinkron.js:1; `setTimeout` (baca) di 50-promosi.js:62, 60-tab-impor-sinkron.js:1.
 
 **Fungsi bersarang** (dideklarasikan di dalam fungsi lain, bukan global): tidak ada.
 
@@ -346,7 +346,7 @@ Tidak ada.
 | `dtx` | impor (./helpers.js) | 2 | 0 |
 | `esc` | impor (./helpers.js) | 5 | 0 |
 | `fmt` | impor (./format.js) | 4 | 0 |
-| `globalThis` | bawaan JS | 3 | 0 |
+| `globalThis` | bawaan JS | 4 | 0 |
 | `navigator` | peramban | 1 | 0 |
 | `num` | impor (./format.js) | 5 | 0 |
 | `pf` | impor (./format.js) | 1 | 0 |

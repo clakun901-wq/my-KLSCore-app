@@ -1,8 +1,14 @@
 Tahap 0-6: SELESAI
 Tahap 7a: SELESAI - v9.43b (GitHub Actions pemilik: npm test exit 0, E2E 18/18)
-Tahap 7b: SELESAI DI KODE - v9.44
-  npm test: LULUS di sandbox (44 skrip, exit 0), termasuk golden-master.
-  Koreksi review: tes promosi-data kini juga membandingkan CFG dan PORD dengan baseline v9.43b (sebelumnya tidak).
-  E2E: tahap7b GAGAL di GitHub Actions (alur klik tes salah, sudah diperbaiki, belum dijalankan ulang). Menunggu 19/19.
-  Uji manual (restore Promo Toko format lama, muat ulang): BELUM DILAKUKAN.
-Tahap 8: BELUM DIMULAI. Jangan mulai sebelum 7b lulus E2E dan uji manual.
+Tahap 7b: SELESAI - v9.44 (GitHub Actions pemilik: npm test lulus, E2E 19/19; uji manual restore Promo Toko format lama: lulus)
+Tahap 8: SELESAI DI KODE - v9.45
+  npm test: LULUS di sandbox sesi (45 skrip, exit 0), termasuk golden-master dan tes baru tests/tahap8.test.mjs.
+  Isi Tahap 8: satu sumber nomor versi (js/version.js); tes penutupan (legacy hilang, satu titik masuk index.html,
+    daftar cache sw.js = berkas nyata, sw.js dijalankan di sandbox); MIGRATION-STATUS.md dipindah ke arsip/;
+    README dan progress.html diringkas dan dibetulkan; E2E baru tahap8 (Service Worker aktif, cache lengkap, muat ulang offline).
+  Tidak ada perubahan rumus, hasil hitung, atau fitur.
+  GitHub Actions v9.45 (npm test + 20 E2E): MENUNGGU HASIL PEMILIK.
+  Uji manual Bagian 7 (tutup cepat, restore lalu muat ulang, >1.000 produk, offline, profil kosong): BELUM DILAKUKAN.
+Pekerjaan lanjutan (opsional, bukan syarat migrasi): peta-global masih mencatat 90 nama bersama ANTAR BAGIAN di dalam js/app-core.js
+  (variabel privat satu modul, bukan global lintas berkas). Menghapusnya berarti merancang ulang akar perakitan; butuh persetujuan pemilik.
+Status produksi: BELUM BOLEH menggantikan aplikasi toko asli sebelum E2E 20/20 dan uji manual Bagian 7 lulus.

@@ -1,3 +1,5 @@
+> **ARSIP (dipindah di Tahap 8, v9.45).** Catatan sejarah teknis v9.x. Jangan dibaca penuh; posisi terkini ada di `../LANJUT-DI-SINI.md` dan `../state_tracker.txt`.
+
 # Status migrasi Kalsara v5.82 — paket v9.35
 
 Tanggal build: 2026-11-05

@@ -1,78 +1,35 @@
-# LANJUT-DI-SINI (v7) — posisi setelah Tahap 7b (v9.44)
+# LANJUT-DI-SINI (v8) - posisi setelah Tahap 8 (v9.45)
 
-Untuk AI di sesi berikutnya: baca dokumen ini dan `LANJUT-DI-SINI-v2.md` milik pemilik. Kerjakan SATU tahap per sesi. **Tahap 8 belum dimulai.** Jangan membaca seluruh `MIGRATION-STATUS.md`; buka hanya bagian yang diperlukan.
+Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`. Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
 
-## Posisi dan hasil sesi
+## Posisi
+- Tahap 0-8 sudah dikerjakan. Tahap 8 (v9.45) selesai di kode; menunggu GitHub Actions pemilik (npm test + 20 E2E) dan uji manual.
+- Belum ada tahap berikutnya. Jangan membuat tahap baru tanpa permintaan pemilik.
 
-- Tahap 0–6: selesai.
-- Tahap 7a: panel/tampilan promosi dipindah ke `js/promosi-panel.js`; pemilik melaporkan GitHub Actions v9.43b `npm test` exit 0 dan 18/18 E2E lulus.
-- Tahap 7b: kode data promosi dan voucher dipindah ke `js/promosi-data.js` dengan factory `createPromosiData(D)` dan sambungan eksplisit.
-- Kode kandidat ini bernama **v9.44**. Ini belum menjadi paket produksi dan belum boleh menggantikan aplikasi toko asli.
+## Yang dikerjakan di Tahap 8
+- `js/version.js`: satu-satunya sumber nomor versi (`app` 5.82, `paket` 9.45). Dipakai `sw.js` (importScripts, nama cache), panel Pembaruan (APPV via `js/main.js` lalu `app-core.js`). `package.json` dan dokumen diperiksa tes.
+- `tests/tahap8.test.mjs`: legacy/loader/parts.json tidak ada dan tidak dirujuk; `index.html` hanya memuat `js/main.js`; CORE `sw.js` = berkas runtime nyata (dua arah); `sw.js` dijalankan di sandbox; tiap fixture masih dirujuk tes; dokumen arsip ada.
+- `tests/e2e/tahap8.e2e.py` (E2E ke-20): Service Worker aktif, cache bernama versi berisi seluruh berkas inti, halaman dimuat ulang saat offline. Tes E2E lain memblokir Service Worker, jadi ini pertama kalinya jalur offline diuji di browser.
+- `MIGRATION-STATUS.md` dipindah ke `arsip/`; `README.md` dan `progress.html` diringkas dan dibetulkan (sebelumnya usang: v9.35, 46,6%, "masih ada CDN").
+- Tidak ada perubahan rumus, hasil hitung, atau fitur. `tests/fixtures/*` TIDAK dihapus: semuanya masih dipakai tes diferensial yang membuktikan kode yang dipindah identik dengan aslinya.
 
-## Perubahan Tahap 7b
-
-- Dipindah: `CFG`, `PORD`, `migPt`, `ptp`, `psig`, `calcNV`, `vsc`, `vscT`, `vscn`, `vnote`, `vcSoon`, `vwarn`, `vcWhy`, `vcEff`, `fwdV`, `bis`, `pcalc2`, dan `actPromo`.
-- `State.PRM`, `PSEL`, dan `PSIG` tetap berada di `app-core.js` sebagai keadaan bersama/penyambung yang masih dipakai bagian lain. Panel 7a tetap di modulnya sendiri.
-- `CalcCache.invalidate()` tetap dijalankan pada saat modul data promosi dipasang, seperti sebelumnya.
-- `js/app-core.js` kini hanya memasang modul data promosi dan meneruskan nama fungsi lama ke modul. Logika inti tidak ditulis ulang.
-- Cache offline Service Worker ditambah `js/promosi-data.js`; nomor paket/cache diperbarui menjadi v9.44.
-- Golden-master sekarang mengambil baseline data promosi v9.43b dari fixture khusus, agar pembanding tidak membandingkan modul baru dengan dirinya sendiri.
-
-## Pemeriksaan
-
-| Pemeriksaan | Hasil | Lingkungan |
+## Definisi selesai (LANJUT-DI-SINI-v2, Bagian 6) - status jujur
+| # | Syarat | Status |
 |---|---|---|
-| `npm test` | **Lulus**, exit 0; 44 skrip tes | Sandbox sesi |
-| Golden-master kalkulator | 2.010 assertion identik | Sandbox sesi |
-| Golden-master voucher | 112 assertion identik | Sandbox sesi |
-| Golden-master Promo/Paket Diskon | 205 assertion identik | Sandbox sesi |
-| Golden-master aturan harga promo | 200 assertion identik | Sandbox sesi |
-| Golden-master Kombo/Hadiah | 100 assertion identik | Sandbox sesi |
-| Golden-master pipa hitung | 1.500 assertion identik | Sandbox sesi |
-| Tes baru `promosi-data.test.mjs` | Lulus; 15 fungsi cocok dengan baseline; migrasi, harga promo, psig, bis, dan VNO diuji | Sandbox sesi |
-| Audit peta global | Lulus; 121 global, 90 lintas berkas, 0 penugasan ulang inti langsung | Sandbox sesi |
-| 19 E2E Chromium | **Belum diuji** | Sandbox sesi memblokir `localhost` dengan `ERR_BLOCKED_BY_ADMINISTRATOR`; perlu GitHub Actions pemilik |
-| Uji HP/offline/restore nyata | **Perlu uji manual** | Perangkat pemilik |
+| 1 | `js/legacy/`, `legacy-app.js`, `parts.json` tidak ada | Terpenuhi (hilang sejak v9.38; kini dijaga tes) |
+| 2 | 0 variabel global lintas berkas | Terpenuhi untuk LINTAS BERKAS (hanya `app-core.js` yang punya nama bersama; modul lain memakai sambungan eksplisit). Peta masih mencatat 90 nama lintas BAGIAN di dalam `app-core.js`: variabel privat satu modul, bukan global. Menghapusnya = merancang ulang akar perakitan; belum dikerjakan, perlu persetujuan pemilik |
+| 3 | `npm test` exit 0, golden-master identik | Lulus di sandbox sesi; GitHub Actions v9.45 menunggu pemilik |
+| 4 | E2E lulus di GitHub Actions pemilik | Menunggu (kini 20 skrip; angka "13 E2E / 242 pernyataan" di rencana lama sudah usang) |
+| 5 | Uji manual Bagian 7 | Belum dilakukan |
+| 6 | Uji sabotase tetap menangkap perubahan | Tes sabotase lama tetap ada dan lulus |
 
-Catatan: percobaan E2E di sandbox tidak berhasil memulai navigasi localhost karena pembatasan lingkungan. Ini bukan hasil lulus atau gagal dari aplikasi. Jangan menyebut E2E v9.44 lulus sebelum log GitHub Actions pemilik tersedia.
+## Belum terbukti
+- E2E v9.45 (terutama `tahap8`: Service Worker dan offline) belum dijalankan di browser mana pun.
+- Uji HP nyata, uji offline pada perangkat nyata, pemulihan dengan data besar atau data toko asli, cadangan lintas perangkat.
+- Paket ini belum boleh menggantikan aplikasi toko asli.
 
-## File yang berubah/baru
-
-- Baru: `js/promosi-data.js`
-- Baru: `tests/promosi-data.test.mjs`
-- Baru: `tests/fixtures/app-core.bagian50-data.pre_v9_44.js.txt`
-- Baru: `tests/e2e/tahap7b.e2e.py`
-- Diubah: `js/app-core.js`, `sw.js`, `package.json`, `.github/workflows/e2e.yml`, `tests/legacy-split.test.mjs`, `tests/golden-master.test.mjs`, `README.md`, `laporan/PETA-GLOBAL.md`.
-
-## Berikutnya — masih Tahap 7b
-
-1. Pemilik unggah ZIP v9.44 ke GitHub.
-2. Jalankan **Actions → Uji E2E Browser → Run workflow**.
-3. Workflow kini menjalankan 19 E2E, termasuk `tahap7b`.
-4. Kirim hasil `npm test` dan seluruh 19 E2E (jumlah lulus/gagal serta nama skrip gagal).
-5. Jika satu tes gagal, berhenti dan perbaiki Tahap 7b atau kembali ke ZIP v9.43b. Jangan lanjut Tahap 8.
-
-## Risiko/bukti yang masih kurang
-
-- E2E v9.44 belum lulus di GitHub Actions pemilik.
-- E2E Tahap 7b baru belum dijalankan pada browser yang dapat mengakses server lokal.
-- Uji HP/peramban nyata, Service Worker offline, pemulihan data asli, data ERP besar, migrasi data riil, dan pemulihan lintas perangkat tetap belum terbukti.
-- Masih ada 90 nama global lintas berkas; struktur global belum selesai. Ini pekerjaan Tahap 8, **jangan disentuh pada sesi ini**.
-
-## Koreksi review v9.44 (sesi koreksi)
-
-- Tes `tests/promosi-data.test.mjs` diperkuat: `CFG` dan `PORD` kini dibandingkan dengan baseline v9.43b. Sebelumnya hanya 15 fungsi yang dibandingkan. Isi `CFG` dan `PORD` terbukti identik; tidak ada perubahan kode aplikasi.
-- Ditambahkan `state_tracker.txt` (sebelumnya tidak ada di ZIP).
-- Status E2E v9.44 tetap: belum diuji di browser. Menunggu GitHub Actions pemilik.
-
-## Koreksi review v9.44 (sesi koreksi)
-
-- Tes `tests/promosi-data.test.mjs` diperkuat: `CFG` dan `PORD` kini dibandingkan dengan baseline v9.43b. Sebelumnya hanya 15 fungsi yang dibandingkan. Isi `CFG` dan `PORD` terbukti identik; tidak ada perubahan kode aplikasi.
-- Ditambahkan `state_tracker.txt` (sebelumnya tidak ada di ZIP).
-- Status E2E v9.44 tetap: belum diuji di browser. Menunggu GitHub Actions pemilik.
-
-## Hasil GitHub Actions v9.44 dan perbaikan (sesi koreksi 2)
-
-- Pemilik melaporkan: workflow gagal hanya di skrip `tahap7b` (tes menunggu elemen yang "tidak terlihat" lalu timeout). Skrip lain sebelum `tahap7b` tidak dilaporkan gagal.
-- Dugaan penyebab: tes `tahap7b.e2e.py` mengklik `#t2`/`#bp`/`#bpt` secara langsung, padahal panel cadangan ada di dalam `<details>` tertutup. Tes lain (`tahap0`, `cadangan`) memakai klik/isi lewat DOM. Ini kesalahan alur tes, bukan bukti logika promosi rusak.
-- Perbaikan: `tahap7b.e2e.py` kini mengikuti alur `tahap0.e2e.py`. Belum dijalankan di browser; menunggu GitHub Actions pemilik.
+## Langkah pemilik
+1. Simpan ZIP v9.44 koreksi2 sebagai cadangan.
+2. Unggah ZIP v9.45 ke GitHub, lalu Actions -> Uji E2E Browser -> Run workflow.
+3. Kirim hasilnya (lulus berapa dari 20; nama skrip yang gagal beserta log di atas baris GAGAL).
+4. Setelah lulus, lakukan uji manual Bagian 7 pada salinan data.

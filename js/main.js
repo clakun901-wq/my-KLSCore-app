@@ -1,6 +1,7 @@
 import {initStorage,KStore,backupToFile} from './storage.js';
 import {compute} from './worker-client.js';
 import {mergeLegacyRows,mergeMigrationConflicts,compareLegacyKey} from './migration.js';
+import './version.js';
 import './money.js';
 import './dom.js';
 import './signals.js';

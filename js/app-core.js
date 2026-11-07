@@ -201,4 +201,4 @@ tbuild();
 (function(){var d=null;try{d=JSON.parse(KStore.getItem('kalsara_v3')||'null')}catch(e){}
  if(d)applyState(d);else{fill();add();add();upd(false)}tab(0);obInit();syLocal();bkRemind()})();
 /* ===== BAGIAN 99-pwa ===== */
-createPWA({$, toast, lflush, APPV:'5.82'});
+createPWA({$, toast, lflush, APPV:globalThis.KALSARA_VERSION.app});
