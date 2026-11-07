@@ -44,7 +44,7 @@ ok(/^await import\('\.\/app-core\.js'\);$/m.test(mainSrc) && !/legacy-app/.test(
 ok(mainSrc.indexOf("await import('./app-core.js')") > mainSrc.indexOf('await initStorage()'), 'app-core dimuat SETELAH initStorage() selesai (urutan sama seperti sebelum Tahap 2)');
 // Setiap import eksplisit menunjuk berkas nyata, tidak dobel, dan terdaftar di cache offline.
 const IMPORTS = coreImports();
-ok(IMPORTS.length === 21 && new Set(IMPORTS.map(x => x[0])).size === IMPORTS.length, 'app-core.js mengimpor 21 modul, masing-masing sekali (22 sebelum v9.40; tema, parser cadangan, dan cadangan kini diimpor modul fitur, ditambah dua modul baru)');
+ok(IMPORTS.length === 22 && new Set(IMPORTS.map(x => x[0])).size === IMPORTS.length, 'app-core.js mengimpor 21 modul, masing-masing sekali (22 sebelum v9.40; tema, parser cadangan, dan cadangan kini diimpor modul fitur, ditambah dua modul baru)');
 for (const [file] of IMPORTS) { ok(fs.existsSync(new URL('../js/' + file.slice(2), import.meta.url)), 'berkas impor harus ada: ' + file); ok(sw.includes("'./js/" + file.slice(2) + "'"), 'sw.js CORE harus menyebut js/' + file.slice(2)); }
 ok(sw.includes("'./js/app-core.js'") && !/js\/legacy/.test(sw), 'sw.js CORE harus menyebut js/app-core.js dan tidak lagi js/legacy/*');
 /* v9.39: setiap entri CORE sw.js harus berkas nyata (mencegah pemasangan offline gagal karena berkas yang sudah dihapus masih terdaftar). */
@@ -261,7 +261,7 @@ for (const f of legacyParts) ok(!/^(function (tblSync|tbuild|fillT|tchk|verStale
 for (const f of legacyParts) ok(!/(?<![\w$.])(verStale|ADN|AD0|GO0)\b/.test(legacyPart(f).replace(/\/\*[\s\S]*?\*\//g, '')), f + ' tidak boleh memakai verStale/ADN/AD0/GO0 (privat di tarif-ui.js)');
 { // tchk harus tetap bisa ditugaskan ulang (pengaturan.js membungkusnya lewat wrapTchk, yang dipasang app-core): dipasang sebagai var legacy, bukan const/let.
   ok(/^wrapTchk\(function\(_tchk\)\{return function\(\)\{_tchk\(\);/m.test(modAtur), 'pengaturan.js masih membungkus tchk lewat wrapTchk (_tchk dipanggil di dalam pembungkus)');
-  ok(/wrapTchk:function\(mk\)\{tchk=mk\(tchk\)\}/.test(legacyPart('80-cadangan-tema.js')) && /wrapTab:function\(mk\)\{tab=mk\(tab\)\}/.test(legacyPart('80-cadangan-tema.js')), 'app-core memasang wrapTchk/wrapTab yang menimpa tchk/tab milik app-core');
+  ok(/wrapTchk:function\(mk\)\{tchk=mk\(tchk\)\}/.test(legacyPart('80-cadangan-tema.js')) && /wrapTab:function\(mk\)\{tab.wrap\(mk\)\}/.test(legacyPart('80-cadangan-tema.js')), 'app-core memasang wrapTchk/wrapTab yang menimpa tchk/tab milik app-core');
   ok(!/\b(const|let)\s*\{[^}]*\btchk\b/.test(part20c) && /^var \{[^}]*\btchk\b/m.test(part20c), 'tchk dipasang dengan var (bisa ditugaskan ulang)');
 }
 { // Dulu function yang di-hoist; kini var. Tak boleh dipakai saat muat sebelum baris pemasangan (00-core, 10-calc, awal bagian 20).
@@ -297,7 +297,7 @@ for (const f of legacyParts) ok(!/^function (pc1|skHi|stk|warns|WN|mchg)\(/m.tes
 execFileSync(process.execPath, ['--check', new URL('../js/hasil-view.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/hasil-view.js'"), 'sw.js CORE harus menyebut js/hasil-view.js');
 // v9.39 (Tahap 3): nama cache dinaikkan agar pengguna lama mengunduh js/app-core.js dan membuang cache lama yang memuat js/legacy/*.
-ok(sw.includes("client-v9.40"), 'sw.js harus memakai nama cache client-v9.40');
+ok(sw.includes("client-v9.41"), 'sw.js harus memakai nama cache client-v9.41');
 ok(loaderImports('./hasil-view.js', 'createHasilView'), 'app-core.js harus mengimpor createHasilView');
 const hvCode = fs.readFileSync(new URL('../js/hasil-view.js', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 ok(/export function createHasilView\(\{getA,fmt,rp,esc,tmod,fwdL,warns,WN,pc1\}\)\{/.test(hvCode), 'hasil-view.js mengekspor createHasilView dengan tanda tangan yang disepakati');
@@ -318,7 +318,7 @@ ok(!/^(const|let)\s*\{[^}]*\b(CR|errH|sp|revHtml)\b/m.test(part20e), 'CR/errH/sp
   const atW = part20e.indexOf('var {pc1,skHi,stk,warns,WN,mchg}=createWarnings(');
   ok(atW >= 0 && atW < at, 'createHasilView dipasang SETELAH createWarnings (warns/WN/pc1 disuntikkan langsung)');
   ok(part20e.indexOf('var A=') < 0 && legacyParts.indexOf('10-calc.js') < legacyParts.indexOf('20-hitung-etalase.js') && /var \{[^}]*\btmod\b[^}]*\bfwdL\b[^}]*\}=createPricing\(/.test(legacyPart('10-calc.js')), 'tmod dan fwdL sudah dipasang di 10-calc.js (sebelum bagian 20), jadi aman disuntikkan langsung');
-  ok(legacyParts.indexOf('60-tab-impor-sinkron.js') > legacyParts.indexOf('20-hitung-etalase.js') && /\bCR\(/.test(legacyPart('60-tab-impor-sinkron.js')), 'CR masih dipakai 60-tab-impor-sinkron.js, yang berjalan setelah pemasangan');
+  ok(legacyParts.indexOf('60-tab-impor-sinkron.js') > legacyParts.indexOf('20-hitung-etalase.js') && /\bCR\(/.test(fs.readFileSync(new URL('../js/tab-impor-sinkron.js', import.meta.url), 'utf8')), 'CR masih dipakai 60-tab-impor-sinkron.js, yang berjalan setelah pemasangan');
 }
 // v9.32.1: pemasangan createXxx({k:nilaiTelanjang}) menyalin nilai SAAT MUAT. Bila nilainya var yang baru ditugaskan di bagian/baris SESUDAH pemasangan, yang tersalin undefined
 // (bug ERP:ERP di createBackup sejak v9.18: cadangan penuh dan pulihkan cadangan ber-ERP error). Audit ini berlaku untuk SEMUA pemasangan.
