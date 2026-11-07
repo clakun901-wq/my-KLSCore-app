@@ -1,37 +1,20 @@
-# LANJUT-DI-SINI (v4, paket v9.41)
+# LANJUT-DI-SINI (v5) - posisi setelah Tahap 6 (v9.42)
 
-**Panduan sesi:** aturan pemilik, cara kerja, definisi selesai, uji manual, format laporan, dan aturan berhenti tetap seperti `LANJUT-DI-SINI-v2.md` (Bagian 1-3 dan 5-10). Posisi terbaru di bawah menggantikan posisi v3. Kerjakan SATU tahap per sesi.
+Untuk AI di percakapan baru: baca berkas ini dan LANJUT-DI-SINI-v2.md (rencana tahap). Jangan membaca seluruh MIGRATION-STATUS.md. Kerjakan SATU tahap per sesi.
 
-## Posisi saat ini
+## Posisi (dibuktikan)
+- Tahap 0-5 SELESAI. Tahap 5 terbukti: npm test exit 0 dan 16 E2E LULUS di GitHub Actions milik pemilik (v9.41).
+- Tahap 6 (v9.42): bagian 20-hitung-etalase pindah ke js/hitung-etalase.js. Status: KODE SELESAI, MENUNGGU E2E GITHUB (17 skrip).
+  - Di sandbox sesi: 41 berkas tes unit lulus, tests/hitung-etalase.test.mjs 99 assertion (45 dari 45 pernyataan cocok fixture v9.41; 7 penyesuaian nama terdokumentasi), 16 E2E lama lulus, tahap6.e2e.py 21 assertion lulus (juga lulus di v9.41 asli).
+  - Sabotase terbukti tertangkap unit dan E2E.
+- Ukuran: 148 nama global di app-core.js (dari 177); lintas bagian masih 90 (turun saat bagian 30/40/50/95 dipindah). Sisa app-core.js: bagian 00,10,20(pemasangan),30,40,50,60(pemasangan),70,80(pemasangan),90,95,99.
+- Belum terbukti: uji HP nyata, offline Service Worker, uji manual Bagian 7 v2, data toko asli. Paket BELUM boleh menggantikan produksi.
 
-Tahap 0-4 selesai (v9.36-v9.40). **Tahap 5 sudah dipindahkan secara kode ke v9.41, tetapi BELUM boleh dinyatakan selesai** karena E2E browser belum berhasil dijalankan di sandbox sesi ini dan belum ada hasil GitHub Actions pemilik.
+## Catatan temuan (di luar tahap, belum diperbaiki)
+1. BUG LAMA: tombol #add (tab-impor-sinkron.js) memanggil .focus() pada input kartu baru; di atas 40 produk kartu belum terhidrasi sehingga error sekali dan upd(false) terlewat. Ada di v9.41. Perlu persetujuan pemilik sebelum diperbaiki (tes tahap6 mengizinkan persis satu error ini).
+2. globalThis.KShelf dibaca langsung di hitung-etalase.js (ada di teks asli); jadikan dependensi eksplisit.
+3. DUGAAN belum diperiksa: tab-impor-sinkron menerima PSIG sebagai nilai salinan, bukan dibaca ulang.
 
-| Ukuran | Nilai |
-|---|---:|
-| Versi paket | v9.41 (`package.json` 0.9.41; cache SW v9.41) |
-| Global di `js/app-core.js` | 177 |
-| Global lintas bagian | 90 (sebelumnya 90; penghubung yang diperlukan masih ada) |
-| `npm test` | exit 0; tes Tahap 5: 61 assertion |
-| Kesetaraan bagian 60 | 51 pernyataan sama dengan fixture v9.40 |
-| E2E Tahap 5 | Belum diuji: Chromium memblokir akses `127.0.0.1` di sandbox sesi |
-
-## Tahap 5 (`60-tab-impor-sinkron`)
-
-Isi 51 pernyataan asli bagian 60 dipindahkan ke `js/tab-impor-sinkron.js` dalam factory `createTabImporSinkron`. `State` dan `KStore` diimpor langsung; fungsi yang masih dipakai bagian lain tersedia lewat penerus kompatibilitas. `parseCsv.bad` diteruskan melalui getter/setter karena bagian XLSX lama membaca status parser itu. Modul sudah didaftarkan di `sw.js`.
-
-Bukti otomatis yang sudah dijalankan:
-- `npm test`: LULUS (termasuk golden-master uang, peta global, tes kompatibilitas, dan tes Tahap 5).
-- `node --check` untuk `js/app-core.js` dan `js/tab-impor-sinkron.js`: LULUS.
-- `python -m py_compile tests/e2e/tahap5.e2e.py`: LULUS.
-- `node scripts/peta-global.mjs`: 177 global, 90 lintas bagian, 0 penugasan ulang langsung variabel inti.
-
-## Berikutnya (masih Tahap 5, jangan mulai Tahap 6)
-
-1. Unggah ZIP v9.41 ke repositori GitHub.
-2. Buka Actions → **Uji E2E Browser** → Run workflow.
-3. Workflow kini menjalankan 16 skrip E2E, termasuk `tahap4` dan `tahap5`.
-4. Laporkan hasil dan nama skrip yang gagal. Jika ada satu kegagalan, berhenti dan perbaiki Tahap 5; jangan lanjut ke Tahap 6.
-
-## Risiko dan hal belum terbukti
-
-E2E Tahap 5, E2E GitHub Actions, uji HP nyata, offline Service Worker, dan uji manual Bagian 7 v2 belum terbukti. Paket v9.41 belum boleh menggantikan aplikasi produksi atau data toko asli.
+## Berikutnya (Tahap 7 menurut v2: 50-promosi, 40 KB, dua sesi bila perlu)
+Pola: peta acorn -> pabrik createXxx -> fixture teks asli -> tes kesetaraan -> E2E -> daftar di package.json dan e2e.yml -> sabotase -> sw.js, versi, node scripts/peta-global.mjs.
+Hati-hati: tab/tchk dibungkus ulang (wrapTab/wrapTchk lewat HE.wrapTchk); PSEL/PSIG/CFG ditulis/dibaca lintas modul lewat penerus.
