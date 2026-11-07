@@ -1,7 +1,6 @@
-/* Signals: memakai @preact/signals-core dari CDN bila tersedia (batas tunggu 2,5 detik agar boot
-   tidak tertahan), dan jatuh ke implementasi lokal dengan API sama (signal/computed/effect/batch)
-   yang melacak dependensi secara otomatis. Mode luring tetap reaktif sepenuhnya. */
-const CDN = 'https://cdn.jsdelivr.net/npm/@preact/signals-core@1.8.0/+esm';
+/* Signals: mesin reaktif lokal (API sama dengan signal/computed/effect/batch milik @preact/signals-core).
+   Sengaja TIDAK memuat apa pun dari internet: aturan proyek melarang CDN saat aplikasi berjalan, dan aplikasi harus
+   utuh sejak pemasangan pertama tanpa internet. */
 
 export function createLocalSignals() {
   let current = null, batchDepth = 0;
@@ -50,16 +49,7 @@ export function createLocalSignals() {
   return {signal, computed, effect, batch};
 }
 
-async function loadCore() {
-  try {
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('CDN timeout')), 2500));
-    const core = await Promise.race([import(CDN), timeout]);
-    if (core && core.signal && core.effect) return {core, source: 'cdn'};
-  } catch (error) { console.warn('Signals CDN belum tersedia; memakai mesin reaktif lokal.', error && error.message); }
-  return {core: createLocalSignals(), source: 'local'};
-}
-
-const loaded = await loadCore();
+const loaded = {core: createLocalSignals(), source: 'local'};
 const core = loaded.core;
 export const signalsSource = loaded.source;
 export const {signal, computed, effect} = core;
