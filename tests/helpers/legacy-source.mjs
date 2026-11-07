@@ -23,6 +23,6 @@ export const readLegacyPartsOnly = () => split.sections.map(s => s.text).join(''
 /* Pasangan [berkas, nama impor] dari baris import di header; bentuk sama dengan larik `modules` lama. */
 export const coreImports = () => [...split.header.matchAll(/^import \{([^}]*)\} from '([^']+)';$/gm)].map(m => [m[2], m[1]]);
 export const erpModuleSource = () => fs.readFileSync(new URL('../../js/erp.js', import.meta.url), 'utf8');
-export const leafModuleSources = () => ['xlsx-reader.js','pwa.js','backup.js','format.js','tariff.js','pricing.js','calc-cache.js','voucher-rules.js','state.js','penjualan.js','voucher-panel.js','ui.js','helpers.js','tarif-ui.js','warnings.js','hasil-view.js','kartu-update.js','upd-fill.js','etalase-view.js','penyimpanan-cadangan.js','pengaturan.js'].map(n => fs.readFileSync(new URL('../../js/'+n, import.meta.url), 'utf8')).join('\n');
+export const leafModuleSources = () => ['xlsx-reader.js','pwa.js','backup.js','format.js','tariff.js','pricing.js','calc-cache.js','voucher-rules.js','state.js','penjualan.js','voucher-panel.js','ui.js','helpers.js','tarif-ui.js','warnings.js','hasil-view.js','kartu-update.js','upd-fill.js','etalase-view.js','penyimpanan-cadangan.js','pengaturan.js','hitung-etalase.js'].map(n => fs.readFileSync(new URL('../../js/'+n, import.meta.url), 'utf8')).join('\n');
 /* v9.15: modul ERP (js/erp.js) dihitung bagian dari sumber legacy untuk audit statis; urutannya tidak penting bagi audit. */
 export const readLegacySource = () => readLegacyPartsOnly() + '\n' + erpModuleSource() + '\n' + leafModuleSources();

@@ -10,7 +10,10 @@ const root = new URL('../', import.meta.url);
 /* v9.40 (Tahap 4): isi bagian 80 pindah ke dua modul fitur; pemeriksaan teks yang dulu mencari di bagian 80 kini mencari di sini. */
 const modSimpan = fs.readFileSync(new URL('../js/penyimpanan-cadangan.js', import.meta.url), 'utf8');
 const modAtur = fs.readFileSync(new URL('../js/pengaturan.js', import.meta.url), 'utf8');
+const modHitung = fs.readFileSync(new URL('../js/hitung-etalase.js', import.meta.url), 'utf8'); /* v9.42 (Tahap 6): isi bagian 20 pindah ke js/hitung-etalase.js; pemeriksaan teks yang dulu mencari di bagian 20 kini mencari di bagian 20 + modul ini. */
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+/* Teks modul lebih dulu: pemeriksaan urutan ("tidak dirujuk sebelum dipasang") memotong teks sampai baris pemasangan, dan urutan itu kini ada di dalam modul. */
+const partText = name => /^20-hitung-etalase(\.js)?$/.test(name) ? modHitung + '\n' + legacyPart(name) : legacyPart(name);
 /* v9.39: penanda BAGIAN di js/app-core.js menggantikan js/legacy/parts.json. Urutan = urutan eksekusi, sama persis dengan parts.json v9.37.
    Bila sebuah bagian dipindah ke modul fitur (Tahap 4-8), perbarui daftar ini dengan sadar. */
 const EXPECTED_ORDER = ['00-core.js', '10-calc.js', '20-hitung-etalase.js', '30-penjualan.js', '40-voucher-panel.js', '50-promosi.js', '60-tab-impor-sinkron.js', '70-xlsx-reader.js', '80-cadangan-tema.js', '90-erp.js', '95-boot.js', '99-pwa.js'];
@@ -23,7 +26,7 @@ ok((coreSrc.match(/^\/\* ===== BAGIAN /gm) || []).length === legacyParts.length,
 // Mekanisme lama harus benar-benar hilang (Tahap 2): tidak ada folder js/legacy/, loader legacy-app.js, parts.json.
 for (const gone of ['js/legacy', 'js/legacy-app.js', 'js/legacy/parts.json']) ok(!fs.existsSync(new URL(gone, root)), gone + ' harus sudah dihapus');
 for (const name of legacyParts) {
-  const src = legacyPart(name);
+  const src = legacyPart(name); /* teks mentah di app-core: modul fitur dicek terpisah lewat node --check */
   ok(src.endsWith('\n'), name + ' harus diakhiri baris baru agar penanda bagian berikutnya berdiri sendiri di barisnya');
   assert.doesNotThrow(() => new vm.Script('"use strict";' + src, {filename: name}), name + ' harus valid sebagai potongan statement utuh');
   n++;
@@ -32,7 +35,7 @@ for (const name of legacyParts) {
 execFileSync(process.execPath, ['--check', new URL('../js/app-core.js', import.meta.url).pathname]); n++;
 ok(!/^\s*(import|export)\s/m.test(readLegacyPartsOnly()), 'isi bagian tidak boleh memakai import/export (import hanya boleh di header js/app-core.js)');
 const headerCode = appCoreHeader.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(l => l.trim()).filter(Boolean);
-ok(headerCode.length > 20 && headerCode.every(l => /^import \{[^}]+\} from '\.\/[\w-]+\.js';$/.test(l)), 'header app-core.js hanya berisi baris import statis eksplisit dari ./nama.js');
+ok(headerCode.length > 10 && headerCode.every(l => /^import \{[^}]+\} from '\.\/[\w-]+\.js';$/.test(l)), 'header app-core.js hanya berisi baris import statis eksplisit dari ./nama.js');
 // Tidak ada lagi sisa mekanisme loader lama di app-core.js: import dinamis, pembaca parts.json/folder legacy, penyambungan teks `preamble`, sourceURL, import.meta, eval.
 // (fetch dan Blob TIDAK dilarang: dipakai fitur sah, yaitu sinkron Google Sheet dan unduh file cadangan; yang dilarang hanya pola loader.)
 const coreNoComments = coreSrc.replace(/\/\*[\s\S]*?\*\//g, m => ' '.repeat(m.length));
@@ -44,19 +47,21 @@ ok(/^await import\('\.\/app-core\.js'\);$/m.test(mainSrc) && !/legacy-app/.test(
 ok(mainSrc.indexOf("await import('./app-core.js')") > mainSrc.indexOf('await initStorage()'), 'app-core dimuat SETELAH initStorage() selesai (urutan sama seperti sebelum Tahap 2)');
 // Setiap import eksplisit menunjuk berkas nyata, tidak dobel, dan terdaftar di cache offline.
 const IMPORTS = coreImports();
-ok(IMPORTS.length === 22 && new Set(IMPORTS.map(x => x[0])).size === IMPORTS.length, 'app-core.js mengimpor 21 modul, masing-masing sekali (22 sebelum v9.40; tema, parser cadangan, dan cadangan kini diimpor modul fitur, ditambah dua modul baru)');
+ok(IMPORTS.length === 16 && new Set(IMPORTS.map(x => x[0])).size === IMPORTS.length, 'app-core.js mengimpor 16 modul, masing-masing sekali (22 sebelum v9.42; ui, tarif-ui, warnings, hasil-view, kartu-update, upd-fill, dan etalase-view kini diimpor js/hitung-etalase.js, ditambah hitung-etalase.js sendiri)');
+const IMPORTS_HITUNG = [...modHitung.matchAll(/^import \{([^}]*)\} from '([^']+)';$/gm)].map(m => [m[2], m[1]]);
+for (const [file] of IMPORTS_HITUNG) { ok(fs.existsSync(new URL('../js/' + file.slice(2), import.meta.url)), 'berkas impor js/hitung-etalase.js harus ada: ' + file); ok(sw.includes("'./js/" + file.slice(2) + "'"), 'sw.js CORE harus menyebut js/' + file.slice(2)); }
 for (const [file] of IMPORTS) { ok(fs.existsSync(new URL('../js/' + file.slice(2), import.meta.url)), 'berkas impor harus ada: ' + file); ok(sw.includes("'./js/" + file.slice(2) + "'"), 'sw.js CORE harus menyebut js/' + file.slice(2)); }
 ok(sw.includes("'./js/app-core.js'") && !/js\/legacy/.test(sw), 'sw.js CORE harus menyebut js/app-core.js dan tidak lagi js/legacy/*');
 /* v9.39: setiap entri CORE sw.js harus berkas nyata (mencegah pemasangan offline gagal karena berkas yang sudah dihapus masih terdaftar). */
 for (const f of eval(sw.match(/const CORE=(\[.*?\]);/)[1])) ok(f === './' || fs.existsSync(new URL(f, root)), 'entri CORE sw.js harus ada di disk: ' + f);
 /* Daftar impor eksplisit (pengganti larik `modules` di legacy-app.js v9.24+): memastikan sebuah modul diimpor dengan nama yang tepat. */
-const loaderImports = (file, names) => IMPORTS.some(([f, nm]) => f === file && nm === names);
+const loaderImports = (file, names) => IMPORTS.concat(IMPORTS_HITUNG).some(([f, nm]) => f === file && nm === names);
 // Tahap 2 (v9.15): ERP adalah modul ES sungguhan dengan dependensi eksplisit.
 const erp = erpModuleSource();
 ok(/^export function createERP\(\{\$, today, toast, getRows\}\)/m.test(erp), 'js/erp.js harus mengekspor createERP dengan dependensi eksplisit');
 for (const imp of ["from './storage.js'", "from './worker-client.js'", "from './money.js'", "from './dom.js'"]) ok(erp.includes(imp), 'js/erp.js harus mengimpor ' + imp);
 ok(!/globalThis\.(KStore|KalsaraWorker|KalsaraMoney|KDOM)|window\.rows/.test(erp), 'js/erp.js tidak boleh membaca global tersembunyi');
-const part90 = legacyPart('90-erp.js');
+const part90 = partText('90-erp.js');
 ok(/var ERP=createERP\(/.test(part90) && part90.split('\n').length < 6, '90-erp.js hanya memasang dependensi, tanpa logika ERP');
 ok(/return getRows\(\)\.map\(/.test(erp) && /var P=getRows\(\),/.test(erp), 'js/erp.js membaca daftar produk lewat getRows() di prodsLite dan mt');
 ok(/getRows:function\(\)\{return State.rows\}/.test(part90), 'daftar produk harus dibaca segar lewat getRows (rows bisa diganti applyState)');
@@ -105,7 +110,7 @@ ok(!/parseFloat/.test(formatMod), 'format.js tidak boleh memakai parseFloat');
 execFileSync(process.execPath, ['--check', new URL('../js/format.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/format.js'"), 'sw.js CORE harus menyebut js/format.js');
 ok(loaderImports('./format.js', 'rp, pf, num, fmt, PCT, today'), 'app-core.js harus mengimpor modul format');
-const core = legacyPart('00-core.js');
+const core = partText('00-core.js');
 ok(!/^(var rp=|function pf\(|var num=|var fmt=|function today\(|var PCT=)/m.test(core), '00-core.js tidak boleh lagi mendefinisikan ulang fungsi format');
 // Tahap 4b (v9.21): tabel dan fungsi tarif dipisahkan dari 10-calc.js.
 const tariffMod = fs.readFileSync(new URL('../js/tariff.js', import.meta.url), 'utf8');
@@ -114,8 +119,8 @@ ok(tariffMod.includes('export function createTariff({getA})'), 'tariff.js harus 
 ok(!/\bwindow\.|globalThis\.|document\.|KStore/.test(tariffMod), 'tariff.js tidak boleh membaca global tersembunyi atau DOM');
 execFileSync(process.execPath, ['--check', new URL('../js/tariff.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/tariff.js'"), 'sw.js CORE harus menyebut js/tariff.js');
-ok(loaderImports('./tariff.js', 'GO, GO2, GO2D, AD, createTariff'), 'app-core.js harus mengimpor modul tarif');
-const calcPart = legacyPart('10-calc.js');
+ok(loaderImports('./tariff.js', 'GO2D, createTariff') && loaderImports('./tariff.js', 'GO, GO2, AD'), 'app-core.js mengimpor GO2D, createTariff dan js/hitung-etalase.js mengimpor GO, GO2, AD dari modul tarif (v9.42: dulu satu baris di app-core)');
+const calcPart = partText('10-calc.js');
 ok(!/^(var GO=|var GO2=|var AD=|function (gcOf|goT|capG|gfac|goRate|adRate|rate)\()/m.test(calcPart), '10-calc.js tidak boleh lagi mendefinisikan ulang tarif');
 ok(/createTariff\(\{getA:function\(\)\{return State.A\}\}\)/.test(calcPart), 'legacy harus memasang factory tarif dengan getter A');
 // Tahap 4c (v9.22): pipa harga sinkron dipisahkan dari 10-calc.js.
@@ -126,7 +131,7 @@ ok(!/\bwindow\.|globalThis\.|document\.|KStore|\bVNO\b(?!\))/.test(pricingMod.re
 execFileSync(process.execPath, ['--check', new URL('../js/pricing.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/pricing.js'"), 'sw.js CORE harus menyebut js/pricing.js');
 ok(loaderImports('./pricing.js', 'createPricing'), 'app-core.js harus mengimpor modul pipa harga');
-const calcPart2 = legacyPart('10-calc.js');
+const calcPart2 = partText('10-calc.js');
 ok(!/^function (vbest|volt|fees|tmod|fwdL|fwd|impas|calcSync)\(/m.test(calcPart2), '10-calc.js tidak boleh lagi mendefinisikan ulang pipa harga');
 ok(/createPricing\(\{getA:function\(\)\{return State.A\},getVNO:function\(\)\{return VNO\}/.test(calcPart2), 'legacy harus memasang factory pipa harga dengan getA dan getVNO');
 ok(/var VNO=0;/.test(calcPart2), 'flag VNO harus tetap di legacy (dimutasi calcNV)');
@@ -138,9 +143,9 @@ ok(!/\bwindow\.|globalThis\.|document\.|KStore/.test(ccMod.replace(/\/\*[\s\S]*?
 execFileSync(process.execPath, ['--check', new URL('../js/calc-cache.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/calc-cache.js'"), 'sw.js CORE harus menyebut js/calc-cache.js');
 ok(loaderImports('./calc-cache.js', 'createCalcCache'), 'app-core.js harus mengimpor modul cache kalkulator');
-const calcPart3 = legacyPart('10-calc.js');
+const calcPart3 = partText('10-calc.js');
 ok(!/^function (gver|rkey|staleRows|prewarm|pwKick|calc)\(/m.test(calcPart3) && !/var CC=new Map/.test(calcPart3), '10-calc.js tidak boleh lagi mendefinisikan ulang cache kalkulator');
-for (const f of ['20-hitung-etalase.js', '30-penjualan.js', '50-promosi.js', '80-cadangan-tema.js']) ok(!/(?<![\w.])GK=null/.test(legacyPart(f)), f + ' tidak boleh menulis GK langsung (pakai CalcCache.invalidate())');
+for (const f of ['20-hitung-etalase.js', '30-penjualan.js', '50-promosi.js', '80-cadangan-tema.js']) ok(!/(?<![\w.])GK=null/.test(partText(f)), f + ' tidak boleh menulis GK langsung (pakai CalcCache.invalidate())');
 for (const [nm, t] of [['penyimpanan-cadangan.js', modSimpan], ['pengaturan.js', modAtur]]) ok(!/(?<![\w.])GK=null/.test(t), nm + ' tidak boleh menulis GK langsung (pakai CalcCache.invalidate())');
 ok(/CalcCache\.prewarmStale\(only\)/.test(fs.readFileSync(new URL('../js/upd-fill.js', import.meta.url), 'utf8')), 'upd() modul harus memakai CalcCache.prewarmStale');
 // Tahap 5a (v9.25): aturan voucher dipisahkan dari 50-promosi.js ke js/voucher-rules.js.
@@ -151,11 +156,11 @@ ok(!/\bwindow\.|globalThis\.|document\.|KStore|\$\(/.test(vrMod.replace(/\/\*[\s
 execFileSync(process.execPath, ['--check', new URL('../js/voucher-rules.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/voucher-rules.js'"), 'sw.js CORE harus menyebut js/voucher-rules.js');
 ok(loaderImports('./voucher-rules.js', 'createVoucherRules'), 'app-core.js harus mengimpor modul aturan voucher');
-const promoPart = legacyPart('50-promosi.js');
+const promoPart = partText('50-promosi.js');
 ok(!/^function (vdisc|cbc|dd|pst|vcList|vcApply|vcLab|vcBest|vcBad|vcThr)\(/m.test(promoPart) && !/var VCC=/.test(promoPart), '50-promosi.js tidak boleh lagi mendefinisikan ulang aturan voucher');
-for (const f of ['30-penjualan.js', '50-promosi.js', '80-cadangan-tema.js']) ok(!/(?<![\w.])VCC\b/.test(legacyPart(f)), f + ' tidak boleh menulis VCC langsung (pakai VoucherRules.reset())');
+for (const f of ['30-penjualan.js', '50-promosi.js', '80-cadangan-tema.js']) ok(!/(?<![\w.])VCC\b/.test(partText(f)), f + ' tidak boleh menulis VCC langsung (pakai VoucherRules.reset())');
 for (const [nm, t] of [['penyimpanan-cadangan.js', modSimpan], ['pengaturan.js', modAtur]]) ok(!/(?<![\w.])VCC\b/.test(t), nm + ' tidak boleh menulis VCC langsung (pakai VoucherRules.reset())');
-ok(/createVoucherRules\(\{getPRM:function\(\)\{return State.PRM\}/.test(legacyPart('10-calc.js')), 'legacy harus memasang factory aturan voucher dengan getPRM segar');
+ok(/createVoucherRules\(\{getPRM:function\(\)\{return State.PRM\}/.test(partText('10-calc.js')), 'legacy harus memasang factory aturan voucher dengan getPRM segar');
 // Tahap 5b (v9.26): jembatan state inti (js/state.js) dan tab Penjualan (js/penjualan.js) dipisahkan dari legacy.
 const stMod = fs.readFileSync(new URL('../js/state.js', import.meta.url), 'utf8');
 ok(stMod.includes('export function createState(initial = {})') && stMod.includes('export const State = createState()') && stMod.includes("export const STATE_KEYS = Object.freeze(['A', 'rows', 'SALES', 'PRM', 'TS'])"), 'state.js harus memiliki penyimpanan sendiri dan singleton State untuk lima kunci');
@@ -172,16 +177,16 @@ for (const f of ['state.js', 'penjualan.js']) {
   ok(sw.includes("'./js/" + f + "'"), 'sw.js CORE harus menyebut js/' + f);
 }
 ok(loaderImports('./state.js', 'State') && loaderImports('./penjualan.js', 'createPenjualan'), 'app-core.js harus mengimpor State resmi dan createPenjualan');
-const core5b = legacyPart('00-core.js');
+const core5b = partText('00-core.js');
 ok(/State\.A=Object\.assign\(\{\},DEF\)/.test(core5b) && !/(?<![\w$.])(?:A|rows|SALES|PRM|TS)\s*=/.test(core5b), '00-core.js menginisialisasi A lewat State dan tidak mendeklarasikan ulang lima nama inti');
-for (const key of ['A','rows','SALES','PRM','TS']) ok(new RegExp('State\\.'+key+'\\b').test(legacyParts.map(f=>legacyPart(f)).join('\n') + '\n' + modSimpan + '\n' + modAtur), key+' harus diakses melalui objek State (di app-core atau di modul fitur hasil pemisahan)');
-ok(/^State\.PRM=\[\];/.test(legacyPart('50-promosi.js')), 'PRM baru diinisialisasi pada posisi semula di bagian 50, bukan lebih awal');
-ok(/getPRM:function\(\)\{return State\.PRM\}/.test(legacyPart('10-calc.js')), 'getter PRM yang dipasang di bagian 10 tetap late-bound sampai inisialisasi bagian 50');
-const part30 = legacyPart('30-penjualan.js');
+for (const key of ['A','rows','SALES','PRM','TS']) ok(new RegExp('State\\.'+key+'\\b').test(legacyParts.map(f=>partText(f)).join('\n') + '\n' + modSimpan + '\n' + modAtur), key+' harus diakses melalui objek State (di app-core atau di modul fitur hasil pemisahan)');
+ok(/^State\.PRM=\[\];/.test(partText('50-promosi.js')), 'PRM baru diinisialisasi pada posisi semula di bagian 50, bukan lebih awal');
+ok(/getPRM:function\(\)\{return State\.PRM\}/.test(partText('10-calc.js')), 'getter PRM yang dipasang di bagian 10 tetap late-bound sampai inisialisasi bagian 50');
+const part30 = partText('30-penjualan.js');
 ok(/var \{rpt,sold,curP,VUSE,rlAll,ymd\}=createPenjualan\(\{st:State,/.test(part30) && part30.split('\n').length < 10, '30-penjualan.js hanya memasang dependensi, tanpa logika tab');
 ok(!/^(var SALES=|function (sold|curP|rpt|delSale|perS|bkHtml|fprod|sgrp|rlSet|rlOn|rlAll|ymd)\()/m.test(part30), '30-penjualan.js tidak boleh lagi mendefinisikan ulang logika penjualan');
 ok(/getCFG:function\(\)\{return CFG\}/.test(part30) && /getSalesMax:function\(\)\{return SALES_MAX\}/.test(part30), 'CFG dan SALES_MAX dibaca saat dipanggil (didefinisikan di bagian setelahnya)');
-for (const f of ['20-hitung-etalase.js', '50-promosi.js', '60-tab-impor-sinkron.js', '80-cadangan-tema.js']) ok(!/(?<![\w.])(RM|RD|RO|RPL|RLU|RLT|SW|swMoved)\b\s*=[^=]/.test(legacyPart(f)), f + ' tidak boleh menyentuh state privat tab Penjualan');
+for (const f of ['20-hitung-etalase.js', '50-promosi.js', '60-tab-impor-sinkron.js', '80-cadangan-tema.js']) ok(!/(?<![\w.])(RM|RD|RO|RPL|RLU|RLT|SW|swMoved)\b\s*=[^=]/.test(partText(f)), f + ' tidak boleh menyentuh state privat tab Penjualan');
 for (const [nm, t] of [['penyimpanan-cadangan.js', modSimpan], ['pengaturan.js', modAtur]]) ok(!/(?<![\w.])(RM|RD|RO|RPL|RLU|RLT|SW|swMoved)\b\s*=[^=]/.test(t), nm + ' tidak boleh menyentuh state privat tab Penjualan');
 // Tahap 5c (v9.27): panel "Cek pesanan nyata" + dialog peringatan/panduan tarif (js/voucher-panel.js) dipisahkan dari legacy.
 execFileSync(process.execPath, ['--check', new URL('../js/voucher-panel.js', import.meta.url).pathname]); n++;
@@ -196,13 +201,13 @@ for (const name of [...vpPrivate, 'vgSync', 'vfKeep']) ok(name === 'VF' ? /var V
 const vpCode = vpMod.replace(/\/\*[\s\S]*?\*\//g, '');
 ok(!/\bwindow\.|globalThis\.|localStorage/.test(vpCode), 'voucher-panel.js tidak boleh membaca global tersembunyi atau localStorage (document dan KStore disuntikkan)');
 ok(!/(?<![\w$.])(A(?=\.)|rows|dprev|SALES|PRM|TS)(?![\w$])/.test(vpCode.replace(/(?<![\w$.])st\.(A|rows)\b/g, '')), 'voucher-panel.js tidak boleh mengakses A/rows/dprev/SALES/PRM/TS langsung (lewat st, getDprev/setDprev)');
-const part40 = legacyPart('40-voucher-panel.js');
+const part40 = partText('40-voucher-panel.js');
 const wireKeys = (/createVoucherPanel\(\{([\s\S]*?)\}\);\s*$/.exec(part40) || [])[1] || '';
 ok(/var \{vgSync,vfKeep\}=createVoucherPanel\(\{st:State,/.test(part40) && part40.split('\n').length < 12, '40-voucher-panel.js hanya memasang dependensi, tanpa logika panel');
 ok(vpParams.split(',').every(k => new RegExp('(^|[,{\\s])' + k.replace('$', '\\$') + ':').test(wireKeys)) && vpParams.split(',').length === (wireKeys.match(/(?:^|[,{\s])[\w$]+:/g) || []).length, 'pemasangan di legacy harus menyuntikkan tepat semua dependensi factory');
 ok(/getDprev:getDprev,setDprev:setDprev\}\);\s*$/.test(part40) && !/(?<![\w$.])dprev\b/.test(part40.replace(/\/\*[\s\S]*?\*\//g, '')), 'dprev dibagikan lewat getDprev/setDprev dari createUI (bagian 40 tidak menyentuh variabel dprev)');
 ok(!/^(var VF=|function (vf[A-Za-z0-9]*|vg[A-Za-z]*|gd[A-Za-z]*|tlPush)\()/m.test(part40), '40-voucher-panel.js tidak boleh lagi mendefinisikan ulang logika panel');
-for (const f of legacyParts.filter(f => f !== '40-voucher-panel.js')) ok(!new RegExp('(?<![\\w$.])(' + vpPrivate.join('|') + ')(?![\\w$])').test(legacyPart(f)), f + ' tidak boleh memakai fungsi panel yang kini privat (hanya vgSync/vfKeep yang dibagikan)');
+for (const f of legacyParts.filter(f => f !== '40-voucher-panel.js')) ok(!new RegExp('(?<![\\w$.])(' + vpPrivate.join('|') + ')(?![\\w$])').test(partText(f)), f + ' tidak boleh memakai fungsi panel yang kini privat (hanya vgSync/vfKeep yang dibagikan)');
 ok(/vgSync\(\)/.test(modAtur) && /vfKeep\(\)/.test(modAtur), 'pengaturan.js tetap memakai vgSync dan vfKeep yang disuntikkan dari hasil factory panel');
 for (const [nm, t] of [['penyimpanan-cadangan.js', modSimpan], ['pengaturan.js', modAtur]]) ok(!new RegExp('(?<![\\w$.])(' + vpPrivate.join('|') + ')(?![\\w$])').test(t), nm + ' tidak boleh memakai fungsi panel yang kini privat');
 // Tahap 6a (v9.28): dialog konfirmasi (ask), inertBg, dan toast (js/ui.js) dipisahkan dari 20-hitung-etalase.js.
@@ -214,18 +219,18 @@ ok(uiMod.includes('export function createUI({$,document}){'), 'ui.js harus menge
 ok(/return \{inertBg:inertBg,ask:ask,toast:toast,getDprev:function\(\)\{return dprev\},setDprev:function\(v\)\{dprev=v\}\};\n\}\n$/.test(uiMod), 'ui.js hanya mengekspos inertBg, ask, toast, getDprev, setDprev');
 for (const name of ['inertBg', 'ask', 'dclose', 'toast']) ok(new RegExp('function ' + name + '\\(').test(uiMod), 'ui.js harus memuat ' + name);
 ok(!/\bwindow\.|globalThis\.|localStorage|KStore/.test(uiMod.replace(/\/\*[\s\S]*?\*\//g, '')), 'ui.js tidak boleh membaca global tersembunyi');
-const part20 = legacyPart('20-hitung-etalase.js');
+const part20 = partText('20-hitung-etalase.js');
 ok(/var \{inertBg,ask,toast,getDprev,setDprev\}=createUI\(\{\$:\$,document:document\}\);/.test(part20), '20-hitung-etalase.js memasang createUI');
 ok(!/function (inertBg|ask|dclose|toast)\(/.test(part20) && !/var (dfn|dprev|toastT)\b/.test(part20) && !/var dfn=null,dprev=null/.test(part20), '20-hitung-etalase.js tidak boleh lagi mendefinisikan dialog/toast');
-for (const f of legacyParts) ok(!/(?<![\w$.])(dfn|dprev|toastT|dclose)\b/.test(legacyPart(f).replace(/\/\*[\s\S]*?\*\//g, '')), f + ' tidak boleh memakai dfn/dprev/toastT/dclose (privat di ui.js)');
+for (const f of legacyParts) ok(!/(?<![\w$.])(dfn|dprev|toastT|dclose)\b/.test(partText(f).replace(/\/\*[\s\S]*?\*\//g, '')), f + ' tidak boleh memakai dfn/dprev/toastT/dclose (privat di ui.js)');
 { /* pemasangan harus terjadi SEBELUM pemakaian saat muat: tak ada pemanggilan ask/toast/inertBg di tingkat atas bagian 00/10 atau 20 sebelum baris pemasangan */
-  const pre = part20.slice(0, part20.indexOf('var {inertBg,ask,toast,getDprev,setDprev}=createUI(')) + legacyPart('00-core.js') + legacyPart('10-calc.js');
+  const pre = part20.slice(0, part20.indexOf('var {inertBg,ask,toast,getDprev,setDprev}=createUI(')) + partText('00-core.js') + partText('10-calc.js');
   ok(!/(?<![\w$.])(toast|ask|inertBg):(toast|ask|inertBg)\b/.test(pre), 'tak ada yang meneruskan ask/toast/inertBg sebagai nilai sebelum pemasangan createUI (bukan lagi di-hoist)');
 }
 // Tahap 6b (v9.29): helper murni (esc, dtx, uid, prodSig, SGL, feeSig) dipisahkan ke js/helpers.js.
 execFileSync(process.execPath, ['--check', new URL('../js/helpers.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/helpers.js'"), 'sw.js CORE harus menyebut js/helpers.js');
-ok(loaderImports('./helpers.js', 'esc, dtx, uid, prodSig, SGL, createFeeSig'), 'app-core.js harus mengimpor esc, dtx, uid, prodSig, SGL, createFeeSig');
+ok(loaderImports('./helpers.js', 'esc, dtx, uid, prodSig') && loaderImports('./helpers.js', 'esc, dtx, uid, prodSig, SGL, createFeeSig'), 'app-core.js mengimpor esc, dtx, uid, prodSig dan js/hitung-etalase.js mengimpor esc, dtx, uid, prodSig, SGL, createFeeSig (v9.42)');
 const hlpMod = fs.readFileSync(new URL('../js/helpers.js', import.meta.url), 'utf8');
 ok(/export function createFeeSig\(\{getA,gfac\}\)\{/.test(hlpMod) && /return feeSig;\n\}\n$/.test(hlpMod), 'helpers.js harus mengekspor createFeeSig({getA,gfac}) yang mengembalikan feeSig');
 for (const name of ['esc', 'dtx', 'uid', 'prodSig']) ok(new RegExp('export function ' + name + '\\(').test(hlpMod), 'helpers.js harus mengekspor ' + name);
@@ -233,15 +238,15 @@ ok(/export var SGL=\{/.test(hlpMod), 'helpers.js harus mengekspor SGL');
 const hlpCode = hlpMod.replace(/\/\*[\s\S]*?\*\//g, '');
 ok(/function feeSig\(\)\{var A=getA\(\);/.test(hlpCode), 'feeSig membaca A lewat getA() di dalam fungsinya (A bisa ditugaskan ulang saat restore)');
 ok(!/\bwindow\.|globalThis\.|localStorage|KStore|document\b/.test(hlpCode.replace(/function esc\(.*?\}\)\}\n/, '').replace(/var SGL=\{[^}]*\};/, '')), 'helpers.js tidak boleh membaca global tersembunyi');
-const part20b = legacyPart('20-hitung-etalase.js');
+const part20b = partText('20-hitung-etalase.js');
 ok(!/^(function (esc|dtx|uid|prodSig|feeSig)\(|var SGL=)/m.test(part20b), '20-hitung-etalase.js tidak boleh lagi mendefinisikan esc/dtx/uid/prodSig/feeSig/SGL');
 ok(/^var feeSig=createFeeSig\(\{getA:function\(\)\{return State.A\},gfac:gfac\}\);$/m.test(part20b), '20-hitung-etalase.js memasang createFeeSig dengan getA dan gfac');
-for (const f of legacyParts) ok(!/^(function (esc|dtx|uid|prodSig|feeSig)\(|var SGL=)/m.test(legacyPart(f)), f + ' tidak boleh mendefinisikan ulang helper yang kini di js/helpers.js');
+for (const f of legacyParts) ok(!/^(function (esc|dtx|uid|prodSig|feeSig)\(|var SGL=)/m.test(partText(f)), f + ' tidak boleh mendefinisikan ulang helper yang kini di js/helpers.js');
 { // feeSig dulu function yang di-hoist; kini var. Tidak boleh dipakai saat muat sebelum baris pemasangannya.
   const at = part20b.indexOf('var feeSig=createFeeSig(');
-  const pre = legacyPart('00-core.js') + legacyPart('10-calc.js') + part20b.slice(0, at);
+  const pre = partText('00-core.js') + partText('10-calc.js') + part20b.slice(0, at);
   ok(!/(?<![\w$.])feeSig\b/.test(pre.replace(/\/\*[\s\S]*?\*\//g, '').replace('feeSig:function(){return feeSig()}', '')), 'feeSig tidak boleh dirujuk di 00-core, 10-calc, atau bagian 20 sebelum pemasangannya (kecuali pembungkus late-bound createTarifUI, yang baru memanggil saat dipakai)');
-  ok(/prodSig:prodSig,feeSig:feeSig/.test(legacyPart('40-voucher-panel.js')) && !/^\s*(feeSig|prodSig|esc|dtx|uid)\(/m.test(part20b.slice(0, at)), 'bagian 40 menerima feeSig/prodSig sebagai nilai setelah bagian 20 (urutan eksekusi terjaga)'); }
+  ok(/prodSig:prodSig,feeSig:feeSig/.test(partText('40-voucher-panel.js')) && !/^\s*(feeSig|prodSig|esc|dtx|uid)\(/m.test(part20b.slice(0, at)), 'bagian 40 menerima feeSig/prodSig sebagai nilai setelah bagian 20 (urutan eksekusi terjaga)'); }
 // Tahap 6c (v9.30): logika tarif/peringatan (tblSync, tbuild, fillT, tchk, verStale, ADN, refreshLabels, AD0/GO0) dipisahkan ke js/tarif-ui.js.
 execFileSync(process.execPath, ['--check', new URL('../js/tarif-ui.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/tarif-ui.js'"), 'sw.js CORE harus menyebut js/tarif-ui.js');
@@ -254,21 +259,21 @@ ok(!/\bwindow\.|globalThis\.|localStorage|KStore|\bsessionStorage\b/.test(tuCode
 for (const fnName of ['tblSync', 'tchk', 'refreshLabels']) ok(new RegExp('function ' + fnName + '\\([^)]*\\)\\{var A=getA\\(\\);').test(tuCode), fnName + ' membaca A lewat getA() di dalam fungsinya (A bisa ditugaskan ulang saat restore)');
 ok(/function verStale\(\)\{var A=getA\(\),rows=getRows\(\);/.test(tuCode), 'verStale membaca A dan rows lewat getA()/getRows()');
 ok(/addEventListener\('input',function\(e\)\{var A=getA\(\);/.test(tuCode) && /\$\('tr'\)\.onclick=function\(\)\{var A=getA\(\);/.test(tuCode), 'pendengar tbuild membaca A ulang saat peristiwa terjadi');
-const part20c = legacyPart('20-hitung-etalase.js');
+const part20c = partText('20-hitung-etalase.js');
 ok(/^var \{tblSync,tbuild,fillT,tchk,refreshLabels\}=createTarifUI\(\{getA:function\(\)\{return State.A\},getRows:function\(\)\{return State.rows\},/m.test(part20c), '20-hitung-etalase.js memasang createTarifUI dengan getA dan getRows');
 for (const w of ['feeSig:function(){return feeSig()}', 'calc:function(){return calc.apply(null,arguments)}', 'upd:function(){return upd.apply(null,arguments)}', 'fill:function(){return fill()}', 'toast:function(m){return toast(m)}']) ok(part20c.includes(w), 'pemasangan createTarifUI memakai pembungkus late-bound: ' + w);
-for (const f of legacyParts) ok(!/^(function (tblSync|tbuild|fillT|tchk|verStale|refreshLabels)\(|var (AD0|GO0|ADN)\b)/m.test(legacyPart(f)), f + ' tidak boleh mendefinisikan ulang fungsi/variabel tarif yang kini di js/tarif-ui.js');
-for (const f of legacyParts) ok(!/(?<![\w$.])(verStale|ADN|AD0|GO0)\b/.test(legacyPart(f).replace(/\/\*[\s\S]*?\*\//g, '')), f + ' tidak boleh memakai verStale/ADN/AD0/GO0 (privat di tarif-ui.js)');
+for (const f of legacyParts) ok(!/^(function (tblSync|tbuild|fillT|tchk|verStale|refreshLabels)\(|var (AD0|GO0|ADN)\b)/m.test(partText(f)), f + ' tidak boleh mendefinisikan ulang fungsi/variabel tarif yang kini di js/tarif-ui.js');
+for (const f of legacyParts) ok(!/(?<![\w$.])(verStale|ADN|AD0|GO0)\b/.test(partText(f).replace(/\/\*[\s\S]*?\*\//g, '')), f + ' tidak boleh memakai verStale/ADN/AD0/GO0 (privat di tarif-ui.js)');
 { // tchk harus tetap bisa ditugaskan ulang (pengaturan.js membungkusnya lewat wrapTchk, yang dipasang app-core): dipasang sebagai var legacy, bukan const/let.
   ok(/^wrapTchk\(function\(_tchk\)\{return function\(\)\{_tchk\(\);/m.test(modAtur), 'pengaturan.js masih membungkus tchk lewat wrapTchk (_tchk dipanggil di dalam pembungkus)');
-  ok(/wrapTchk:function\(mk\)\{tchk=mk\(tchk\)\}/.test(legacyPart('80-cadangan-tema.js')) && /wrapTab:function\(mk\)\{tab.wrap\(mk\)\}/.test(legacyPart('80-cadangan-tema.js')), 'app-core memasang wrapTchk/wrapTab yang menimpa tchk/tab milik app-core');
+  ok(/wrapTchk:function\(mk\)\{HE\.wrapTchk\(mk\)\}/.test(partText('80-cadangan-tema.js')) && /wrapTab:function\(mk\)\{tab.wrap\(mk\)\}/.test(partText('80-cadangan-tema.js')) && /wrapTchk:function\(mk\)\{tchk=mk\(tchk\)\}/.test(modHitung), 'app-core memasang wrapTchk/wrapTab yang menimpa tchk/tab milik app-core');
   ok(!/\b(const|let)\s*\{[^}]*\btchk\b/.test(part20c) && /^var \{[^}]*\btchk\b/m.test(part20c), 'tchk dipasang dengan var (bisa ditugaskan ulang)');
 }
 { // Dulu function yang di-hoist; kini var. Tak boleh dipakai saat muat sebelum baris pemasangan (00-core, 10-calc, awal bagian 20).
   const at = part20c.indexOf('var {tblSync,tbuild,fillT,tchk,refreshLabels}=createTarifUI(');
-  const pre = legacyPart('00-core.js') + legacyPart('10-calc.js') + part20c.slice(0, at);
+  const pre = partText('00-core.js') + partText('10-calc.js') + part20c.slice(0, at);
   ok(at >= 0 && !/(?<![\w$.'"])(tblSync|tbuild|fillT|tchk|refreshLabels)\b(?!\s*:)/.test(pre.replace(/\/\*[\s\S]*?\*\//g, '')), 'tblSync/tbuild/fillT/tchk/refreshLabels tidak boleh dirujuk sebelum pemasangannya');
-  const boot = legacyPart('95-boot.js');
+  const boot = partText('95-boot.js');
   ok(legacyParts.indexOf('95-boot.js') > legacyParts.indexOf('20-hitung-etalase.js') && /\btbuild\(\)/.test(boot), 'tbuild dipanggil di 95-boot.js, yang berjalan SETELAH bagian 20');
 }
 // Tahap 6d (v9.31): peringatan stok/margin (pc1, skHi, stk, warns, WN, mchg) dipisahkan ke js/warnings.js.
@@ -282,13 +287,13 @@ ok(!/\bwindow\.|globalThis\.|localStorage|KStore|\bsessionStorage\b|\bdocument\b
 for (const fnName of ['skHi', 'stk', 'warns', 'mchg']) ok(new RegExp('function ' + fnName + '\\([^)]*\\)\\{var A=getA\\(\\);').test(wrCode), fnName + ' membaca A lewat getA() di dalam fungsinya (A bisa ditugaskan ulang saat restore)');
 ok(!/function (pc1|WN)\([^)]*\)\{[^}]*\bA\./.test(wrCode), 'pc1 dan WN murni: tidak memakai A');
 ok((wrCode.match(/\bA\s*=/g) || []).length === 4, 'A hanya ditugaskan empat kali (var A=getA() di empat fungsi), tidak ada salinan lain');
-const part20d = legacyPart('20-hitung-etalase.js');
+const part20d = partText('20-hitung-etalase.js');
 ok(/^var \{pc1,skHi,stk,warns,WN,mchg\}=createWarnings\(\{getA:function\(\)\{return State.A\},/m.test(part20d), '20-hitung-etalase.js memasang createWarnings dengan getA');
 for (const w of ['calc:function(){return calc.apply(null,arguments)}', 'fwd:function(){return fwd.apply(null,arguments)}', 'rp:rp,fmt:fmt,today:today,dtx:dtx']) ok(part20d.includes(w), 'pemasangan createWarnings: ' + w);
-for (const f of legacyParts) ok(!/^function (pc1|skHi|stk|warns|WN|mchg)\(/m.test(legacyPart(f)), f + ' tidak boleh mendefinisikan ulang fungsi peringatan yang kini di js/warnings.js');
+for (const f of legacyParts) ok(!/^function (pc1|skHi|stk|warns|WN|mchg)\(/m.test(partText(f)), f + ' tidak boleh mendefinisikan ulang fungsi peringatan yang kini di js/warnings.js');
 { // Dulu function yang di-hoist; kini var. Tak boleh dipakai saat muat sebelum baris pemasangan (00-core, 10-calc, awal bagian 20).
   const at = part20d.indexOf('var {pc1,skHi,stk,warns,WN,mchg}=createWarnings(');
-  const pre = legacyPart('00-core.js') + legacyPart('10-calc.js') + part20d.slice(0, at);
+  const pre = partText('00-core.js') + partText('10-calc.js') + part20d.slice(0, at);
   ok(at >= 0 && !/(?<![\w$.'"\-])(pc1|skHi|stk|warns|WN|mchg)\(/.test(pre.replace(/\/\*[\s\S]*?\*\//g, '')), 'pc1/skHi/stk/warns/WN/mchg tidak boleh dipanggil sebelum pemasangannya');
   ok(legacyParts.indexOf('95-boot.js') > legacyParts.indexOf('20-hitung-etalase.js'), 'boot berjalan SETELAH bagian 20 (pemanggilan pertama terjadi sesudah pemasangan)');
   ok(legacyParts.indexOf('50-promosi.js') > legacyParts.indexOf('20-hitung-etalase.js') && legacyParts.indexOf('60-tab-impor-sinkron.js') > legacyParts.indexOf('20-hitung-etalase.js'), 'pemakai di luar bagian 20 (50-promosi, 60-tab-impor-sinkron) dijalankan setelah pemasangan');
@@ -297,7 +302,7 @@ for (const f of legacyParts) ok(!/^function (pc1|skHi|stk|warns|WN|mchg)\(/m.tes
 execFileSync(process.execPath, ['--check', new URL('../js/hasil-view.js', import.meta.url).pathname]); n++;
 ok(sw.includes("'./js/hasil-view.js'"), 'sw.js CORE harus menyebut js/hasil-view.js');
 // v9.39 (Tahap 3): nama cache dinaikkan agar pengguna lama mengunduh js/app-core.js dan membuang cache lama yang memuat js/legacy/*.
-ok(sw.includes("client-v9.41"), 'sw.js harus memakai nama cache client-v9.41');
+ok(sw.includes("client-v9.42"), 'sw.js harus memakai nama cache client-v9.42');
 ok(loaderImports('./hasil-view.js', 'createHasilView'), 'app-core.js harus mengimpor createHasilView');
 const hvCode = fs.readFileSync(new URL('../js/hasil-view.js', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 ok(/export function createHasilView\(\{getA,fmt,rp,esc,tmod,fwdL,warns,WN,pc1\}\)\{/.test(hvCode), 'hasil-view.js mengekspor createHasilView dengan tanda tangan yang disepakati');
@@ -306,27 +311,28 @@ ok(!/\bwindow\.|globalThis\.|localStorage|KStore|\bsessionStorage\b|\bdocument\b
 for (const fnName of ['revHtml', 'sp']) ok(new RegExp('function ' + fnName + '\\([^)]*\\)\\{var A=getA\\(\\);').test(hvCode), fnName + ' membaca A lewat getA() di dalam fungsinya (A bisa ditugaskan ulang saat restore)');
 ok(!/function (CR|errH)\([^)]*\)\{[^}]*\bA\./.test(hvCode), 'CR dan errH murni: tidak memakai A');
 ok((hvCode.match(/\bA\s*=/g) || []).length === 2, 'A hanya ditugaskan dua kali (var A=getA() di dua fungsi), tidak ada salinan lain');
-const part20e = legacyPart('20-hitung-etalase.js');
+const part20e = partText('20-hitung-etalase.js');
 ok(/^var \{CR,errH,sp,revHtml\}=createHasilView\(\{getA:function\(\)\{return State.A\},/m.test(part20e), '20-hitung-etalase.js memasang createHasilView dengan getA (var, global bagi 60-tab-impor-sinkron.js)');
 for (const w of ['fmt:fmt,rp:rp,esc:esc', 'tmod:tmod,fwdL:fwdL', 'warns:warns,WN:WN,pc1:pc1']) ok(part20e.includes(w), 'pemasangan createHasilView: ' + w);
-for (const f of legacyParts) ok(!/^function (CR|errH|sp|revHtml)\(/m.test(legacyPart(f)), f + ' tidak boleh mendefinisikan ulang fungsi tampilan hasil yang kini di js/hasil-view.js');
+for (const f of legacyParts) ok(!/^function (CR|errH|sp|revHtml)\(/m.test(partText(f)), f + ' tidak boleh mendefinisikan ulang fungsi tampilan hasil yang kini di js/hasil-view.js');
 ok(!/^(const|let)\s*\{[^}]*\b(CR|errH|sp|revHtml)\b/m.test(part20e), 'CR/errH/sp/revHtml dipasang dengan var (global), bukan const/let');
 { // Dulu function yang di-hoist; kini var. Tak boleh dipakai saat muat sebelum baris pemasangan (00-core, 10-calc, awal bagian 20).
   const at = part20e.indexOf('var {CR,errH,sp,revHtml}=createHasilView(');
-  const pre = legacyPart('00-core.js') + legacyPart('10-calc.js') + part20e.slice(0, at);
+  const pre = partText('00-core.js') + partText('10-calc.js') + part20e.slice(0, at);
   ok(at >= 0 && !/(?<![\w$.'"\-])(CR|errH|sp|revHtml)\(/.test(pre.replace(/\/\*[\s\S]*?\*\//g, '')), 'CR/errH/sp/revHtml tidak boleh dipanggil sebelum pemasangannya');
   const atW = part20e.indexOf('var {pc1,skHi,stk,warns,WN,mchg}=createWarnings(');
   ok(atW >= 0 && atW < at, 'createHasilView dipasang SETELAH createWarnings (warns/WN/pc1 disuntikkan langsung)');
-  ok(part20e.indexOf('var A=') < 0 && legacyParts.indexOf('10-calc.js') < legacyParts.indexOf('20-hitung-etalase.js') && /var \{[^}]*\btmod\b[^}]*\bfwdL\b[^}]*\}=createPricing\(/.test(legacyPart('10-calc.js')), 'tmod dan fwdL sudah dipasang di 10-calc.js (sebelum bagian 20), jadi aman disuntikkan langsung');
+  ok(part20e.indexOf('var A=') < 0 && legacyParts.indexOf('10-calc.js') < legacyParts.indexOf('20-hitung-etalase.js') && /var \{[^}]*\btmod\b[^}]*\bfwdL\b[^}]*\}=createPricing\(/.test(partText('10-calc.js')), 'tmod dan fwdL sudah dipasang di 10-calc.js (sebelum bagian 20), jadi aman disuntikkan langsung');
   ok(legacyParts.indexOf('60-tab-impor-sinkron.js') > legacyParts.indexOf('20-hitung-etalase.js') && /\bCR\(/.test(fs.readFileSync(new URL('../js/tab-impor-sinkron.js', import.meta.url), 'utf8')), 'CR masih dipakai 60-tab-impor-sinkron.js, yang berjalan setelah pemasangan');
 }
 // v9.32.1: pemasangan createXxx({k:nilaiTelanjang}) menyalin nilai SAAT MUAT. Bila nilainya var yang baru ditugaskan di bagian/baris SESUDAH pemasangan, yang tersalin undefined
 // (bug ERP:ERP di createBackup sejak v9.18: cadangan penuh dan pulihkan cadangan ber-ERP error). Audit ini berlaku untuk SEMUA pemasangan.
 function lateCaptures(texts) {
   const all = texts.join(''), strip = all.replace(/\/\*[\s\S]*?\*\//g, m => ' '.repeat(m.length)), out = [];
-  const imported = new Set(); for (const [, nm] of IMPORTS) nm.split(',').forEach(x => imported.add(x.trim()));
+  const imported = new Set(); for (const [, nm] of IMPORTS.concat(IMPORTS_HITUNG)) nm.split(',').forEach(x => imported.add(x.trim()));
   const globalsLuar = new Set(['KDOM', 'KStore', 'document', 'Math', 'JSON', 'Date', 'Object', 'Array', 'window', 'navigator', 'localStorage', 'globalThis', 'Promise', 'String', 'Number', 'undefined', 'null', 'true', 'false']);
   for (const c of strip.matchAll(/\b(create[A-Z]\w*)\(\{/g)) {
+    if (/function\s+$/.test(strip.slice(Math.max(0, c.index - 12), c.index))) continue; // v9.42: tanda tangan `function createXxx({...})` adalah definisi, bukan pemasangan
     const start = c.index + c[0].length - 1; let d = 0, j = start;
     for (; j < strip.length; j++) { const ch = strip[j]; if ('{(['.includes(ch)) d++; else if ('})]'.includes(ch)) { d--; if (d === 0) break; } }
     const args = []; let dd = 0, cur = '';
@@ -344,12 +350,12 @@ function lateCaptures(texts) {
   return out;
 }
 {
-  const texts = legacyParts.map(f => legacyPart(f));
+  const texts = legacyParts.map(f => partText(f));
   const found = lateCaptures(texts);
   ok(found.length === 0, 'tidak boleh ada nilai bare yang disalin ke createXxx sebelum nilainya ada: ' + found.join('; '));
   const bkIdx = legacyParts.indexOf('80-cadangan-tema.js'), erpIdx = legacyParts.indexOf('90-erp.js');
-  ok(bkIdx >= 0 && erpIdx > bkIdx && /^var ERP=createERP\(/m.test(legacyPart('90-erp.js')), 'ERP dipasang di 90-erp.js, SESUDAH 80-cadangan-tema.js (alasan pembungkus late-bound)');
-  const t80 = legacyPart('80-cadangan-tema.js');
+  ok(bkIdx >= 0 && erpIdx > bkIdx && /^var ERP=createERP\(/m.test(partText('90-erp.js')), 'ERP dipasang di 90-erp.js, SESUDAH 80-cadangan-tema.js (alasan pembungkus late-bound)');
+  const t80 = partText('80-cadangan-tema.js');
   ok(/var ERPLate=\{dump:function\(\)\{return ERP\.dump\.apply\(ERP,arguments\)\},check:function\(\)\{return ERP\.check\.apply\(ERP,arguments\)\},restore:function\(\)\{return ERP\.restore\.apply\(ERP,arguments\)\}\};/.test(t80) && /createPenyimpananCadangan\(\{[^\n]*ERP:ERPLate,/.test(t80), 'app-core menyuntikkan ERP ke modul cadangan sebagai pembungkus late-bound (dump/check/restore), bukan nilai ERP yang belum ada');
   ok(/ERP:ERP,/.test(modSimpan) && /createBackup\(\{/.test(modSimpan), 'modul penyimpanan-cadangan meneruskan ERP yang diterimanya ke createBackup');
   // SABOTASE: versi lama (ERP disalin telanjang) harus terdeteksi oleh audit yang sama; pemasangan lain (KDOM/KStore global, function hoisted) tidak boleh memicu alarm palsu.
@@ -374,7 +380,7 @@ ok(/export function createKartuUpdate\(\{getA,KDOM,fmt,gfac,goRate,adRate,esc,dt
 ok(/function updRow\(r\)\{var A=getA\(\);/.test(kuCode),'updRow tetap deklarasi function dan membaca A terbaru melalui getA');
 ok(/return \{updRow:updRow\};/.test(kuCode),'factory mengembalikan updRow');
 ok(!/\b(?:window|globalThis|document|localStorage|sessionStorage)\b/.test(kuCode),'kartu-update.js tidak boleh membaca global tersembunyi');
-const part20f=legacyPart('20-hitung-etalase.js');
+const part20f=partText('20-hitung-etalase.js');
 ok(/^var \{updRow\}=createKartuUpdate\(\{getA:function\(\)\{return State.A\},/m.test(part20f),'bagian 20 memasang createKartuUpdate dengan getA');
 for(const w of ['KDOM:KDOM','fmt:fmt,gfac:gfac,goRate:goRate,adRate:adRate','stk:stk','calc:function(){return calc.apply(null,arguments)}','acH:function(){return acH.apply(null,arguments)}','bdH:function(){return bdH.apply(null,arguments)}','vnote:function(){return vnote.apply(null,arguments)}','vscn:function(){return vscn.apply(null,arguments)}','CR:CR,sp:sp,revHtml:revHtml,errH:errH']) ok(part20f.includes(w),'pemasangan createKartuUpdate: '+w);
 ok(!/^function updRow\(/m.test(part20f),'bagian 20 tidak lagi mendefinisikan updRow');
@@ -384,7 +390,7 @@ ok(sw.includes("'./js/upd-fill.js'"),'sw.js CORE harus menyebut js/upd-fill.js')
 ok(loaderImports('./upd-fill.js','createUpdater, createFiller'),'app-core.js harus mengimpor createUpdater dan createFiller');
 ok(/^var \{upd\}=createUpdater\(/m.test(part20f),'bagian 20 memasang createUpdater');
 ok(/^var \{fill\}=createFiller\(/m.test(part20f),'bagian 20 memasang createFiller');
-ok(!/^function upd\(/m.test(part20f)&&!/^function fill\(/m.test(legacyPart('80-cadangan-tema.js')),'upd dan fill tidak lagi didefinisikan di legacy');
+ok(!/^function upd\(/m.test(part20f)&&!/^function fill\(/m.test(partText('80-cadangan-tema.js')),'upd dan fill tidak lagi didefinisikan di legacy');
 ok(/export function createUpdater/.test(ufCode)&&/export function createFiller/.test(ufCode),'modul mengekspor dua factory');
 ok(/setPSIG\(psig\(\)\)/.test(ufCode),'upd memperbarui PSIG melalui setter');
 ok(/getA\(\)/.test(ufCode)&&/getRows\(\)/.test(ufCode),'modul membaca A dan rows terbaru melalui getter');
@@ -396,7 +402,7 @@ ok(!/\b(?:window|globalThis|localStorage|sessionStorage)\b/.test(ufCode),'modul 
  ok((part20f.replace(/\/\*[\s\S]*?\*\//g,'').match(/\bupdRow\s*\(/g)||[]).length===1 && part20f.includes('updRow:updRow'),'updRow hanya diberikan sebagai dependensi, tidak dipanggil saat evaluasi muat');
 }
 {
- const all=legacyParts.map(f=>legacyPart(f));
+ const all=legacyParts.map(f=>partText(f));
  const found=lateCaptures(all);
  ok(found.length===0,'audit lateCaptures harus lulus setelah pemasangan kartu-update: '+found.join('; '));
  const install=/^var \{updRow\}=createKartuUpdate\([^\n]*\);\n/m;
@@ -408,7 +414,7 @@ ok(fs.existsSync(new URL('./e2e/kartu-update.e2e.py',import.meta.url)),'E2E khus
 // Tahap 6h (v9.35): model Etalase dipisahkan ke js/etalase-view.js.
 {
  const ev=fs.readFileSync(new URL('../js/etalase-view.js',import.meta.url),'utf8');
- const p20=legacyPart('20-hitung-etalase.js');
+ const p20=partText('20-hitung-etalase.js');
  execFileSync(process.execPath,['--check',new URL('../js/etalase-view.js',import.meta.url).pathname]); n++;
  ok(ev.includes('export function createEtalaseView({getRows,getA,getPRM,getCFG,getVUSE,getCurP,getVbest,getActL,'),'etalase-view mengekspor factory dengan getter state');
  ok(sw.includes("'./js/etalase-view.js'"),'sw CORE memuat etalase-view.js');
