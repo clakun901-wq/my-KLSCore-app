@@ -12,7 +12,8 @@ Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelum
 - TIDAK berubah: pembagian halaman, jumlah kartu, rumus, data, teks.
 - Tes baru: `tests/penanda-halaman.test.mjs` (penjaga statis, 13 pernyataan) dan `tests/e2e/penanda-halaman.e2e.py` (E2E ke-23, 173 pernyataan di Chromium nyata: lebar 320/360/412/1024 px, penanda atas dan bawah, halaman 1 dan 2, angka halaman sangat panjang). Uji sabotase: CSS lama membuat keduanya GAGAL.
 - Bukti: di SANDBOX sesi (bukan GitHub Actions): `npm test` exit 0 (golden-master identik vs v5.82; `penanda-halaman` 13 pernyataan; `dokumentasi` 76 pernyataan) dan 23/23 E2E lulus, `fail=0` (`penanda-halaman` 173 pernyataan di Chromium nyata).
-- Belum terbukti: tampilan di HP asli pemilik dan GitHub Actions v9.51.
+- Bukti tambahan: GitHub Actions pemilik (8 Nov 2026, log dari pemilik): `npm test` lulus (termasuk `penanda-halaman` 13 pernyataan, `baris-rincian` 17, `dokumentasi` 76, golden-master identik) dan 23/23 E2E lulus, `fail=0` (`penanda-halaman` 173 pernyataan, `baris-rincian` 62).
+- Belum terbukti: tampilan di HP asli pemilik.
 
 ## v9.50 - Tampilan: teks rincian panjang turun ke baris ke-2, angka sejajar (8 Nov 2026)
 - Pemilik: pada baris rincian (kartu Hitung "Lihat rincian biaya" dan laporan ERP), teks yang panjang membuat angkanya pindah ke baris sendiri atau teks terjepit. Diminta: teks panjang otomatis turun jadi 2 baris, dan angka hasil ikut sejajar dengan baris ke-2 teks.
