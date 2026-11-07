@@ -1,10 +1,10 @@
-# LANJUT-DI-SINI (v8) - posisi setelah Tahap 8 (v9.45)
+# LANJUT-DI-SINI (v10) - posisi setelah Tahap 9C (v9.49)
 
 Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`. Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
 
 ## Posisi
-- Tahap 0-8 sudah dikerjakan. Tahap 8 (v9.45) selesai di kode; menunggu GitHub Actions pemilik (npm test + 20 E2E) dan uji manual.
-- Belum ada tahap berikutnya. Jangan membuat tahap baru tanpa permintaan pemilik.
+- Tahap 0-8 selesai. Tahap 9A/9B (v9.48, kinerja 1.000 produk) selesai dan LULUS di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21 E2E lulus, `fail=0`.
+- Tahap berikutnya BELUM ada. Langkah 3 (Hitung berhalaman) dan langkah 4 (`upd` per ketikan) hanya dikerjakan bila angka/kesan dari HP pemilik menunjukkan masih berat. Bila sudah lancar, keduanya dilewati. Jangan membuat tahap baru tanpa permintaan pemilik.
 
 ## Yang dikerjakan di Tahap 8
 - `js/version.js`: satu-satunya sumber nomor versi (`app` 5.82, `paket` 9.45). Dipakai `sw.js` (importScripts, nama cache), panel Pembaruan (APPV via `js/main.js` lalu `app-core.js`). `package.json` dan dokumen diperiksa tes.
@@ -18,26 +18,27 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`. Jangan mem
 |---|---|---|
 | 1 | `js/legacy/`, `legacy-app.js`, `parts.json` tidak ada | Terpenuhi (hilang sejak v9.38; kini dijaga tes) |
 | 2 | 0 variabel global lintas berkas | Terpenuhi untuk LINTAS BERKAS (hanya `app-core.js` yang punya nama bersama; modul lain memakai sambungan eksplisit). Peta masih mencatat 90 nama lintas BAGIAN di dalam `app-core.js`: variabel privat satu modul, bukan global. Menghapusnya = merancang ulang akar perakitan; belum dikerjakan, perlu persetujuan pemilik |
-| 3 | `npm test` exit 0, golden-master identik | Lulus di sandbox sesi; GitHub Actions v9.45 menunggu pemilik |
-| 4 | E2E lulus di GitHub Actions pemilik | Menunggu (kini 20 skrip; angka "13 E2E / 242 pernyataan" di rencana lama sudah usang) |
+| 3 | `npm test` exit 0, golden-master identik | Lulus di GitHub Actions pemilik (v9.48) |
+| 4 | E2E lulus di GitHub Actions pemilik | LULUS v9.48: 21 skrip, `fail=0` (angka "13 E2E / 242 pernyataan" di rencana lama sudah usang) |
 | 5 | Uji manual Bagian 7 | Belum dilakukan |
 | 6 | Uji sabotase tetap menangkap perubahan | Tes sabotase lama tetap ada dan lulus |
 
 ## Belum terbukti
-- E2E v9.45 (terutama `tahap8`: Service Worker dan offline) belum dijalankan di browser mana pun.
-- Uji HP nyata, uji offline pada perangkat nyata, pemulihan dengan data besar atau data toko asli, cadangan lintas perangkat.
+- Uji manual Bagian 7 pada salinan data.
+- HP asli: kelancaran Etalase dan Hitung dengan 1.000 produk, mode offline, pemulihan cadangan besar. Angka sandbox dan runner GitHub (boot 1.000 kartu 570 ms di run terakhir, 1.225 ms di log sebelumnya; beda mesin, bukan beda kode) TIDAK mewakili HP.
+- Cadangan lintas perangkat; pemulihan dengan data toko asli.
 - Paket ini belum boleh menggantikan aplikasi toko asli.
 
 ## Langkah pemilik
-1. Simpan ZIP v9.44 koreksi2 sebagai cadangan.
-2. Unggah ZIP v9.45 ke GitHub, lalu Actions -> Uji E2E Browser -> Run workflow.
-3. Kirim hasilnya (lulus berapa dari 20; nama skrip yang gagal beserta log di atas baris GAGAL).
-4. Setelah lulus, lakukan uji manual Bagian 7 pada salinan data.
+1. Simpan ZIP v9.48 ini sebagai cadangan (versi yang lulus Actions).
+2. Pasang di HP dengan SALINAN data berisi banyak produk. Buka aplikasi dengan `?perf=1` di belakang alamatnya.
+3. Pakai tab Etalase, Hitung, dan lainnya; kirim hasil `KPerf.report()` atau kesan (tab mana yang masih berat) ke AI.
+4. Lakukan uji manual Bagian 7 pada salinan data.
 
 ## Hasil GitHub Actions v9.45 dan perbaikan (sesi koreksi)
 - Pemilik melaporkan: hanya `tahap8` gagal (Timeout 20000ms menunggu `kalsara-product-card`).
 - Penyebab (dugaan kuat): E2E `tahap8` memuat aplikasi TANPA data, sehingga kartu produk memang tidak pernah muncul. Salah di alur tes, bukan bukti aplikasi rusak. Tes lain lulus karena memakai data awal.
-- Perbaikan: tes kini menunggu panel Pembaruan menulis "Versi ..." (tanda boot selesai). Belum dijalankan ulang; menunggu GitHub Actions pemilik.
+- Perbaikan: tes kini menunggu panel Pembaruan menulis "Versi ..." (tanda boot selesai). Sudah dijalankan ulang di GitHub Actions pemilik (v9.48): `tahap8` LULUS, jadi perbaikan alur tes terbukti.
 
 ## Tahap 9A/9B (v9.48) - kinerja 1.000 produk (sesi 8 Nov 2026)
 - Diminta pemilik: hampir semua tab freeze dengan 1.000 produk (laptop dan HP). Keputusan pemilik: pembagian halaman (bukan virtualisasi); kerjakan langkah 1 (pengukur) dan 2 (penanda data-berubah + Etalase berhalaman). Langkah 3 (Hitung berhalaman) dan 4 (upd per ketikan) BELUM dikerjakan: tunggu angka dari HP pemilik.
@@ -45,4 +46,13 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`. Jangan mem
 - Baru: `js/kinerja.js` (pengukur, aktif hanya dengan `?perf=1`), `js/etalase-halaman.js` (potong halaman 50 kartu, `?hal=25|50|100` untuk membandingkan; penanda data-berubah berdasarkan State.TS, rows/A/PRM, kunci stok terbuka, dan batas 60 detik), `scripts/ukur-tab.py` (ukur dari luar v9.47 vs v9.48), tests/etalase-halaman.test.mjs, tests/kinerja.test.mjs, tests/e2e/kinerja.e2e.py (E2E ke-21).
 - `shop()` di js/etalase-view.js TIDAK diubah; pemotongan terjadi di antara shop() dan perender kartu (KShelf dipasang ulang oleh js/main.js). Model seluruh produk live tetap dihitung; yang berkurang adalah elemen DOM. Bila angka HP menunjukkan pembuatan model masih mahal, ubah shop() dengan memperbarui fixture etalase-view secara sadar.
 - Hitung sudah punya hidrasi malas (`.pc.lz`): 1.000 cangkang ada di DOM, hanya sekitar 40 yang terbangun. Pertimbangkan ini sebelum merancang langkah 3.
-- Belum terbukti: HP asli, GitHub Actions v9.48 (npm test + 21 E2E). Angka kinerja di sandbox adalah Chromium headless; "CPU x4" hanya perkiraan HP kelas menengah.
+- Terbukti di GitHub Actions pemilik: npm test lulus, 21 E2E lulus (`fail=0`), termasuk `kinerja` (23 pernyataan, Chromium nyata) dan boot 1.000 produk jauh di bawah batas 120 detik. Belum terbukti: HP asli. Angka kinerja di sandbox adalah Chromium headless; "CPU x4" hanya perkiraan HP kelas menengah.
+
+## Tahap 9C (v9.49) - percepatan aksi di tab Hitung, Promosi, Etalase (sesi 8 Nov 2026)
+- Pemilik melaporkan tiga tab masih berat setelah v9.48. Pengukuran ulang (`scripts/ukur-aksi.py`, Chromium, CPU x4, 1.000 produk): PINDAH tab sudah cepat (di bawah 0,3 dtk); yang berat adalah AKSI di dalam tab.
+- Hitung: mengetik di kolom kartu memanggil `upd()` yang ikut membangun 1.000 model Etalase (tersembunyi). Kini `upd()` hanya menandai Etalase "kotor" (`KH.tandaiKotor()`, dipasang lewat dependensi eksplisit `tundaShop` di `createHitungEtalase`); Etalase dirender saat dibuka. Sekitar 545 ms -> 140 ms per ketikan (x4).
+- Semua tab: `rp()` (js/format.js) memakai satu `Intl.NumberFormat` (sebelumnya `toLocaleString` membuat pemformat baru tiap panggilan, ~250 ms per render 1.000 kartu). Teks hasil identik.
+- Promosi: daftar "Ganti produk..." di tiap baris promo berisi SEMUA produk (30 baris x 1.000 = 30.000 opsi). Kini diisi saat pertama disentuh/difokus (`itswFill` di js/promosi-panel.js). Menambah produk ke Promo Toko: sekitar 9 dtk -> 2 dtk (x4). Sisa waktu ada di hitungan promo (money.js `percentUnits`), TIDAK disentuh (rumus dibekukan).
+- Penyimpangan sadar dari fixture: tests/promosi-panel.test.mjs (dua pernyataan baru + satu penggantian teks, diturunkan dari fixture sehingga perubahan lain tetap tertangkap) dan tests/hitung-etalase.test.mjs (satu penyesuaian, total 8). Tes baru: etalase-halaman (tandaiKotor) dan 2 pernyataan E2E di tahap7a (daftar kosong sebelum disentuh, terisi saat dibuka).
+- Belum dikerjakan: boot 1.000 produk (sekitar 5 dtk, satu tugas panjang 2 dtk pada x4), `refreshLabels()` yang menyisir seluruh dokumen tiap `upd()`, `percentUnits`. Menunggu angka HP pemilik.
+- Terbukti di sandbox sesi: `npm test` exit 0, 21 E2E lulus (`fail=0`). Belum terbukti: GitHub Actions v9.49, HP asli.

@@ -42,6 +42,13 @@ try:
   discount=pg.locator('#prl .pe .pii[data-ix] input[data-it="d"]');price=pg.locator('#prl .pe .pii[data-ix] input[data-it="h"]')
   discount.fill('10');pg.wait_for_timeout(200)
   check(price.input_value().replace('.','').replace(',','').isdigit() and int(price.input_value().replace('.','').replace(',',''))>0,'mengisi diskon otomatis mengisi harga promo yang setara')
+  # v9.49: daftar "Ganti produk..." diisi saat disentuh (kinerja), bukan saat tampil.
+  itsw=pg.locator('#prl .pe .pii[data-ix] select[data-itsw]')
+  check(itsw.evaluate("s=>s.options.length")==1,'daftar Ganti produk belum diisi sebelum disentuh (hemat DOM)')
+  itsw.click();pg.wait_for_selector('#pkb',timeout=5000)
+  check(pg.locator('#pkl .pkr').count()>=9 and 'Produk 07' not in pg.locator('#pkl').inner_text(),'saat disentuh, daftar Ganti produk berisi produk lain (tanpa produk yang sedang dipakai)')
+  pg.keyboard.press('Escape');pg.wait_for_timeout(200)
+  if pg.locator('#pkb').count() and pg.locator('#pkb').is_visible(): pg.mouse.click(5,5);pg.wait_for_timeout(200)
   async_saved="async()=>{await KStore.flush();return JSON.parse(KStore.getItem('kalsara_v3'))}"
   # Penyimpanan data memakai jeda 350 ms (debounce). Tunggu sampai data benar-benar tertulis, jangan menebak waktu.
   def saved_until(pred,limit=8000):

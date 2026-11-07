@@ -17,9 +17,22 @@ const body=factory.body.body.slice(0,-1);
 const moved=body.map(x=>norm(mod.slice(x.start,x.end)));
 const original=statements(fixture);
 const restore=s=>s.replace(/\bD\.([A-Za-z_$][\w$]*)(?![\w$])/g,(_,n)=>connectorNames.includes(n)?n:'D.'+n);
-const restored=moved.map(restore);
+/* v9.49 (kinerja, SATU penyimpangan yang disengaja dari v9.42): daftar "Ganti produk..." per baris promo diisi saat pertama disentuh (lazy).
+   Pernyataan baru: function itswFill dan satu pemasang pendengar. Pernyataan pitems berbeda HANYA pada potongan daftar opsi itsw; tes menurunkan bentuk
+   yang diharapkan dari fixture dengan satu penggantian teks, jadi perubahan lain apa pun tetap terdeteksi. */
+const LAZY_NEW=['function itswFill(','[\'pointerdown\''];
+const isNew=x=>LAZY_NEW.some(k=>x.startsWith(k));
+const restored=moved.filter(x=>!isNew(x)).map(restore);
+assert.equal(moved.filter(isNew).length,2,'tepat dua pernyataan baru (itswFill dan pemasang pendengar)');
+assert.ok(moved.some(x=>x.startsWith('function itswFill(')&&x.includes("data-lz")),'itswFill mengisi daftar yang ditandai data-lz');
+const ITSW_OLD=original.findIndex(x=>x.startsWith('function pitems('));
+const origRaw=original.slice();
+const oldPitems=origRaw[ITSW_OLD].replace(/D\./g,'D.');
+const m0=oldPitems.match(/<select data-itsw aria-label="Ganti produk ini"><option value="">Ganti produk\.\.\.<\/option>'\+rows\.filter\(function\(r2\)\{[^]*?\}\)\.map\(function\(r2\)\{[^]*?\}\)\.join\(''\)/)||oldPitems.match(/<select data-itsw aria-label="Ganti produk ini"><option value="">Ganti produk\.\.\.<\/option>'\+State\.rows\.filter\(function\(r2\)\{[^]*?\}\)\.map\(function\(r2\)\{[^]*?\}\)\.join\(''\)/);
+assert.ok(m0,'fixture harus memuat daftar opsi itsw yang diganti');
+original[ITSW_OLD]=oldPitems.replace(m0[0],'<select data-itsw data-lz aria-label="Ganti produk ini"><option value="">Ganti produk...</option>\'');
 assert.equal(original.length,47,'fixture harus berisi 47 pernyataan panel/tampilan yang dipindah');
-assert.equal(restored.length,original.length,'jumlah pernyataan di factory harus sama dengan fixture');
+assert.equal(restored.length,original.length,'jumlah pernyataan di factory (di luar dua yang baru) harus sama dengan fixture');
 for(let i=0;i<original.length;i++)assert.equal(restored[i],original[i],`pernyataan panel/tampilan #${i+1} berubah`);
 for(const name of connectorNames){
   assert.ok(mod.includes('D.'+name),`modul harus memakai sambungan D.${name}`);

@@ -7,10 +7,10 @@ Dihasilkan oleh `node scripts/peta-global.mjs`. Jangan diedit tangan: jalankan u
 Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berupa berkas terpisah di `js/legacy/`; sejak v9.38 disatukan menjadi satu modul, isinya tidak diubah) yang berbagi SATU lingkup nama besar saat dijalankan. Karena berbagi, sebuah potongan bisa memakai "nama" (fungsi atau variabel) milik potongan lain tanpa izin tertulis. Nama seperti itu disebut **global**. Makin banyak global yang dipakai lintas potongan, makin sulit potongan-potongan itu dipisah menjadi modul mandiri.
 
 - Jumlah seluruh nama global: **122** (50 fungsi, 72 variabel/konstanta).
-- Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **91** (36 fungsi, 55 variabel). **Inilah angka yang harus turun ke 0** agar bagian-bagian `app-core.js` bisa dipisah menjadi modul fitur mandiri.
-- Nama yang hanya dipakai di berkasnya sendiri: 31 (ini mudah dipindah).
+- Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **92** (36 fungsi, 56 variabel). **Inilah angka yang harus turun ke 0** agar bagian-bagian `app-core.js` bisa dipisah menjadi modul fitur mandiri.
+- Nama yang hanya dipakai di berkasnya sendiri: 30 (ini mudah dipindah).
 - Lima data inti (`A`, `rows`, `SALES`, `PRM`, `TS`) kini disimpan langsung oleh modul `state.js`; kelimanya tidak lagi menjadi nama global di `app-core.js`. Akses tercatat di bagian 2.
-- Dibanding v9.38, jumlah global turun 111 (233 → 122) dan jumlah lintas bagian turun 5 (96 → 91). Tahap 3 (v9.39) menghapus enam nama: `A`, `rows`, `SALES`, `PRM`, `TS`, dan `State` (jembatan lama; kini impor modul). Tahap 4 (v9.40) memindahkan seluruh isi bagian 80 ke `js/penyimpanan-cadangan.js` dan `js/pengaturan.js`; nama yang dulu hanya dipakai di dalam bagian itu kini bersarang di modulnya dan keluar dari daftar global.
+- Dibanding v9.38, jumlah global turun 111 (233 → 122) dan jumlah lintas bagian turun 4 (96 → 92). Tahap 3 (v9.39) menghapus enam nama: `A`, `rows`, `SALES`, `PRM`, `TS`, dan `State` (jembatan lama; kini impor modul). Tahap 4 (v9.40) memindahkan seluruh isi bagian 80 ke `js/penyimpanan-cadangan.js` dan `js/pengaturan.js`; nama yang dulu hanya dipakai di dalam bagian itu kini bersarang di modulnya dan keluar dari daftar global.
 - Nama yang dipanggil lewat teks HTML (mis. `onclick="..."`) dan karena itu tidak kelihatan sebagai pemanggilan biasa: **0** (bagian 5). Ini PERLU perhatian khusus saat fungsi dipindah ke modul.
 - Nama yang didefinisikan lebih dari sekali: 0.
 - Nama yang tidak ditemukan di mana pun (kemungkinan salah ketik): 0.
@@ -21,17 +21,17 @@ Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berup
 |---|---:|---:|---:|---:|---:|---:|
 | 00-core.js | 617 | 4 | 0 | 4 | 3 | 0 |
 | 10-calc.js | 1.210 | 29 | 0 | 29 | 21 | 2 |
-| 20-hitung-etalase.js | 1.570 | 25 | 9 | 16 | 25 | 31 |
+| 20-hitung-etalase.js | 1.657 | 25 | 9 | 16 | 25 | 32 |
 | 30-penjualan.js | 826 | 6 | 0 | 6 | 6 | 19 |
 | 40-voucher-panel.js | 976 | 2 | 0 | 2 | 2 | 16 |
 | 50-promosi.js | 3.439 | 26 | 20 | 6 | 11 | 24 |
-| 60-tab-impor-sinkron.js | 1.980 | 15 | 12 | 3 | 11 | 27 |
+| 60-tab-impor-sinkron.js | 1.980 | 15 | 12 | 3 | 12 | 27 |
 | 70-xlsx-reader.js | 171 | 0 | 0 | 0 | 0 | 8 |
 | 80-cadangan-tema.js | 2.026 | 14 | 9 | 5 | 11 | 22 |
 | 90-erp.js | 262 | 1 | 0 | 1 | 1 | 2 |
 | 95-boot.js | 487 | 0 | 0 | 0 | 0 | 13 |
 | 99-pwa.js | 68 | 0 | 0 | 0 | 0 | 3 |
-| **Jumlah** | **13.632** | **122** | **50** | **72** | **91** (nama unik) | |
+| **Jumlah** | **13.719** | **122** | **50** | **72** | **92** (nama unik) | |
 
 Cara membaca: "Dipakai berkas lain" = berapa nama buatan berkas ini yang dipakai berkas lain. "Memakai nama berkas lain" = berapa nama milik berkas lain yang dipakai di berkas ini. Berkas dengan angka keduanya kecil paling mudah dipindah lebih dulu.
 
@@ -41,7 +41,7 @@ Cara membaca: "Dipakai berkas lain" = berapa nama buatan berkas ini yang dipakai
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 00-core.js |  |  |  |  |  |  |  |  |  |  |  |  |
 | 10-calc.js | 1 |  | 1 |  |  |  |  |  |  |  |  |  |
-| 20-hitung-etalase.js | 2 | 11 |  | 3 |  | 9 | 4 |  | 2 |  |  |  |
+| 20-hitung-etalase.js | 2 | 11 |  | 3 |  | 9 | 5 |  | 2 |  |  |  |
 | 30-penjualan.js | 1 | 5 | 3 |  |  | 2 | 6 |  | 2 |  |  |  |
 | 40-voucher-panel.js | 2 | 4 | 7 |  |  |  |  |  | 3 |  |  |  |
 | 50-promosi.js | 2 | 15 | 6 |  |  |  |  |  | 1 |  |  |  |
@@ -76,17 +76,18 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 
 **`TS`** - bukan global. Akses `State.TS` terdapat di: -.
 
-## 3. Nama yang melintasi berkas (91)
+## 3. Nama yang melintasi berkas (92)
 
 | Nama | Jenis | Didefinisikan di | Dibaca di | Ditulis ulang di | Juga dari HTML? |
 |---|---|---|---|---|---|
-| `$` | variabel | 00-core.js | 20-hitung-etalase×1, 30-penjualan×1, 40-voucher-panel×1, 50-promosi×2, 60-tab-impor-sinkron×1, 70-xlsx-reader×1, 80-cadangan-tema×2, 90-erp×1, 95-boot×4, 99-pwa×1 | - |  |
+| `$` | variabel | 00-core.js | 20-hitung-etalase×2, 30-penjualan×1, 40-voucher-panel×1, 50-promosi×2, 60-tab-impor-sinkron×1, 70-xlsx-reader×1, 80-cadangan-tema×2, 90-erp×1, 95-boot×4, 99-pwa×1 | - |  |
 | `CFG` | variabel | 50-promosi.js | 20-hitung-etalase×1, 30-penjualan×1 | - |  |
 | `CR` | variabel | 20-hitung-etalase.js | 60-tab-impor-sinkron×1 | - |  |
 | `CalcCache` | variabel | 10-calc.js | 20-hitung-etalase×1, 30-penjualan×1, 50-promosi×2, 80-cadangan-tema×1 | - |  |
 | `DEF` | variabel | 00-core.js | 80-cadangan-tema×2 | - |  |
 | `ERP` | variabel | 90-erp.js | 80-cadangan-tema×6, 95-boot×1 | - |  |
 | `HE` | variabel | 20-hitung-etalase.js | 80-cadangan-tema×1 | - |  |
+| `KH` | variabel | 60-tab-impor-sinkron.js | 20-hitung-etalase×2 | - |  |
 | `KK` | variabel | 60-tab-impor-sinkron.js | 95-boot×1 | - |  |
 | `PSEL` | variabel | 50-promosi.js | - | 20-hitung-etalase×1 |  |
 | `PSIG` | variabel | 50-promosi.js | 60-tab-impor-sinkron×1 | 20-hitung-etalase×1 |  |
@@ -178,7 +179,7 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 
 | Nama | Jenis | Didefinisikan di (baris) | Dibaca | Ditulis ulang | Lintas berkas |
 |---|---|---|---:|---:|---|
-| `$` | variabel (nilai fungsi) | 00-core.js:4 | 15 | 0 | ya |
+| `$` | variabel (nilai fungsi) | 00-core.js:4 | 16 | 0 | ya |
 | `Atur` | variabel | 80-cadangan-tema.js:6 | 5 | 0 |  |
 | `CFG` | variabel | 50-promosi.js:10 | 3 | 0 | ya |
 | `CR` | variabel | 20-hitung-etalase.js:8 | 1 | 0 | ya |
@@ -187,7 +188,7 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `ERP` | variabel | 90-erp.js:2 | 7 | 0 | ya |
 | `ERPLate` | variabel | 80-cadangan-tema.js:4 | 1 | 0 |  |
 | `HE` | variabel | 20-hitung-etalase.js:4 | 11 | 0 | ya |
-| `KH` | variabel | 60-tab-impor-sinkron.js:2 | 2 | 0 |  |
+| `KH` | variabel | 60-tab-impor-sinkron.js:2 | 4 | 0 | ya |
 | `KK` | variabel | 60-tab-impor-sinkron.js:2 | 6 | 0 | ya |
 | `OK` | variabel | 00-core.js:3 | 0 | 0 |  |
 | `PORD` | variabel | 50-promosi.js:10 | 1 | 0 |  |

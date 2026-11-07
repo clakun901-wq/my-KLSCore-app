@@ -117,6 +117,9 @@ export function installEtalaseHalaman({ global = globalThis, doc = globalThis.do
         return fn.apply(this, arguments);
       };
     },
+    /* v9.49: upd() dari tab Hitung tidak perlu membangun 1.000 model Etalase yang sedang tersembunyi.
+     * Cukup tandai "kotor"; perpindahan ke Etalase lewat gate() lalu merender ulang. */
+    tandaiKotor() { st.rendered = false; },
     stats() { return { rendered: st.ran, skipped: st.skipped, page: st.page + 1, size }; }
   };
 }

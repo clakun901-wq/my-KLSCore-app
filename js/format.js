@@ -1,5 +1,7 @@
 /* Pembaca/pemformat angka Indonesia dan tanggal lokal. Fungsi murni, tanpa state aplikasi dan tanpa global tersembunyi. Dipindahkan apa adanya dari js/legacy/00-core.js (tahap 4a). */
-export const rp=function(n){return 'Rp '+Math.round(n).toLocaleString('id-ID')};
+/* v9.49: satu pemformat Intl dipakai ulang (toLocaleString membuat pemformat baru tiap panggilan; teks hasil identik). */
+const NF_ID=new Intl.NumberFormat('id-ID');
+export const rp=function(n){return 'Rp '+NF_ID.format(Math.round(n))};
 /*v5.14: pf() = pembaca angka desimal format Indonesia untuk kolom pengaturan/tarif (titik = ribuan, koma = desimal; "1,234.56" juga dikenali). pct=true: titik/koma selalu desimal (persentase).*/
 export function pf(s,pct){s=String(s).trim().replace(/^rp\.?\s*/i,'').replace(/[^\d.,]/g,'');if(!/\d/.test(s))return NaN;
  var dt=(s.match(/\./g)||[]).length,cm=(s.match(/,/g)||[]).length;

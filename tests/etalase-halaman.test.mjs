@@ -50,4 +50,9 @@ ok(sw.includes("'./js/etalase-halaman.js'")&&sw.includes("'./js/kinerja.js'"),'d
 ok(/installEtalaseHalaman\(/.test(main)&&main.indexOf('installEtalaseHalaman(')<main.indexOf("import('./app-core.js')"),'pembagian halaman dipasang SEBELUM app-core dimuat');
 ok(core.includes('KH.gate(shop)'),'tab() memakai shop() berpenanda data-berubah');
 ok(html.includes('id="shpt"')&&html.includes('id="shpg"'),'index.html punya penanda halaman atas dan bawah');
+// v9.49: upd() dari tab Hitung hanya menandai Etalase "kotor"; kunjungan berikutnya WAJIB merender ulang, walau kunci data tidak berubah.
+{const g2={KShelf:{renderShelf(){},anyCardEditing(){return false}}};const H2=installEtalaseHalaman({global:g2,doc:null,getKey:()=>[1]});let c=0;const run=H2.gate(()=>{c++;g2.KShelf.renderShelf({},cards(5))});
+ run();run();ok(c===1,'tanpa perubahan: render kedua dilewati');H2.tandaiKotor();run();ok(c===2,'setelah tandaiKotor: render ulang dijalankan');run();ok(c===2,'lalu kembali dilewati');}
+const hz=fs.readFileSync(new URL('../js/hitung-etalase.js',import.meta.url),'utf8');
+ok(hz.includes('if(tundaShop())return;return shop()')&&core.includes('KH.tandaiKotor()'),'upd() menunda shop() saat Etalase tersembunyi');
 console.log(`Etalase berhalaman (Tahap 9B): ${n} pernyataan lulus.`);

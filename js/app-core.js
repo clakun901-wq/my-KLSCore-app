@@ -46,7 +46,7 @@ var calc=CalcCache.calc;
 /*v9.42 (Tahap 6): seluruh isi bagian ini pindah ke js/hitung-etalase.js (createHitungEtalase). Di sini hanya dipasang dependensinya.
  Nama dari bagian yang berjalan SESUDAH bagian ini (CFG, VUSE, curP, sold, PSEL, PSIG) diteruskan lewat getter/setter/pembungkus, bukan disalin.
  Fungsi penerus di bawah menjaga nama lama yang dipakai bagian lain (di-hoist seperti dulu); var-nya tersedia setelah baris pemasangan, seperti dulu.*/
-var HE=createHitungEtalase({$:$,KDOM:KDOM,document:document,CalcCache:CalcCache,calc:calc,impas:impas,tmod:tmod,fwd:fwd,fwdL:fwdL,gfac:gfac,goRate:goRate,adRate:adRate,pr:pr,pst:pst,vbest:vbest,persist:persist,tab:tab,tlRender:tlRender,paSync:paSync,psig:psig,ptp:ptp,vnote:vnote,vscn:vscn,vwarn:vwarn,acH:acH,actL:actL,bdH:bdH,
+var HE=createHitungEtalase({tundaShop:function(){if(KH&&$('v0').hidden){KH.tandaiKotor();return true}return false},$:$,KDOM:KDOM,document:document,CalcCache:CalcCache,calc:calc,impas:impas,tmod:tmod,fwd:fwd,fwdL:fwdL,gfac:gfac,goRate:goRate,adRate:adRate,pr:pr,pst:pst,vbest:vbest,persist:persist,tab:tab,tlRender:tlRender,paSync:paSync,psig:psig,ptp:ptp,vnote:vnote,vscn:vscn,vwarn:vwarn,acH:acH,actL:actL,bdH:bdH,
  sold:function(){return sold.apply(null,arguments)},
  getCFG:function(){return CFG},getVUSE:function(){return VUSE},getCurP:function(){return curP},
  setPSEL:function(v){PSEL=v},setPSIGOuter:function(v){PSIG=v}});

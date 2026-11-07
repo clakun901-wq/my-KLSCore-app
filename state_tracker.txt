@@ -7,9 +7,11 @@ Tahap 8: SELESAI DI KODE - v9.47
     daftar cache sw.js = berkas nyata, sw.js dijalankan di sandbox); MIGRATION-STATUS.md dipindah ke arsip/;
     README dan progress.html diringkas dan dibetulkan; E2E baru tahap8 (Service Worker aktif, cache lengkap, muat ulang offline).
   Tidak ada perubahan rumus, hasil hitung, atau fitur.
-  GitHub Actions v9.47: npm test lulus; E2E tahap8 GAGAL (salah alur tes: menunggu kartu produk padahal tanpa data; sudah diperbaiki, belum dijalankan ulang). Menunggu 20/20.
+  GitHub Actions v9.47: npm test lulus; E2E tahap8 GAGAL (salah alur tes: menunggu kartu produk padahal tanpa data; sudah diperbaiki). Dijalankan ulang di v9.48: lulus.
   Uji manual Bagian 7 (tutup cepat, restore lalu muat ulang, >1.000 produk, offline, profil kosong): BELUM DILAKUKAN.
-Tahap 9 (kinerja 1.000 produk, v9.48): DALAM PENGERJAAN (diminta pemilik 8 Nov 2026 setelah ZIP v9.47: hampir semua tab freeze dengan 1.000 produk di laptop dan HP).
+Tahap 9C (v9.49): percepatan aksi tab Hitung/Promosi/Etalase (upd tidak membangun Etalase tersembunyi; rp() satu Intl; daftar Ganti produk lazy). Sandbox: npm test + 21 E2E lulus; GitHub Actions v9.49 menunggu.
+Tahap 9A/9B (kinerja 1.000 produk, v9.48): SELESAI (GitHub Actions pemilik 8 Nov 2026: npm test lulus, 21/21 E2E, fail=0; HP asli belum diuji).
+  Riwayat: dikerjakan (diminta pemilik 8 Nov 2026 setelah ZIP v9.47: hampir semua tab freeze dengan 1.000 produk di laptop dan HP).
   Keputusan pemilik: pembagian halaman (bukan virtualisasi); mulai langkah 1 (9A pengukur) dan 2 (penanda data-berubah di tab() + pembagian halaman Etalase). Langkah 3 (Hitung berhalaman) dan 4 (upd() per ketikan) menunggu angka ukur dari HP pemilik.
   9A: js/kinerja.js (aktif hanya dengan ?perf=1). 9B: js/etalase-halaman.js (50 kartu per halaman, ?hal=25/50/100 untuk membandingkan), penanda data-berubah memakai State.TS.
   shop() di js/etalase-view.js TIDAK diubah (tes identik teks legacy tetap menjaga); pemotongan dilakukan di antara shop() dan perender kartu.

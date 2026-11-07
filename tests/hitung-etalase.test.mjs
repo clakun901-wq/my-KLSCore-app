@@ -21,13 +21,15 @@ const SUBS=[
  ['getCurP:function(){return getCurP()}','getCurP:function(){return curP}',1],
  ['getVUSE()[r.id]=e.detail.checked','VUSE[r.id]=e.detail.checked',1],
  ['setPSEL(g);','PSEL=g;',2],
- ['setPSIG:function(v){setPSIGOuter(v)}','setPSIG:function(v){PSIG=v}',1]];
+ ['setPSIG:function(v){setPSIGOuter(v)}','setPSIG:function(v){PSIG=v}',1],
+ /* v9.49 (kinerja): upd() tidak membangun model Etalase saat tab Etalase tersembunyi; hanya menandai "kotor" (diperiksa di tests/etalase-halaman.test.mjs). */
+ ['shop:function(){if(tundaShop())return;return shop()}','shop:function(){return shop()}',1]];
 const ast=acorn.parse(mod,{ecmaVersion:'latest',sourceType:'module'});
 const factory=ast.body.find(x=>x.type==='ExportNamedDeclaration'&&x.declaration?.id?.name==='createHitungEtalase').declaration;
 let body=mod.slice(factory.body.body[0].start,factory.body.body.at(-2).end); // tanpa pernyataan `return` penutup
 let total=0;
 for(const [m,o,c] of SUBS){const k=body.split(m).length-1;assert.equal(k,c,'penyesuaian '+m+' harus tepat '+c+' kali');body=body.split(m).join(o);total+=c;n++}
-ok(total===7,'tepat 7 tempat yang disesuaikan');
+ok(total===8,'tepat 8 tempat yang disesuaikan (7 lama + satu penundaan shop() v9.49)');
 const original=statements(fixture.slice(fixture.indexOf('\n')+1));
 const moved=statements(body);
 ok(original.length===moved.length&&original.length===45,'jumlah pernyataan bagian 20 (45) sama dengan isi factory');
