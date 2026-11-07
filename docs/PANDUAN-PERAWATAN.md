@@ -95,10 +95,26 @@ Sumber kebenaran hasil hitung adalah `source/Kalsara-v5_82.html` (dipakai golden
 
 ## 5. Tes
 - `npm test` (Node 22): unit, diferensial, golden-master, audit arsitektur. Cepat (menit).
-- E2E Chromium nyata: GitHub -> Actions -> Uji E2E Browser -> Run workflow (21 skrip di `tests/e2e/`). Lokal: `python3 tests/e2e/<nama>.e2e.py`.
+- E2E Chromium nyata: GitHub -> Actions -> Uji E2E Browser -> Run workflow (22 skrip di `tests/e2e/`). Lokal: `python3 tests/e2e/<nama>.e2e.py`.
 - Kinerja: `python3 scripts/ukur-aksi.py . <port> 1000 100 4` (CPU x4 = perkiraan HP menengah, BUKAN HP asli).
-- Daftar periksa rilis: (1) ubah kode minimal; (2) `npm test`; (3) 21 E2E; (4) naikkan versi di `js/version.js` + `package.json`; (5) perbarui dokumen (aturan emas no. 5); (6) ZIP; (7) pemilik menjalankan Actions; (8) catat hasil Actions di CHANGELOG/LANJUT.
+- Daftar periksa rilis: (1) ubah kode minimal; (2) `npm test`; (3) 22 E2E; (4) naikkan versi di `js/version.js` + `package.json`; (5) perbarui dokumen (aturan emas no. 5); (6) ZIP; (7) pemilik menjalankan Actions; (8) catat hasil Actions di CHANGELOG/LANJUT.
 
 ## 6. Hal yang tetap diminta pemilik (jangan lupa)
 - Uji manual Bagian 7 pada SALINAN data (tutup cepat, restore lalu muat ulang, >1.000 produk, offline, profil kosong).
 - Paket belum boleh menggantikan aplikasi toko asli sebelum uji manual dan uji HP asli.
+
+## 7. Konvensi tampilan: baris rincian "teks + angka" (v9.50)
+Dipakai di kartu Hitung ("Lihat rincian biaya"), Promosi, Penjualan, Cek pesanan nyata, dan laporan ERP. Perilaku yang dijaga: teks panjang turun ke baris ke-2 di kolomnya sendiri; angka tetap di kanan, tidak patah, dan sejajar dengan baris TERAKHIR teks.
+
+| Hal | Letak |
+|---|---|
+| Kartu dan panel: `<div class="rw">teks<b>angka</b></div>` | aturan `.rw` dan `.rw b` di `css/app.css`; HTML dibuat `js/hasil-view.js` (`CR`), `js/kartu-update.js`, `js/tab-impor-sinkron.js`, `js/promosi-panel.js` (`rw`), `js/promosi-data.js` |
+| Laporan ERP: `<div class="erw"><span class="erl">teks</span><span class="era">angka</span></div>` | aturan `.erw`, `.erl`, `.era` di `css/app.css`; HTML dibuat `js/erp.js` (`render`) |
+
+Aturan agar tidak rusak lagi:
+1. Wadah (`.rw`, `.erw`) harus `flex-wrap:nowrap`. Dengan `wrap`, angka pindah ke baris baru (masalah yang dilaporkan pemilik 8 Nov 2026).
+2. Angka harus `flex:0 0 auto` dan `white-space:nowrap`; teks boleh menyusut (`min-width:0`) dan patah.
+3. Sejajar baris terakhir: `align-items:last baseline` di dalam `@supports`, dengan `flex-end` sebagai cadangan browser lama.
+4. Teks harus langsung anak wadah (teks polos atau `span`), angka satu elemen. Menambah elemen ketiga di baris ini mengubah tata letaknya: buat kelas baru.
+5. Bila mengubah aturan ini: jalankan `node tests/baris-rincian.test.mjs` dan `python3 tests/e2e/baris-rincian.e2e.py`. Keduanya sudah diuji sabotase (CSS lama membuat gagal). Jangan melemahkan tes agar lulus.
+6. Bila tampilan perlu diperiksa dengan mata: buka tab Hitung dan ERP pada lebar 320 px dan 412 px, cari baris dengan teks panjang (mis. "Voucher Toko 8% (Voucher Toko Migrasi 8%)", "Voucher, diskon & pengembalian dana").
