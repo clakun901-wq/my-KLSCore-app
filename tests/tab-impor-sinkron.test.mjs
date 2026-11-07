@@ -21,7 +21,7 @@ for(let i=0;i<a.length;i++){assert.equal(b[i],a[i],'pernyataan berubah/hilang: '
 ok(moved.every((s,i)=>i===0||original.indexOf(s)>original.indexOf(moved[i-1])),'urutan pernyataan dipertahankan');
 ok(/^import \{State\} from '\.\/state\.js';$/m.test(mod)&&/^import \{KStore\} from '\.\/storage\.js';$/m.test(mod),'State dan KStore diimpor secara eksplisit');
 ok(/^export function createTabImporSinkron\(\{\$,ROW_MAX,/m.test(mod),'modul memakai factory dengan dependensi eksplisit');
-ok(/return \{tab:tab,parseCsv:parseCsv,wrapTab:/.test(mod),'fungsi tab, parser CSV, dan pembungkus tab diekspor');
+ok(/return \{tab:function\(\)\{return tab\.apply\(null,arguments\)\},parseCsv:parseCsv,wrapTab:/.test(mod),'fungsi tab (penerus ke versi terbungkus terbaru), parser CSV, dan pembungkus tab diekspor');
 ok(!/globalThis\.|localStorage|sessionStorage/.test(noComment(mod)),'modul tidak membaca global tersembunyi atau localStorage');
 ok(sw.includes("'./js/tab-impor-sinkron.js'"),'modul terdaftar di cache offline');
 execFileSync(process.execPath,['--check',new URL('../js/tab-impor-sinkron.js',import.meta.url).pathname]);n++;

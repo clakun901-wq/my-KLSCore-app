@@ -6,11 +6,11 @@ Dihasilkan oleh `node scripts/peta-global.mjs`. Jangan diedit tangan: jalankan u
 
 Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berupa berkas terpisah di `js/legacy/`; sejak v9.38 disatukan menjadi satu modul, isinya tidak diubah) yang berbagi SATU lingkup nama besar saat dijalankan. Karena berbagi, sebuah potongan bisa memakai "nama" (fungsi atau variabel) milik potongan lain tanpa izin tertulis. Nama seperti itu disebut **global**. Makin banyak global yang dipakai lintas potongan, makin sulit potongan-potongan itu dipisah menjadi modul mandiri.
 
-- Jumlah seluruh nama global: **121** (50 fungsi, 71 variabel/konstanta).
+- Jumlah seluruh nama global: **120** (50 fungsi, 70 variabel/konstanta).
 - Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **90** (36 fungsi, 54 variabel). **Inilah angka yang harus turun ke 0** agar bagian-bagian `app-core.js` bisa dipisah menjadi modul fitur mandiri.
-- Nama yang hanya dipakai di berkasnya sendiri: 31 (ini mudah dipindah).
+- Nama yang hanya dipakai di berkasnya sendiri: 30 (ini mudah dipindah).
 - Lima data inti (`A`, `rows`, `SALES`, `PRM`, `TS`) kini disimpan langsung oleh modul `state.js`; kelimanya tidak lagi menjadi nama global di `app-core.js`. Akses tercatat di bagian 2.
-- Dibanding v9.38, jumlah global turun 112 (233 → 121) dan jumlah lintas bagian turun 6 (96 → 90). Tahap 3 (v9.39) menghapus enam nama: `A`, `rows`, `SALES`, `PRM`, `TS`, dan `State` (jembatan lama; kini impor modul). Tahap 4 (v9.40) memindahkan seluruh isi bagian 80 ke `js/penyimpanan-cadangan.js` dan `js/pengaturan.js`; nama yang dulu hanya dipakai di dalam bagian itu kini bersarang di modulnya dan keluar dari daftar global.
+- Dibanding v9.38, jumlah global turun 113 (233 → 120) dan jumlah lintas bagian turun 6 (96 → 90). Tahap 3 (v9.39) menghapus enam nama: `A`, `rows`, `SALES`, `PRM`, `TS`, dan `State` (jembatan lama; kini impor modul). Tahap 4 (v9.40) memindahkan seluruh isi bagian 80 ke `js/penyimpanan-cadangan.js` dan `js/pengaturan.js`; nama yang dulu hanya dipakai di dalam bagian itu kini bersarang di modulnya dan keluar dari daftar global.
 - Nama yang dipanggil lewat teks HTML (mis. `onclick="..."`) dan karena itu tidak kelihatan sebagai pemanggilan biasa: **0** (bagian 5). Ini PERLU perhatian khusus saat fungsi dipindah ke modul.
 - Nama yang didefinisikan lebih dari sekali: 0.
 - Nama yang tidak ditemukan di mana pun (kemungkinan salah ketik): 0.
@@ -29,9 +29,9 @@ Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berup
 | 70-xlsx-reader.js | 171 | 0 | 0 | 0 | 0 | 8 |
 | 80-cadangan-tema.js | 2.026 | 14 | 9 | 5 | 11 | 22 |
 | 90-erp.js | 262 | 1 | 0 | 1 | 1 | 2 |
-| 95-boot.js | 449 | 1 | 0 | 1 | 0 | 12 |
+| 95-boot.js | 465 | 0 | 0 | 0 | 0 | 12 |
 | 99-pwa.js | 68 | 0 | 0 | 0 | 0 | 3 |
-| **Jumlah** | **13.122** | **121** | **50** | **71** | **90** (nama unik) | |
+| **Jumlah** | **13.138** | **120** | **50** | **70** | **90** (nama unik) | |
 
 Cara membaca: "Dipakai berkas lain" = berapa nama buatan berkas ini yang dipakai berkas lain. "Memakai nama berkas lain" = berapa nama milik berkas lain yang dipakai di berkas ini. Berkas dengan angka keduanya kecil paling mudah dipindah lebih dulu.
 
@@ -149,7 +149,7 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 | `strip` | fungsi | 20-hitung-etalase.js | 60-tab-impor-sinkron×1, 70-xlsx-reader×1, 80-cadangan-tema×1 | - |  |
 | `syLocal` | fungsi | 80-cadangan-tema.js | 95-boot×1 | - |  |
 | `syncVL` | fungsi | 80-cadangan-tema.js | 40-voucher-panel×1 | - |  |
-| `tab` | fungsi | 60-tab-impor-sinkron.js | 20-hitung-etalase×1, 80-cadangan-tema×2, 95-boot×3 | 95-boot×1 |  |
+| `tab` | fungsi | 60-tab-impor-sinkron.js | 20-hitung-etalase×1, 80-cadangan-tema×2, 95-boot×3 | - |  |
 | `tbuild` | variabel | 20-hitung-etalase.js | 95-boot×1 | - |  |
 | `tgl` | fungsi | 20-hitung-etalase.js | 60-tab-impor-sinkron×1 | - |  |
 | `tlOk` | fungsi | 80-cadangan-tema.js | 40-voucher-panel×1 | - |  |
@@ -173,7 +173,7 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 
 Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" / "Ditulis ulang di".
 
-## 4. Semua nama global (121)
+## 4. Semua nama global (120)
 
 | Nama | Jenis | Didefinisikan di (baris) | Dibaca | Ditulis ulang | Lintas berkas |
 |---|---|---|---:|---:|---|
@@ -201,7 +201,6 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `VUSE` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `VoucherRules` | variabel | 10-calc.js:5 | 4 | 0 | ya |
 | `WN` | variabel | 20-hitung-etalase.js:8 | 2 | 0 | ya |
-| `_tab6` | variabel | 95-boot.js:1 | 1 | 0 |  |
 | `acH` | fungsi | 60-tab-impor-sinkron.js:14 | 1 | 0 | ya |
 | `actL` | fungsi | 60-tab-impor-sinkron.js:12 | 2 | 0 | ya |
 | `actNote` | fungsi | 60-tab-impor-sinkron.js:11 | 0 | 0 |  |
@@ -269,7 +268,7 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `strip` | fungsi | 20-hitung-etalase.js:16 | 3 | 0 | ya |
 | `syLocal` | fungsi | 80-cadangan-tema.js:16 | 1 | 0 | ya |
 | `syncVL` | fungsi | 80-cadangan-tema.js:19 | 1 | 0 | ya |
-| `tab` | fungsi | 60-tab-impor-sinkron.js:2 | 7 | 1 | ya |
+| `tab` | fungsi | 60-tab-impor-sinkron.js:2 | 7 | 0 | ya |
 | `tbuild` | variabel | 20-hitung-etalase.js:8 | 1 | 0 | ya |
 | `tgl` | fungsi | 20-hitung-etalase.js:17 | 1 | 0 | ya |
 | `tlOk` | fungsi | 80-cadangan-tema.js:17 | 1 | 0 | ya |

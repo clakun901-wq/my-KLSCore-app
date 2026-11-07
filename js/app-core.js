@@ -195,7 +195,7 @@ var SALES_MAX=Simpan.SALES_MAX,TO=Atur.TO;
 /*v9.15 (tahap 2): modul ERP kini modul ES sungguhan di js/erp.js. Di sini hanya dipasang dependensi dari lingkup legacy; createERP diimpor oleh loader (js/legacy-app.js).*/
 var ERP=createERP({$:$,today:today,toast:toast,getRows:function(){return State.rows}});
 /* ===== BAGIAN 95-boot ===== */
-var _tab6=tab;tab=function(i){_tab6(i);$('v6').hidden=i!=6;$('t6').setAttribute('aria-selected',i==6);TO.forEach(function(id){var b=$(id);b.tabIndex=b.getAttribute('aria-selected')=='true'?0:-1});if(i==6)ERP.show()};
+tab.wrap(function(_tab6){return function(i){_tab6(i);$('v6').hidden=i!=6;$('t6').setAttribute('aria-selected',i==6);TO.forEach(function(id){var b=$(id);b.tabIndex=b.getAttribute('aria-selected')=='true'?0:-1});if(i==6)ERP.show()}});
 $('t6').onclick=function(){tab(6)};
 tbuild();
 (function(){var d=null;try{d=JSON.parse(KStore.getItem('kalsara_v3')||'null')}catch(e){}

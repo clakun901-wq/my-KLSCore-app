@@ -397,9 +397,9 @@ nav{grid-template-columns:repeat(7,minmax(0,1fr))!important}#v6 select{margin-bo
 .pc.lz{height:895px;overflow:hidden}
 .pc.lz.cl{height:347px}
 
-/* Laporan ERP: label boleh turun baris, angka tidak pernah terpotong atau menabrak label */
+/* Laporan ERP: bila label + angka tidak muat satu baris, angka (lengkap dengan tanda -) turun ke baris bawah rata kanan */
 .erw{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 14px;padding:8px 0;border-bottom:1px solid var(--line)}
 .erw.tot{font-weight:800}
-.erl{flex:1 1 150px;min-width:0;overflow-wrap:anywhere}
+.erl{flex:0 1 auto;min-width:0;overflow-wrap:anywhere}
 .era{flex:0 0 auto;margin-left:auto;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .erw.neg .era{color:var(--bad)}

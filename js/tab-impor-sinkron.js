@@ -183,5 +183,5 @@ function hrGo(){var u=$('hru').value.trim(),b=$('hrb');
 $('hrb').onclick=hrGo;
 $('hrc').onclick=function(){$('hrf').click()};
 $('hrf').onchange=function(){var f=this.files[0];this.value='';if(!f)return;var fr=new FileReader();fr.onload=function(){hrSync(String(fr.result))};fr.onerror=function(){toast('File tidak bisa dibaca')};fr.readAsText(f)};
- return {tab:tab,parseCsv:parseCsv,wrapTab:function(mk){tab=mk(tab)},salesRows:salesRows,copySales:copySales,showCpBox:showCpBox,dl:dl,csv:csv,actNote:actNote,actL:actL,bdH:bdH,acH:acH,actRin:actRin,hrSync:hrSync};
+ return {tab:function(){return tab.apply(null,arguments)},parseCsv:parseCsv,wrapTab:function(mk){tab=mk(tab)},salesRows:salesRows,copySales:copySales,showCpBox:showCpBox,dl:dl,csv:csv,actNote:actNote,actL:actL,bdH:bdH,acH:acH,actRin:actRin,hrSync:hrSync};
 }

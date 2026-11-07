@@ -8,5 +8,5 @@
     "vendor:sqlite": "node scripts/fetch-sqlite-wasm.mjs",
     "vendor:check": "node scripts/fetch-sqlite-wasm.mjs --check"
   },
-  "version": "0.9.46"
+  "version": "0.9.47"
 }
