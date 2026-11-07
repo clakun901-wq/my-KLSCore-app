@@ -1,6 +1,6 @@
 # Kalsara - Micro-ERP e-commerce, 100% di sisi klien (basis Kalsara v5.82)
 
-**Versi paket: v9.48 (Tahap 9A/9B: pengukur kinerja, pembagian halaman Etalase, penanda data-berubah).** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (20 E2E) dan uji manual lulus.
+**Versi paket: v9.48 (Tahap 9A/9B: pengukur kinerja, pembagian halaman Etalase, penanda data-berubah).** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (21 E2E) dan uji manual lulus.
 
 Aplikasi berjalan penuh di peramban: tanpa server, tanpa build tool, tanpa CDN saat berjalan. Logika bisnis dan hasil hitung identik dengan v5.82 (dibuktikan tes golden-master dan diferensial).
 
@@ -23,7 +23,7 @@ Aplikasi berjalan penuh di peramban: tanpa server, tanpa build tool, tanpa CDN s
 
 ## Menguji
 - `npm test`: unit, diferensial terhadap kode lama, golden-master terhadap v5.82, audit arsitektur (butuh Node 22).
-- E2E di Chromium nyata: GitHub -> Actions -> **Uji E2E Browser** -> Run workflow (menjalankan `npm test` lalu 20 skrip `tests/e2e/*.e2e.py`).
+- E2E di Chromium nyata: GitHub -> Actions -> **Uji E2E Browser** -> Run workflow (menjalankan `npm test` lalu 21 skrip `tests/e2e/*.e2e.py`).
 - Aturan: satu tes gagal = berhenti dan perbaiki; jangan melemahkan tes agar lulus.
 
 ## Batasan yang masih terbuka
