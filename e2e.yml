@@ -1,0 +1,41 @@
+name: Uji E2E Browser
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pasang Playwright dan Chromium
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Tes unit (npm test)
+        run: npm test
+
+      - name: Jalankan 16 E2E satu per satu
+        run: |
+          fail=0
+          for f in load shelf hitung sqlite-fallback voucher penjualan voucher-panel dialog tarif peringatan hasil cadangan kartu-update tahap0 tahap4 tahap5; do
+            echo "=== $f ==="
+            if python tests/e2e/$f.e2e.py; then
+              echo "LULUS: $f"
+            else
+              echo "GAGAL: $f"
+              fail=1
+            fi
+          done
+          exit $fail
