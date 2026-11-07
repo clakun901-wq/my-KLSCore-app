@@ -6,11 +6,11 @@ Dihasilkan oleh `node scripts/peta-global.mjs`. Jangan diedit tangan: jalankan u
 
 Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berupa berkas terpisah di `js/legacy/`; sejak v9.38 disatukan menjadi satu modul, isinya tidak diubah) yang berbagi SATU lingkup nama besar saat dijalankan. Karena berbagi, sebuah potongan bisa memakai "nama" (fungsi atau variabel) milik potongan lain tanpa izin tertulis. Nama seperti itu disebut **global**. Makin banyak global yang dipakai lintas potongan, makin sulit potongan-potongan itu dipisah menjadi modul mandiri.
 
-- Jumlah seluruh nama global: **120** (50 fungsi, 70 variabel/konstanta).
-- Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **90** (36 fungsi, 54 variabel). **Inilah angka yang harus turun ke 0** agar bagian-bagian `app-core.js` bisa dipisah menjadi modul fitur mandiri.
-- Nama yang hanya dipakai di berkasnya sendiri: 30 (ini mudah dipindah).
+- Jumlah seluruh nama global: **122** (50 fungsi, 72 variabel/konstanta).
+- Nama yang melintasi berkas (didefinisikan di satu potongan, dipakai di potongan lain): **91** (36 fungsi, 55 variabel). **Inilah angka yang harus turun ke 0** agar bagian-bagian `app-core.js` bisa dipisah menjadi modul fitur mandiri.
+- Nama yang hanya dipakai di berkasnya sendiri: 31 (ini mudah dipindah).
 - Lima data inti (`A`, `rows`, `SALES`, `PRM`, `TS`) kini disimpan langsung oleh modul `state.js`; kelimanya tidak lagi menjadi nama global di `app-core.js`. Akses tercatat di bagian 2.
-- Dibanding v9.38, jumlah global turun 113 (233 → 120) dan jumlah lintas bagian turun 6 (96 → 90). Tahap 3 (v9.39) menghapus enam nama: `A`, `rows`, `SALES`, `PRM`, `TS`, dan `State` (jembatan lama; kini impor modul). Tahap 4 (v9.40) memindahkan seluruh isi bagian 80 ke `js/penyimpanan-cadangan.js` dan `js/pengaturan.js`; nama yang dulu hanya dipakai di dalam bagian itu kini bersarang di modulnya dan keluar dari daftar global.
+- Dibanding v9.38, jumlah global turun 111 (233 → 122) dan jumlah lintas bagian turun 5 (96 → 91). Tahap 3 (v9.39) menghapus enam nama: `A`, `rows`, `SALES`, `PRM`, `TS`, dan `State` (jembatan lama; kini impor modul). Tahap 4 (v9.40) memindahkan seluruh isi bagian 80 ke `js/penyimpanan-cadangan.js` dan `js/pengaturan.js`; nama yang dulu hanya dipakai di dalam bagian itu kini bersarang di modulnya dan keluar dari daftar global.
 - Nama yang dipanggil lewat teks HTML (mis. `onclick="..."`) dan karena itu tidak kelihatan sebagai pemanggilan biasa: **0** (bagian 5). Ini PERLU perhatian khusus saat fungsi dipindah ke modul.
 - Nama yang didefinisikan lebih dari sekali: 0.
 - Nama yang tidak ditemukan di mana pun (kemungkinan salah ketik): 0.
@@ -25,13 +25,13 @@ Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berup
 | 30-penjualan.js | 826 | 6 | 0 | 6 | 6 | 19 |
 | 40-voucher-panel.js | 976 | 2 | 0 | 2 | 2 | 16 |
 | 50-promosi.js | 3.439 | 26 | 20 | 6 | 11 | 24 |
-| 60-tab-impor-sinkron.js | 1.508 | 13 | 12 | 1 | 10 | 27 |
+| 60-tab-impor-sinkron.js | 1.980 | 15 | 12 | 3 | 11 | 27 |
 | 70-xlsx-reader.js | 171 | 0 | 0 | 0 | 0 | 8 |
 | 80-cadangan-tema.js | 2.026 | 14 | 9 | 5 | 11 | 22 |
 | 90-erp.js | 262 | 1 | 0 | 1 | 1 | 2 |
-| 95-boot.js | 465 | 0 | 0 | 0 | 0 | 12 |
+| 95-boot.js | 487 | 0 | 0 | 0 | 0 | 13 |
 | 99-pwa.js | 68 | 0 | 0 | 0 | 0 | 3 |
-| **Jumlah** | **13.138** | **120** | **50** | **70** | **90** (nama unik) | |
+| **Jumlah** | **13.632** | **122** | **50** | **72** | **91** (nama unik) | |
 
 Cara membaca: "Dipakai berkas lain" = berapa nama buatan berkas ini yang dipakai berkas lain. "Memakai nama berkas lain" = berapa nama milik berkas lain yang dipakai di berkas ini. Berkas dengan angka keduanya kecil paling mudah dipindah lebih dulu.
 
@@ -49,7 +49,7 @@ Cara membaca: "Dipakai berkas lain" = berapa nama buatan berkas ini yang dipakai
 | 70-xlsx-reader.js | 1 |  | 6 |  |  |  | 1 |  |  |  |  |  |
 | 80-cadangan-tema.js | 2 | 2 | 9 | 1 | 2 | 3 | 2 |  |  | 1 |  |  |
 | 90-erp.js | 1 |  | 1 |  |  |  |  |  |  |  |  |  |
-| 95-boot.js | 1 |  | 4 |  |  |  | 1 |  | 5 | 1 |  |  |
+| 95-boot.js | 1 |  | 4 |  |  |  | 2 |  | 5 | 1 |  |  |
 | 99-pwa.js | 1 |  | 1 |  |  |  |  |  | 1 |  |  |  |
 
 Kolom diberi awalan angka berkas pemilik (00 = 00-core.js, dst.). Satu nama yang didefinisikan di beberapa berkas dihitung di tiap pemilik.
@@ -76,7 +76,7 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 
 **`TS`** - bukan global. Akses `State.TS` terdapat di: -.
 
-## 3. Nama yang melintasi berkas (90)
+## 3. Nama yang melintasi berkas (91)
 
 | Nama | Jenis | Didefinisikan di | Dibaca di | Ditulis ulang di | Juga dari HTML? |
 |---|---|---|---|---|---|
@@ -87,6 +87,7 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 | `DEF` | variabel | 00-core.js | 80-cadangan-tema×2 | - |  |
 | `ERP` | variabel | 90-erp.js | 80-cadangan-tema×6, 95-boot×1 | - |  |
 | `HE` | variabel | 20-hitung-etalase.js | 80-cadangan-tema×1 | - |  |
+| `KK` | variabel | 60-tab-impor-sinkron.js | 95-boot×1 | - |  |
 | `PSEL` | variabel | 50-promosi.js | - | 20-hitung-etalase×1 |  |
 | `PSIG` | variabel | 50-promosi.js | 60-tab-impor-sinkron×1 | 20-hitung-etalase×1 |  |
 | `ROW_MAX` | variabel | 20-hitung-etalase.js | 60-tab-impor-sinkron×1, 80-cadangan-tema×1 | - |  |
@@ -142,14 +143,14 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 | `salesRows` | fungsi | 60-tab-impor-sinkron.js | 30-penjualan×1 | - |  |
 | `setDprev` | variabel | 20-hitung-etalase.js | 40-voucher-panel×1 | - |  |
 | `setStock` | fungsi | 20-hitung-etalase.js | 30-penjualan×1 | - |  |
-| `shop` | variabel | 20-hitung-etalase.js | 60-tab-impor-sinkron×1 | - |  |
+| `shop` | variabel | 20-hitung-etalase.js | 60-tab-impor-sinkron×2 | - |  |
 | `showCpBox` | fungsi | 60-tab-impor-sinkron.js | 30-penjualan×1 | - |  |
 | `sold` | variabel | 30-penjualan.js | 20-hitung-etalase×1 | - |  |
 | `srt` | fungsi | 20-hitung-etalase.js | 60-tab-impor-sinkron×1, 70-xlsx-reader×1 | - |  |
 | `strip` | fungsi | 20-hitung-etalase.js | 60-tab-impor-sinkron×1, 70-xlsx-reader×1, 80-cadangan-tema×1 | - |  |
 | `syLocal` | fungsi | 80-cadangan-tema.js | 95-boot×1 | - |  |
 | `syncVL` | fungsi | 80-cadangan-tema.js | 40-voucher-panel×1 | - |  |
-| `tab` | fungsi | 60-tab-impor-sinkron.js | 20-hitung-etalase×1, 80-cadangan-tema×2, 95-boot×3 | - |  |
+| `tab` | fungsi | 60-tab-impor-sinkron.js | 20-hitung-etalase×1, 80-cadangan-tema×2, 95-boot×4 | - |  |
 | `tbuild` | variabel | 20-hitung-etalase.js | 95-boot×1 | - |  |
 | `tgl` | fungsi | 20-hitung-etalase.js | 60-tab-impor-sinkron×1 | - |  |
 | `tlOk` | fungsi | 80-cadangan-tema.js | 40-voucher-panel×1 | - |  |
@@ -173,7 +174,7 @@ Kelima nama ini bukan lagi variabel global. Nilai tinggal di `state.js`; kode ap
 
 Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" / "Ditulis ulang di".
 
-## 4. Semua nama global (120)
+## 4. Semua nama global (122)
 
 | Nama | Jenis | Didefinisikan di (baris) | Dibaca | Ditulis ulang | Lintas berkas |
 |---|---|---|---:|---:|---|
@@ -186,6 +187,8 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `ERP` | variabel | 90-erp.js:2 | 7 | 0 | ya |
 | `ERPLate` | variabel | 80-cadangan-tema.js:4 | 1 | 0 |  |
 | `HE` | variabel | 20-hitung-etalase.js:4 | 11 | 0 | ya |
+| `KH` | variabel | 60-tab-impor-sinkron.js:2 | 2 | 0 |  |
+| `KK` | variabel | 60-tab-impor-sinkron.js:2 | 6 | 0 | ya |
 | `OK` | variabel | 00-core.js:3 | 0 | 0 |  |
 | `PORD` | variabel | 50-promosi.js:10 | 1 | 0 |  |
 | `PSEL` | variabel | 50-promosi.js:2 | 1 | 2 | ya |
@@ -196,21 +199,21 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `SALES_MAX` | variabel | 80-cadangan-tema.js:21 | 1 | 0 | ya |
 | `Simpan` | variabel | 80-cadangan-tema.js:5 | 6 | 0 |  |
 | `TO` | variabel | 80-cadangan-tema.js:21 | 1 | 0 | ya |
-| `TabImpor` | variabel | 60-tab-impor-sinkron.js:1 | 15 | 0 |  |
+| `TabImpor` | variabel | 60-tab-impor-sinkron.js:3 | 15 | 0 |  |
 | `VNO` | variabel | 10-calc.js:4 | 2 | 1 | ya |
 | `VUSE` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `VoucherRules` | variabel | 10-calc.js:5 | 4 | 0 | ya |
 | `WN` | variabel | 20-hitung-etalase.js:8 | 2 | 0 | ya |
-| `acH` | fungsi | 60-tab-impor-sinkron.js:14 | 1 | 0 | ya |
-| `actL` | fungsi | 60-tab-impor-sinkron.js:12 | 2 | 0 | ya |
-| `actNote` | fungsi | 60-tab-impor-sinkron.js:11 | 0 | 0 |  |
+| `acH` | fungsi | 60-tab-impor-sinkron.js:16 | 1 | 0 | ya |
+| `actL` | fungsi | 60-tab-impor-sinkron.js:14 | 2 | 0 | ya |
+| `actNote` | fungsi | 60-tab-impor-sinkron.js:13 | 0 | 0 |  |
 | `actPromo` | fungsi | 50-promosi.js:26 | 1 | 0 |  |
-| `actRin` | fungsi | 60-tab-impor-sinkron.js:15 | 0 | 0 |  |
+| `actRin` | fungsi | 60-tab-impor-sinkron.js:17 | 0 | 0 |  |
 | `adRate` | variabel | 10-calc.js:2 | 2 | 0 | ya |
 | `add` | fungsi | 20-hitung-etalase.js:9 | 5 | 0 | ya |
 | `applyState` | fungsi | 80-cadangan-tema.js:14 | 1 | 0 | ya |
 | `ask` | variabel | 20-hitung-etalase.js:8 | 6 | 0 | ya |
-| `bdH` | fungsi | 60-tab-impor-sinkron.js:13 | 1 | 0 | ya |
+| `bdH` | fungsi | 60-tab-impor-sinkron.js:15 | 1 | 0 | ya |
 | `bis` | fungsi | 50-promosi.js:24 | 1 | 0 |  |
 | `bkRemind` | fungsi | 80-cadangan-tema.js:15 | 1 | 0 | ya |
 | `calc` | variabel | 10-calc.js:12 | 6 | 0 | ya |
@@ -220,11 +223,11 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `cbc` | variabel | 10-calc.js:6 | 1 | 0 | ya |
 | `clearMark` | fungsi | 20-hitung-etalase.js:10 | 1 | 0 | ya |
 | `colL` | fungsi | 20-hitung-etalase.js:11 | 1 | 0 | ya |
-| `copySales` | fungsi | 60-tab-impor-sinkron.js:7 | 1 | 0 | ya |
-| `csv` | fungsi | 60-tab-impor-sinkron.js:10 | 1 | 0 | ya |
+| `copySales` | fungsi | 60-tab-impor-sinkron.js:9 | 1 | 0 | ya |
+| `csv` | fungsi | 60-tab-impor-sinkron.js:12 | 1 | 0 | ya |
 | `curP` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `dd` | variabel | 10-calc.js:6 | 1 | 0 | ya |
-| `dl` | fungsi | 60-tab-impor-sinkron.js:9 | 2 | 0 | ya |
+| `dl` | fungsi | 60-tab-impor-sinkron.js:11 | 2 | 0 | ya |
 | `etAll` | fungsi | 20-hitung-etalase.js:12 | 1 | 0 | ya |
 | `feeSig` | variabel | 20-hitung-etalase.js:8 | 1 | 0 | ya |
 | `fees` | variabel | 10-calc.js:7 | 3 | 0 | ya |
@@ -244,7 +247,7 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `migPt` | fungsi | 50-promosi.js:11 | 1 | 0 | ya |
 | `obInit` | fungsi | 80-cadangan-tema.js:20 | 1 | 0 | ya |
 | `paSync` | fungsi | 50-promosi.js:72 | 2 | 0 | ya |
-| `parseCsv` | fungsi | 60-tab-impor-sinkron.js:4 | 2 | 0 | ya |
+| `parseCsv` | fungsi | 60-tab-impor-sinkron.js:6 | 2 | 0 | ya |
 | `pc1` | variabel | 20-hitung-etalase.js:8 | 3 | 0 | ya |
 | `pcalc2` | fungsi | 50-promosi.js:25 | 1 | 0 |  |
 | `persist` | fungsi | 80-cadangan-tema.js:12 | 4 | 0 | ya |
@@ -258,17 +261,17 @@ Hanya pemakaian DI LUAR berkas pendefinisi yang tercantum di kolom "Dibaca di" /
 | `rlAll` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `rpt` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `rw` | fungsi | 50-promosi.js:75 | 1 | 0 |  |
-| `salesRows` | fungsi | 60-tab-impor-sinkron.js:6 | 1 | 0 | ya |
+| `salesRows` | fungsi | 60-tab-impor-sinkron.js:8 | 1 | 0 | ya |
 | `setDprev` | variabel | 20-hitung-etalase.js:8 | 1 | 0 | ya |
 | `setStock` | fungsi | 20-hitung-etalase.js:14 | 1 | 0 | ya |
-| `shop` | variabel | 20-hitung-etalase.js:8 | 1 | 0 | ya |
-| `showCpBox` | fungsi | 60-tab-impor-sinkron.js:8 | 1 | 0 | ya |
+| `shop` | variabel | 20-hitung-etalase.js:8 | 2 | 0 | ya |
+| `showCpBox` | fungsi | 60-tab-impor-sinkron.js:10 | 1 | 0 | ya |
 | `sold` | variabel | 30-penjualan.js:4 | 1 | 0 | ya |
 | `srt` | fungsi | 20-hitung-etalase.js:15 | 2 | 0 | ya |
 | `strip` | fungsi | 20-hitung-etalase.js:16 | 3 | 0 | ya |
 | `syLocal` | fungsi | 80-cadangan-tema.js:16 | 1 | 0 | ya |
 | `syncVL` | fungsi | 80-cadangan-tema.js:19 | 1 | 0 | ya |
-| `tab` | fungsi | 60-tab-impor-sinkron.js:2 | 7 | 0 | ya |
+| `tab` | fungsi | 60-tab-impor-sinkron.js:4 | 8 | 0 | ya |
 | `tbuild` | variabel | 20-hitung-etalase.js:8 | 1 | 0 | ya |
 | `tgl` | fungsi | 20-hitung-etalase.js:17 | 1 | 0 | ya |
 | `tlOk` | fungsi | 80-cadangan-tema.js:17 | 1 | 0 | ya |
@@ -312,7 +315,7 @@ Tidak ada.
 
 **Akses dinamis** (`window[...]`, `eval`, `new Function`): tidak ada.
 
-**Nama yang dibaca/ditulis lewat `window.` atau `globalThis.`** di legacy: `Blob` (baca) di 60-tab-impor-sinkron.js:1; `FileReader` (baca) di 60-tab-impor-sinkron.js:1; `KALSARA_VERSION` (baca) di 99-pwa.js:1; `KalsaraMoney` (baca) di 00-core.js:6, 10-calc.js:7; `KalsaraWorker` (baca) di 10-calc.js:11; `URL` (baca) di 60-tab-impor-sinkron.js:1; `fetch` (baca) di 60-tab-impor-sinkron.js:1, 60-tab-impor-sinkron.js:1; `setTimeout` (baca) di 50-promosi.js:62, 60-tab-impor-sinkron.js:1.
+**Nama yang dibaca/ditulis lewat `window.` atau `globalThis.`** di legacy: `Blob` (baca) di 60-tab-impor-sinkron.js:3; `FileReader` (baca) di 60-tab-impor-sinkron.js:3; `KALSARA_VERSION` (baca) di 99-pwa.js:1; `KEtalaseHalaman` (baca) di 60-tab-impor-sinkron.js:2; `KalsaraKinerja` (baca) di 60-tab-impor-sinkron.js:2; `KalsaraMoney` (baca) di 00-core.js:6, 10-calc.js:7; `KalsaraWorker` (baca) di 10-calc.js:11; `URL` (baca) di 60-tab-impor-sinkron.js:3; `fetch` (baca) di 60-tab-impor-sinkron.js:3, 60-tab-impor-sinkron.js:3; `setTimeout` (baca) di 50-promosi.js:62, 60-tab-impor-sinkron.js:3.
 
 **Fungsi bersarang** (dideklarasikan di dalam fungsi lain, bukan global): tidak ada.
 
@@ -345,7 +348,7 @@ Tidak ada.
 | `dtx` | impor (./helpers.js) | 2 | 0 |
 | `esc` | impor (./helpers.js) | 5 | 0 |
 | `fmt` | impor (./format.js) | 4 | 0 |
-| `globalThis` | bawaan JS | 4 | 0 |
+| `globalThis` | bawaan JS | 6 | 0 |
 | `navigator` | peramban | 1 | 0 |
 | `num` | impor (./format.js) | 5 | 0 |
 | `pf` | impor (./format.js) | 1 | 0 |

@@ -6,6 +6,9 @@ import './money.js';
 import './dom.js';
 import './signals.js';
 import '../components/product-card.js';
+import {State} from './state.js';
+import {installEtalaseHalaman,ukuranDariAlamat} from './etalase-halaman.js';
+import {createKinerja,kinerjaAktif} from './kinerja.js';
 
 try { await initStorage(); }
 catch (e) {
@@ -104,6 +107,9 @@ async function migrateLegacyERP() {
 await migrateLegacyERP();
 globalThis.KStore=KStore;
 globalThis.KalsaraWorker={compute};
+// v9.48 (Tahap 9): pengukur kinerja (aktif hanya dengan ?perf=1) dan pembagian halaman Etalase. Dipasang SEBELUM app-core dimuat.
+globalThis.KalsaraKinerja=createKinerja({enabled:kinerjaAktif(location.search,k=>KStore.getItem(k)),getRowsCount:()=>State.rows.length});
+globalThis.KEtalaseHalaman=installEtalaseHalaman({size:ukuranDariAlamat(location.search),getKey:()=>[State.TS,State.rows,State.A,State.PRM]});
 await import('./app-core.js');
 
 // Optional permanent backup through the browser's File System Access API.

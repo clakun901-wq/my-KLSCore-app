@@ -403,3 +403,12 @@ nav{grid-template-columns:repeat(7,minmax(0,1fr))!important}#v6 select{margin-bo
 .erl{flex:0 1 auto;min-width:0;overflow-wrap:anywhere}
 .era{flex:0 0 auto;margin-left:auto;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .erw.neg .era{color:var(--bad)}
+
+/* v9.48: penanda halaman Etalase (hanya tampil bila produk live lebih dari satu halaman) */
+.pgn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 10px;margin:10px 0}
+.pgn[hidden]{display:none}
+.pgn button{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;font-weight:700}
+.pgn button:disabled{opacity:.45}
+.pgn .pgm{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--mute)}
+.pgn input{width:64px;box-sizing:border-box;height:44px;text-align:center;font-size:16px;font-weight:700;border-radius:12px;border:1px solid var(--inpl);background:var(--inp);color:var(--ink)}
+.pgn .pgi{flex-basis:100%;text-align:center;font-size:12.5px;color:var(--mute)}

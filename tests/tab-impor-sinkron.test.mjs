@@ -14,7 +14,13 @@ const statements=s=>acorn.parse(s,{ecmaVersion:'latest',sourceType:'module'}).bo
 const ast=acorn.parse(mod,{ecmaVersion:'latest',sourceType:'module'});
 const factory=ast.body.find(x=>x.type==='ExportNamedDeclaration'&&x.declaration?.id?.name==='createTabImporSinkron').declaration;
 const original=statements(fixture.slice(fixture.indexOf('\n')+1));
-const moved=factory.body.body.slice(0,-1).map(x=>norm(mod.slice(x.start,x.end)));
+// v9.48: SATU penyesuaian yang diizinkan: PSIG dibaca lewat getPSIG() (bukan salinan beku). Dikembalikan ke teks asli sebelum membandingkan.
+const SUB_PSIG=['psig()!==getPSIG()','psig()!==PSIG'];
+let nSub=0;
+const moved=factory.body.body.slice(0,-1).map(x=>norm(mod.slice(x.start,x.end))).map(t=>{const c=t.split(SUB_PSIG[0]).length-1;nSub+=c;return t.split(SUB_PSIG[0]).join(SUB_PSIG[1])});
+ok(nSub===1,'tepat satu pembacaan PSIG diganti getPSIG()');
+ok(/createTabImporSinkron\(\{[^}]*psig,getPSIG,/.test(mod.slice(0,mod.indexOf('{',mod.indexOf('createTabImporSinkron'))+400)),'dependensi getPSIG dideklarasikan');
+ok(!/\bPSIG\b/.test(norm(mod).replace(/getPSIG/g,'').replace('psig()!==','')),'tidak ada rujukan telanjang ke PSIG di modul');
 ok(original.length===moved.length,'jumlah pernyataan bagian 60 sama dengan isi factory');
 const a=[...original].sort(),b=[...moved].sort();
 for(let i=0;i<a.length;i++){assert.equal(b[i],a[i],'pernyataan berubah/hilang: '+a[i].slice(0,90));n++}

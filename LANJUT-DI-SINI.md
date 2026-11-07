@@ -38,3 +38,11 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`. Jangan mem
 - Pemilik melaporkan: hanya `tahap8` gagal (Timeout 20000ms menunggu `kalsara-product-card`).
 - Penyebab (dugaan kuat): E2E `tahap8` memuat aplikasi TANPA data, sehingga kartu produk memang tidak pernah muncul. Salah di alur tes, bukan bukti aplikasi rusak. Tes lain lulus karena memakai data awal.
 - Perbaikan: tes kini menunggu panel Pembaruan menulis "Versi ..." (tanda boot selesai). Belum dijalankan ulang; menunggu GitHub Actions pemilik.
+
+## Tahap 9A/9B (v9.48) - kinerja 1.000 produk (sesi 8 Nov 2026)
+- Diminta pemilik: hampir semua tab freeze dengan 1.000 produk (laptop dan HP). Keputusan pemilik: pembagian halaman (bukan virtualisasi); kerjakan langkah 1 (pengukur) dan 2 (penanda data-berubah + Etalase berhalaman). Langkah 3 (Hitung berhalaman) dan 4 (upd per ketikan) BELUM dikerjakan: tunggu angka dari HP pemilik.
+- TEMUAN UTAMA dari pengukuran: penyebab terbesar freeze bukan Etalase, melainkan membuka tab Hitung. `tab()` memanggil `upd(false)` (hitung ulang seluruh produk) SETIAP kali karena `PSIG` tersalin sebagai nilai beku `''` saat dipindah ke `js/tab-impor-sinkron.js` (v9.41); v5.82 membaca variabel hidup. Diperbaiki dengan `getPSIG()` (satu penyesuaian tercatat di tests/tab-impor-sinkron.test.mjs).
+- Baru: `js/kinerja.js` (pengukur, aktif hanya dengan `?perf=1`), `js/etalase-halaman.js` (potong halaman 50 kartu, `?hal=25|50|100` untuk membandingkan; penanda data-berubah berdasarkan State.TS, rows/A/PRM, kunci stok terbuka, dan batas 60 detik), `scripts/ukur-tab.py` (ukur dari luar v9.47 vs v9.48), tests/etalase-halaman.test.mjs, tests/kinerja.test.mjs, tests/e2e/kinerja.e2e.py (E2E ke-21).
+- `shop()` di js/etalase-view.js TIDAK diubah; pemotongan terjadi di antara shop() dan perender kartu (KShelf dipasang ulang oleh js/main.js). Model seluruh produk live tetap dihitung; yang berkurang adalah elemen DOM. Bila angka HP menunjukkan pembuatan model masih mahal, ubah shop() dengan memperbarui fixture etalase-view secara sadar.
+- Hitung sudah punya hidrasi malas (`.pc.lz`): 1.000 cangkang ada di DOM, hanya sekitar 40 yang terbangun. Pertimbangkan ini sebelum merancang langkah 3.
+- Belum terbukti: HP asli, GitHub Actions v9.48 (npm test + 21 E2E). Angka kinerja di sandbox adalah Chromium headless; "CPU x4" hanya perkiraan HP kelas menengah.

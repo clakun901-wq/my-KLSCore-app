@@ -152,7 +152,9 @@ function prRender(){return PromosiPanel.prRender.apply(null,arguments)}
 function rw(){return PromosiPanel.rw.apply(null,arguments)}
 
 /* ===== BAGIAN 60-tab-impor-sinkron ===== */
-var TabImpor=createTabImporSinkron({$: $,ROW_MAX:ROW_MAX,toast:toast,ask:ask,KDOM:KDOM,add:add,upd:upd,colL:colL,persist:persist,calc:calc,impas:impas,tmod:tmod,fmt:fmt,pc1:pc1,navigator:navigator,document:document,window:window,Blob:window.Blob,URL:window.URL,setTimeout:window.setTimeout.bind(window),FileReader:window.FileReader,fetch:window.fetch?window.fetch.bind(window):undefined,today:today,num:num,rp:rp,strip:strip,etAll:etAll,rlAll:rlAll,psig:psig,PSIG:PSIG,rpt:rpt,tgl:tgl,prRender:prRender,srt:srt,shop:shop,CR:CR,fees:fees,warns:warns,fwdL:fwdL,esc:esc,pr:pr,pf:pf});
+/*v9.48 (Tahap 9): KK = pengukur kinerja (js/kinerja.js; fungsi asli bila ?perf=1 tidak aktif), KH = pembagian halaman + penanda data-berubah Etalase (js/etalase-halaman.js). Keduanya dipasang oleh js/main.js sebelum berkas ini dimuat.*/
+var KK=globalThis.KalsaraKinerja||{t:function(n,f){return f},tabWrap:function(f){return f}},KH=globalThis.KEtalaseHalaman||null;
+var TabImpor=createTabImporSinkron({$: $,ROW_MAX:ROW_MAX,toast:toast,ask:ask,KDOM:KDOM,add:add,upd:KK.t('upd',upd),colL:colL,persist:persist,calc:calc,impas:impas,tmod:tmod,fmt:fmt,pc1:pc1,navigator:navigator,document:document,window:window,Blob:window.Blob,URL:window.URL,setTimeout:window.setTimeout.bind(window),FileReader:window.FileReader,fetch:window.fetch?window.fetch.bind(window):undefined,today:today,num:num,rp:rp,strip:strip,etAll:etAll,rlAll:rlAll,psig:psig,getPSIG:function(){return PSIG},rpt:KK.t('rpt',rpt),tgl:tgl,prRender:KK.t('prRender',prRender),srt:KK.t('srt',srt),shop:KK.t('shop',KH?KH.gate(shop):shop),CR:CR,fees:fees,warns:warns,fwdL:fwdL,esc:esc,pr:pr,pf:pf});
 function tab(){return TabImpor.tab.apply(null,arguments)}
 tab.wrap=function(mk){TabImpor.wrapTab(mk)}
 function parseCsv(){return TabImpor.parseCsv.apply(null,arguments)}
@@ -197,6 +199,7 @@ var ERP=createERP({$:$,today:today,toast:toast,getRows:function(){return State.r
 /* ===== BAGIAN 95-boot ===== */
 tab.wrap(function(_tab6){return function(i){_tab6(i);$('v6').hidden=i!=6;$('t6').setAttribute('aria-selected',i==6);TO.forEach(function(id){var b=$(id);b.tabIndex=b.getAttribute('aria-selected')=='true'?0:-1});if(i==6)ERP.show()}});
 $('t6').onclick=function(){tab(6)};
+tab.wrap(KK.tabWrap);
 tbuild();
 (function(){var d=null;try{d=JSON.parse(KStore.getItem('kalsara_v3')||'null')}catch(e){}
  if(d)applyState(d);else{fill();add();add();upd(false)}tab(0);obInit();syLocal();bkRemind()})();

@@ -62,10 +62,15 @@ try:
         big = [mkrow(i) for i in range(100)]
         ctx = b.new_context(viewport={'width': 412, 'height': 900}, service_workers='block'); ctx.add_init_script(seed(big, []))
         pg = ctx.new_page(); pg.goto(f'http://127.0.0.1:{PORT}/index.html'); pg.wait_for_selector('kalsara-product-card', timeout=30000); pg.wait_for_timeout(1000)
-        n = pg.evaluate("document.querySelectorAll('#shl kalsara-product-card').length"); check(n == 100, f'100 kartu harus dirender, dapat {n}')
+        # v9.48: Etalase dibagi halaman (50 kartu). 100 produk live = 2 halaman; halaman 2 berisi 50 sisanya.
+        n = pg.evaluate("document.querySelectorAll('#shl kalsara-product-card').length"); check(n == 50, f'halaman 1 harus berisi 50 kartu, dapat {n}')
+        check('dari 100' in pg.locator('#shpg .pgi').inner_text() and not pg.locator('#shpg').is_hidden(), 'penanda halaman menyebut 100 produk')
+        pg.locator('#shpg button').nth(1).click(); pg.wait_for_timeout(300)
+        check(pg.evaluate("document.querySelectorAll('#shl kalsara-product-card').length") == 50, 'halaman 2 berisi 50 kartu')
+        pg.locator('#shpg button').nth(0).click(); pg.wait_for_timeout(300)
         pg.evaluate("window.__c0=document.querySelector('#shl kalsara-product-card')")
         pg.locator('nav button').nth(1).click(); pg.wait_for_timeout(300); pg.locator('nav button').nth(0).click(); pg.wait_for_timeout(500)
-        check(pg.evaluate("window.__c0===document.querySelector('#shl kalsara-product-card')&&document.querySelectorAll('#shl kalsara-product-card').length===100"), 'bolak-balik tab: 100 elemen kartu dipakai ulang')
+        check(pg.evaluate("window.__c0===document.querySelector('#shl kalsara-product-card')&&document.querySelectorAll('#shl kalsara-product-card').length===50"), 'bolak-balik tab: 50 elemen kartu halaman aktif dipakai ulang (dan shop() dilewati karena data tidak berubah)')
         ctx.close()
         # ---- 3. Benchmark komponen + renderer pada 1.000 kartu ----
         ctx = b.new_context(viewport={'width': 412, 'height': 900}, service_workers='block'); pg = ctx.new_page()
