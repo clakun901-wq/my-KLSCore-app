@@ -6,6 +6,9 @@ import os, subprocess, time
 from playwright.sync_api import sync_playwright
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')); PORT = 8168
 srv = subprocess.Popen(['python3', '-m', 'http.server', str(PORT), '--bind', '127.0.0.1'], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1)
+def boot(pg, ms=30000):
+    # Aplikasi dimuat TANPA data, jadi kartu produk tidak ada; tanda "sudah boot" = panel Pembaruan sudah menulis versi (pwSt di app-core).
+    pg.wait_for_function("()=>{const e=document.getElementById('pws');return !!e&&e.textContent.indexOf('Versi')>-1}", timeout=ms)
 ok = 0
 def check(c, m):
     global ok
@@ -16,7 +19,7 @@ try:
         b = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH') or None)
         ctx = b.new_context(viewport={'width': 412, 'height': 900})  # Service Worker aktif (default)
         pg = ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
-        pg.goto(f'http://127.0.0.1:{PORT}/index.html'); pg.wait_for_selector('kalsara-product-card', state='attached', timeout=20000); pg.wait_for_timeout(800)
+        pg.goto(f'http://127.0.0.1:{PORT}/index.html'); boot(pg); pg.wait_for_timeout(500)
         v = pg.evaluate("()=>globalThis.KALSARA_VERSION")
         check(v and v.get('app') and v.get('paket'), 'KALSARA_VERSION harus ada di halaman: %r' % v)
         check(pg.evaluate("()=>document.scripts.length") == 1, 'halaman hanya memuat satu skrip')
@@ -31,7 +34,7 @@ try:
             check(f in urls, 'cache harus memuat ' + f)
         check(len(urls) >= 50, 'cache harus berisi seluruh berkas inti: %d' % len(urls))
         ctx.set_offline(True)
-        pg.reload(); pg.wait_for_selector('kalsara-product-card', state='attached', timeout=30000)
+        pg.reload(); boot(pg)
         check(pg.evaluate("()=>document.title.length>0 && !!globalThis.KALSARA_VERSION"), 'halaman offline harus tampil dari cache')
         check(not errs, 'tidak ada pageerror: ' + str(errs))
         ctx.close(); b.close()

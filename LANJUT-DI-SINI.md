@@ -33,3 +33,8 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`. Jangan mem
 2. Unggah ZIP v9.45 ke GitHub, lalu Actions -> Uji E2E Browser -> Run workflow.
 3. Kirim hasilnya (lulus berapa dari 20; nama skrip yang gagal beserta log di atas baris GAGAL).
 4. Setelah lulus, lakukan uji manual Bagian 7 pada salinan data.
+
+## Hasil GitHub Actions v9.45 dan perbaikan (sesi koreksi)
+- Pemilik melaporkan: hanya `tahap8` gagal (Timeout 20000ms menunggu `kalsara-product-card`).
+- Penyebab (dugaan kuat): E2E `tahap8` memuat aplikasi TANPA data, sehingga kartu produk memang tidak pernah muncul. Salah di alur tes, bukan bukti aplikasi rusak. Tes lain lulus karena memakai data awal.
+- Perbaikan: tes kini menunggu panel Pembaruan menulis "Versi ..." (tanda boot selesai). Belum dijalankan ulang; menunggu GitHub Actions pemilik.
