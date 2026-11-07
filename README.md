@@ -1,6 +1,6 @@
 # Kalsara — migrasi client-side (basis Kalsara-v5.82)
 
-**Versi paket: v9.43 (Tahap 7a: panel dan tampilan promosi pindah ke `js/promosi-panel.js`; Tahap 6: bagian 20-hitung-etalase pindah ke `js/hitung-etalase.js`; sebelumnya Tahap 5: bagian 60 pindah ke `js/tab-impor-sinkron.js`, Tahap 4: bagian 80 pindah ke modul fitur) — pengembangan, belum disertifikasi untuk produksi.**
+**Versi paket: v9.44 (Tahap 7b: logika data promosi dan voucher pindah ke `js/promosi-data.js`; Tahap 7a: panel dan tampilan promosi pindah ke `js/promosi-panel.js`; Tahap 6: bagian 20-hitung-etalase pindah ke `js/hitung-etalase.js`; sebelumnya Tahap 5: bagian 60 pindah ke `js/tab-impor-sinkron.js`, Tahap 4: bagian 80 pindah ke modul fitur) — pengembangan, belum disertifikasi untuk produksi.**
 
 - **Melanjutkan pekerjaan (mulai dari sini):** baca [`LANJUT-DI-SINI.md`](./LANJUT-DI-SINI.md) — ringkas, berisi posisi terakhir, angka target, dan langkah berikutnya.
 
@@ -17,7 +17,7 @@ Paket ini mempertahankan markup, stylesheet, dan logika bisnis v5.82 sebagai lap
 - `index.html` — markup dan navigasi asli.
 - `source/Kalsara-v5_82.html` — salinan sumber asli yang tidak diubah sebagai referensi/cadangan.
 - `css/app.css` — stylesheet asli, tidak didesain ulang.
-- `js/promosi-panel.js` — panel dan tampilan promosi (Tahap 7a); logika data dan voucher tetap di `app-core.js` untuk Tahap 7b.
+- `js/promosi-panel.js` — panel dan tampilan promosi (Tahap 7a); `js/promosi-data.js` — logika data promosi dan voucher (Tahap 7b).
 - `js/app-core.js` — modul ES inti (sejak v9.38; menggantikan loader `js/legacy-app.js` dan 12 berkas `js/legacy/*.js`). Isinya logika bisnis asli yang terbagi menjadi bagian berurutan, masing-masing diawali baris penanda `BAGIAN nn-nama`; modul lain diimpor eksplisit di bagian atas berkas. Dimuat oleh `js/main.js`.
 - `js/storage.js` — penyimpanan dengan dua mode: **SQLite** (Worker, OPFS SAH Pool) sebagai satu-satunya sumber data bila `vendor/sqlite-wasm/` tersedia; **jurnal OPFS** lama hanya sebagai jalur cadangan sebelum pernah beralih ke SQLite.
 - `js/sqlite-engine.js`, `js/sqlite-client.js`, `workers/sqlite-store.worker.js` — skema/transaksi SQLite (murni, diuji di SQLite nyata), proxy Worker, dan bootstrap Wasm lokal.

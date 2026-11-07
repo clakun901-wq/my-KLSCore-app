@@ -14,6 +14,8 @@ import {readLegacySource} from './helpers/legacy-source.mjs';
 const migratedSource = readLegacySource();
 const promoPanelSource = fs.readFileSync(new URL('../js/promosi-panel.js', import.meta.url), 'utf8').replace(/^export /gm, '');
 const movedPromoFunctions = new Set(['ppd','pkombo','phm','rw','pinfo']);
+const promoDataSource = fs.readFileSync(new URL('../js/promosi-data.js', import.meta.url), 'utf8');
+const promoDataBaseline = fs.readFileSync(new URL('./fixtures/app-core.bagian50-data.pre_v9_44.js.txt', import.meta.url), 'utf8');
 
 function fixedDate(iso) {
   return class FixedDate extends Date {
@@ -41,15 +43,17 @@ function formatPrelude(source) {
 }
 function createCalc(source, useIntegerMoney, DateImpl = FixedDate) {
   const context = vm.createContext({ Date: DateImpl, console, KalsaraMoney, document: { addEventListener() {} } });
-  const promoStart = Math.max(source.indexOf('var PRM=[],PSEL='), source.indexOf('State.PRM=[];'));
-  const promoEnd = source.indexOf('function vscT', promoStart);
+  const promoSource = source === migratedSource ? promoDataBaseline : source;
+  const promoStart = Math.max(promoSource.indexOf('var PRM=[],PSEL='), promoSource.indexOf('State.PRM=[];'));
+  const promoEnd = promoSource.indexOf('function vscT', promoStart);
   assert.ok(promoStart >= 0 && promoEnd > promoStart, 'Blok rule engine voucher harus ditemukan');
-  const voucherBlock = source.slice(promoStart, promoEnd);
+  const voucherBlock = promoSource.slice(promoStart, promoEnd);
   const stateAdapter = source.includes('State.A')
     ? 'var A=State.A,PRM=State.PRM,rows=State.rows;\n'
     : 'var State={};Object.defineProperties(State,{A:{get:function(){return A},set:function(v){A=v}},rows:{get:function(){return rows},set:function(v){rows=v}},PRM:{get:function(){return PRM},set:function(v){PRM=v}},SALES:{get:function(){return []},set:function(v){}},TS:{get:function(){return 0},set:function(v){}}});\n';
   /* v9.25: pst kini di js/voucher-rules.js (dipasang lewat 10-calc.js); sumber v5.82 asli masih memilikinya sebagai fungsi legacy. */
-  const promoFunctions = ['ptp','pst','actPromo','ppd','pkombo','phm','warns','WN','bis','pc1','rw','pinfo','esc'].filter(name => !(formatPrelude(source) !== '' && name === 'pst')).map(name => (movedPromoFunctions.has(name) ? extractFunction(promoPanelSource, name).replace(/\bD\./g, '') : extractFunction(source, name))).join('\n');
+  const movedPromoDataFunctions = new Set(['ptp','actPromo','bis']);
+const promoFunctions = ['ptp','pst','actPromo','ppd','pkombo','phm','warns','WN','bis','pc1','rw','pinfo','esc'].filter(name => !(formatPrelude(source) !== '' && name === 'pst')).map(name => (movedPromoFunctions.has(name) ? extractFunction(promoPanelSource, name).replace(/\bD\./g, '') : movedPromoDataFunctions.has(name) && source === migratedSource ? extractFunction(promoDataSource, name) : extractFunction(source, name))).join('\n');
   /* v9.31: warns/pc1/WN kini ada di js/warnings.js dan membaca A lewat getA() (tahap 6d); harness vm menyediakan getA yang membaca A global. Sumber v5.82 asli tidak memanggilnya. */
   vm.runInContext(formatPrelude(source) + executablePrefix(source) + stateAdapter + voucherBlock + 'function getA(){return State.A}\n' + promoFunctions + `
     var __rvc=function(){if(typeof VoucherRules!=='undefined')VoucherRules.reset();else VCC=null};

@@ -1,60 +1,72 @@
-# LANJUT-DI-SINI (v6) - posisi setelah Tahap 7a (v9.43)
+# LANJUT-DI-SINI (v7) — posisi setelah Tahap 7b (v9.44)
 
-Untuk AI di percakapan baru: baca berkas ini dan `LANJUT-DI-SINI-v2.md` (aturan sesi dan rencana tahap). Jangan membaca seluruh `MIGRATION-STATUS.md`. Kerjakan SATU tahap per sesi. Jangan mulai Tahap 7b sebelum pemilik melaporkan hasil GitHub Actions v9.43.
+Untuk AI di sesi berikutnya: baca dokumen ini dan `LANJUT-DI-SINI-v2.md` milik pemilik. Kerjakan SATU tahap per sesi. **Tahap 8 belum dimulai.** Jangan membaca seluruh `MIGRATION-STATUS.md`; buka hanya bagian yang diperlukan.
 
-## Posisi pekerjaan
+## Posisi dan hasil sesi
 
-- Tahap 0-6 selesai di kode. Tahap 6 (`20-hitung-etalase` -> `js/hitung-etalase.js`) sudah dilaporkan lulus oleh pemilik di GitHub Actions v9.42.
-- **Tahap 7a selesai di kode, MENUNGGU GitHub Actions pemilik.** Bagian panel dan tampilan promosi dipindah ke `js/promosi-panel.js`. Logika data dan voucher tetap di bagian 50 `app-core.js` untuk Tahap 7b.
-- Pemindahan 7a: 47 pernyataan dipindah dan dibandingkan satu per satu dengan fixture v9.42; 38 sambungan eksplisit ke nama/state yang tetap berada di `app-core.js`; `PSEL` dibaca/ditulis lewat getter/setter. Fungsi yang masih dipakai bagian lain tetap tersedia lewat penerus.
-- Sisa bagian 50 di `app-core.js`: **9.352 byte, 26 pernyataan tingkat atas**. Yang sengaja ditunda ke 7b termasuk `migPt`, `psig`, `ptp`, `CFG`, aturan/data voucher, dan pembuat promosi.
+- Tahap 0–6: selesai.
+- Tahap 7a: panel/tampilan promosi dipindah ke `js/promosi-panel.js`; pemilik melaporkan GitHub Actions v9.43b `npm test` exit 0 dan 18/18 E2E lulus.
+- Tahap 7b: kode data promosi dan voucher dipindah ke `js/promosi-data.js` dengan factory `createPromosiData(D)` dan sambungan eksplisit.
+- Kode kandidat ini bernama **v9.44**. Ini belum menjadi paket produksi dan belum boleh menggantikan aplikasi toko asli.
 
-## Koreksi v9.43a/b (setelah GitHub Actions pemilik)
+## Perubahan Tahap 7b
 
-- v9.43a: `js/signals.js` tidak lagi memuat pustaka dari CDN (aturan A5/B1); tes penjaga ditambah di `tests/pwa.test.mjs`.
-- v9.43b: GitHub Actions pemilik menemukan `tahap7a` GAGAL (17 E2E lain lulus). Dua penyebab: (1) BUG NYATA akibat pemindahan 7a: getter `setTimeout` di sambungan PromosiPanel tidak terikat ke window sehingga pemilih produk melempar 'Illegal invocation' (diperbaiki dengan `.bind(window)`, dijaga tes unit baru); (2) E2E memeriksa data tersimpan terlalu cepat sebelum jeda simpan 350 ms (kini menunggu sampai tertulis). Hasil sandbox sesi setelah perbaikan: `npm test` exit 0 dan 18/18 E2E lulus di Chromium. GitHub Actions v9.43b: BELUM ADA.
+- Dipindah: `CFG`, `PORD`, `migPt`, `ptp`, `psig`, `calcNV`, `vsc`, `vscT`, `vscn`, `vnote`, `vcSoon`, `vwarn`, `vcWhy`, `vcEff`, `fwdV`, `bis`, `pcalc2`, dan `actPromo`.
+- `State.PRM`, `PSEL`, dan `PSIG` tetap berada di `app-core.js` sebagai keadaan bersama/penyambung yang masih dipakai bagian lain. Panel 7a tetap di modulnya sendiri.
+- `CalcCache.invalidate()` tetap dijalankan pada saat modul data promosi dipasang, seperti sebelumnya.
+- `js/app-core.js` kini hanya memasang modul data promosi dan meneruskan nama fungsi lama ke modul. Logika inti tidak ditulis ulang.
+- Cache offline Service Worker ditambah `js/promosi-data.js`; nomor paket/cache diperbarui menjadi v9.44.
+- Golden-master sekarang mengambil baseline data promosi v9.43b dari fixture khusus, agar pembanding tidak membandingkan modul baru dengan dirinya sendiri.
 
-## Bukti dan status pengujian
+## Pemeriksaan
 
-- Baseline v9.42: pemilik mengirim log `npm test` exit 0 dan **17/17 E2E** lulus di Chromium nyata pada lingkungannya.
-- v9.43 di sandbox sesi: `npm test` exit 0; tes baru `tests/promosi-panel.test.mjs` membuktikan 47/47 pernyataan sama dengan fixture, 38 sambungan eksplisit, dan sabotase selector tertangkap. `tests/legacy-split.test.mjs` 166 assertion; laporan audit legacy kumulatif 585 assertion. Golden-master lama tetap berjalan dan cocok.
-- Peta global v9.43: 120 global di `app-core.js`, 90 global lintas bagian/berkas, 0 penugasan ulang langsung variabel inti. `node scripts/peta-global.mjs --check` sudah dijalankan dan exit 0.
-- **E2E v9.43 belum diuji di sandbox.** Chromium sistem di sandbox menolak membuka server lokal dengan `ERR_BLOCKED_BY_ADMINISTRATOR`. E2E baru `tests/e2e/tahap7a.e2e.py` sudah ditambahkan (alur pilih jenis, tambah, ubah, cari produk, isi otomatis harga/diskon, simpan, hapus, dan sabotase), tetapi belum dijalankan. Belum terbukti juga bahwa skrip E2E baru berjalan pada ZIP v9.42 asli sebagai pembanding.
-- Hasil GitHub Actions v9.43: **BELUM ADA**. Jangan menyebut Tahap 7a lulus GitHub sebelum pemilik mengirim hasilnya.
+| Pemeriksaan | Hasil | Lingkungan |
+|---|---|---|
+| `npm test` | **Lulus**, exit 0; 44 skrip tes | Sandbox sesi |
+| Golden-master kalkulator | 2.010 assertion identik | Sandbox sesi |
+| Golden-master voucher | 112 assertion identik | Sandbox sesi |
+| Golden-master Promo/Paket Diskon | 205 assertion identik | Sandbox sesi |
+| Golden-master aturan harga promo | 200 assertion identik | Sandbox sesi |
+| Golden-master Kombo/Hadiah | 100 assertion identik | Sandbox sesi |
+| Golden-master pipa hitung | 1.500 assertion identik | Sandbox sesi |
+| Tes baru `promosi-data.test.mjs` | Lulus; 15 fungsi cocok dengan baseline; migrasi, harga promo, psig, bis, dan VNO diuji | Sandbox sesi |
+| Audit peta global | Lulus; 121 global, 90 lintas berkas, 0 penugasan ulang inti langsung | Sandbox sesi |
+| 19 E2E Chromium | **Belum diuji** | Sandbox sesi memblokir `localhost` dengan `ERR_BLOCKED_BY_ADMINISTRATOR`; perlu GitHub Actions pemilik |
+| Uji HP/offline/restore nyata | **Perlu uji manual** | Perangkat pemilik |
 
-## Angka peta dan ukuran
+Catatan: percobaan E2E di sandbox tidak berhasil memulai navigasi localhost karena pembatasan lingkungan. Ini bukan hasil lulus atau gagal dari aplikasi. Jangan menyebut E2E v9.44 lulus sebelum log GitHub Actions pemilik tersedia.
 
-| Ukuran | v9.42 sebelum 7a | v9.43 setelah 7a |
-|---|---:|---:|
-| Bagian 50 di `app-core.js` | 40.283 byte | 9.352 byte |
-| Modul baru `js/promosi-panel.js` | — | 33.193 byte |
-| Global di `app-core.js` | 148 | 120 |
-| Global lintas bagian/berkas | 90 | 90 |
-| Penugasan ulang langsung variabel inti | 0 | 0 |
-| Pernyataan yang dipindah dan dibandingkan | — | 47 |
-| Pernyataan tingkat atas tersisa di bagian 50 |  — | 26 |
+## File yang berubah/baru
 
-Catatan: peta menghitung global dari `app-core.js`; 38 sambungan factory baru diaudit terpisah oleh tes `promosi-panel.test.mjs`.
+- Baru: `js/promosi-data.js`
+- Baru: `tests/promosi-data.test.mjs`
+- Baru: `tests/fixtures/app-core.bagian50-data.pre_v9_44.js.txt`
+- Baru: `tests/e2e/tahap7b.e2e.py`
+- Diubah: `js/app-core.js`, `sw.js`, `package.json`, `.github/workflows/e2e.yml`, `tests/legacy-split.test.mjs`, `tests/golden-master.test.mjs`, `README.md`, `laporan/PETA-GLOBAL.md`.
 
-## Catatan bug lama - JANGAN DIPERBAIKI PADA TAHAP 7a
+## Berikutnya — masih Tahap 7b
 
-- Pada daftar **lebih dari 40 produk**, tombol **Tambah produk** (`#add`) dan tombol bulat **+** (`#fab`) dapat memunculkan pageerror `Cannot read properties of null (reading 'focus')`.
-- Penyebab yang sudah diketahui: kartu baru masih berupa cangkang kosong karena hidrasi malas (`HY_ALL=40`); `js/tab-impor-sinkron.js` baris 8 menjalankan `c.querySelector('input').focus()` padahal hasil pencarian input masih `null`.
-- Bug ini juga ada di ZIP v9.41 asli. Pemilik sengaja menunda perbaikannya ke Tahap 8 setelah struktur selesai.
-- Jangan memperbaikinya pada Tahap 7a/7b dan jangan membuat E2E yang menekan `#add` atau `#fab` pada daftar lebih dari 40 produk.
+1. Pemilik unggah ZIP v9.44 ke GitHub.
+2. Jalankan **Actions → Uji E2E Browser → Run workflow**.
+3. Workflow kini menjalankan 19 E2E, termasuk `tahap7b`.
+4. Kirim hasil `npm test` dan seluruh 19 E2E (jumlah lulus/gagal serta nama skrip gagal).
+5. Jika satu tes gagal, berhenti dan perbaiki Tahap 7b atau kembali ke ZIP v9.43b. Jangan lanjut Tahap 8.
 
-## Berikutnya
+## Risiko/bukti yang masih kurang
 
-1. Pemilik mengunggah ZIP v9.43 ke GitHub.
-2. Buka **Actions** -> **Uji E2E Browser** -> **Run workflow** dan tunggu semua pemeriksaan selesai.
-3. Kirim log `npm test` dan hasil seluruh 18 E2E (angka lulus/gagal serta nama skrip gagal bila ada).
-4. Jika satu tes gagal, berhenti dan perbaiki di tahap yang sama atau kembali ke ZIP v9.42. Jangan mulai 7b.
-5. Jika semua pemeriksaan GitHub lulus, sesi berikutnya boleh mengerjakan **Tahap 7b saja**.
+- E2E v9.44 belum lulus di GitHub Actions pemilik.
+- E2E Tahap 7b baru belum dijalankan pada browser yang dapat mengakses server lokal.
+- Uji HP/peramban nyata, Service Worker offline, pemulihan data asli, data ERP besar, migrasi data riil, dan pemulihan lintas perangkat tetap belum terbukti.
+- Masih ada 90 nama global lintas berkas; struktur global belum selesai. Ini pekerjaan Tahap 8, **jangan disentuh pada sesi ini**.
 
-## Belum terbukti (tetap dibawa)
+## Koreksi review v9.44 (sesi koreksi)
 
-- Uji HP/peramban nyata milik pemilik; uji offline Service Worker.
-- Uji manual Bagian 7 pada `LANJUT-DI-SINI-v2.md`.
-- ERP dengan data besar, cadangan/ekspor asli, migrasi data v5.82 riil, dan pemulihan lintas perangkat.
-- E2E 7a pada v9.42 asli dan v9.43 di GitHub Actions.
-- Paket belum boleh menggantikan aplikasi produksi.
+- Tes `tests/promosi-data.test.mjs` diperkuat: `CFG` dan `PORD` kini dibandingkan dengan baseline v9.43b. Sebelumnya hanya 15 fungsi yang dibandingkan. Isi `CFG` dan `PORD` terbukti identik; tidak ada perubahan kode aplikasi.
+- Ditambahkan `state_tracker.txt` (sebelumnya tidak ada di ZIP).
+- Status E2E v9.44 tetap: belum diuji di browser. Menunggu GitHub Actions pemilik.
+
+## Koreksi review v9.44 (sesi koreksi)
+
+- Tes `tests/promosi-data.test.mjs` diperkuat: `CFG` dan `PORD` kini dibandingkan dengan baseline v9.43b. Sebelumnya hanya 15 fungsi yang dibandingkan. Isi `CFG` dan `PORD` terbukti identik; tidak ada perubahan kode aplikasi.
+- Ditambahkan `state_tracker.txt` (sebelumnya tidak ada di ZIP).
+- Status E2E v9.44 tetap: belum diuji di browser. Menunggu GitHub Actions pemilik.
