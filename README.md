@@ -1,6 +1,6 @@
 # Kalsara - Micro-ERP e-commerce, 100% di sisi klien (basis Kalsara v5.82)
 
-**Versi paket: v9.45 (Tahap 8: penutupan migrasi ke modul ES).** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (20 E2E) dan uji manual lulus.
+**Versi paket: v9.46 (Tahap 8: penutupan migrasi ke modul ES).** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (20 E2E) dan uji manual lulus.
 
 Aplikasi berjalan penuh di peramban: tanpa server, tanpa build tool, tanpa CDN saat berjalan. Logika bisnis dan hasil hitung identik dengan v5.82 (dibuktikan tes golden-master dan diferensial).
 
@@ -27,6 +27,6 @@ Aplikasi berjalan penuh di peramban: tanpa server, tanpa build tool, tanpa CDN s
 - Aturan: satu tes gagal = berhenti dan perbaiki; jangan melemahkan tes agar lulus.
 
 ## Batasan yang masih terbuka
-- E2E v9.45 belum dijalankan; uji HP nyata, uji offline pada perangkat nyata, pemulihan data besar/asli, dan cadangan lintas perangkat belum dilakukan.
+- E2E v9.46 belum dijalankan; uji HP nyata, uji offline pada perangkat nyata, pemulihan data besar/asli, dan cadangan lintas perangkat belum dilakukan.
 - `js/app-core.js` masih satu modul perakitan yang berisi beberapa bagian; memecahnya lagi adalah pekerjaan opsional.
 - Simpan cadangan data secara berkala; lakukan semua uji pada salinan data, bukan data toko asli.
