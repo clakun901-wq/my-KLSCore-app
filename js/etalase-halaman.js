@@ -62,7 +62,7 @@ export function installEtalaseHalaman({ global = globalThis, doc = globalThis.do
     nav.className = 'pgn'; nav.hidden = true;
     const mid = doc.createElement('span'); mid.className = 'pgm';
     mid.append(doc.createTextNode('Hal. '), inp, of);
-    nav.append(prev, mid, next, info);
+    nav.append(prev, next, mid, info); /* v9.51: urutan DOM = urutan tampilan (baris 1 tombol, baris 2 Hal., baris 3 info) */
     prev.onclick = () => go(st.page - 1);
     next.onclick = () => go(st.page + 1);
     const jump = () => { const v = parseInt(inp.value, 10); if (Number.isFinite(v)) go(v - 1); else inp.value = String(st.page + 1); };

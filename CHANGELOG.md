@@ -4,6 +4,16 @@ Aturan: SETIAP sesi yang mengubah paket menambah satu entri di paling atas (terb
 
 Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelumnya diringkas ulang dari `arsip/MIGRATION-STATUS.md` (arsip lengkap); v9.36 sampai v9.39 tidak punya bagian sendiri di arsip, jadi hanya disebut sebagai rangkaian tahap 6.
 
+## v9.51 - Tampilan: penanda halaman Etalase rapi dan presisi (8 Nov 2026)
+- Pemilik: gaya penanda halaman ("Sebelumnya", "Hal. 1 dari 10", "Berikutnya", "Produk 1-50 dari 500") sudah disukai, tetapi ukuran dan susunannya acak: di HP tombol "Berikutnya" jatuh sendirian di baris kedua.
+- Penyebab: `.pgn` memakai `flex-wrap:wrap`; tiga blok berdampingan tidak muat di lebar HP, sehingga pecah tidak beraturan.
+- Perbaikan: `.pgn` kini grid. Baris 1: dua tombol selebar sama persis (tinggi 44px). Baris 2: "Hal. [n] dari N" dengan kotak angka tepat di tengah (kolom kiri-kanan sama lebar). Baris 3: teks info di tengah. Susunan sama di semua lebar layar; lebar dibatasi 440px agar tombol tidak melar di laptop. Warna, sudut membulat, tinggi, ukuran huruf tidak diubah.
+- Berkas: `css/app.css` (aturan `.pgn*`), `js/etalase-halaman.js` (SATU baris: urutan elemen `prev, next, mid, info` agar urutan tombol Tab sama dengan urutan tampilan; tidak mengubah perilaku halaman).
+- TIDAK berubah: pembagian halaman, jumlah kartu, rumus, data, teks.
+- Tes baru: `tests/penanda-halaman.test.mjs` (penjaga statis, 13 pernyataan) dan `tests/e2e/penanda-halaman.e2e.py` (E2E ke-23, 173 pernyataan di Chromium nyata: lebar 320/360/412/1024 px, penanda atas dan bawah, halaman 1 dan 2, angka halaman sangat panjang). Uji sabotase: CSS lama membuat keduanya GAGAL.
+- Bukti: di SANDBOX sesi (bukan GitHub Actions): `npm test` exit 0 (golden-master identik vs v5.82; `penanda-halaman` 13 pernyataan; `dokumentasi` 76 pernyataan) dan 23/23 E2E lulus, `fail=0` (`penanda-halaman` 173 pernyataan di Chromium nyata).
+- Belum terbukti: tampilan di HP asli pemilik dan GitHub Actions v9.51.
+
 ## v9.50 - Tampilan: teks rincian panjang turun ke baris ke-2, angka sejajar (8 Nov 2026)
 - Pemilik: pada baris rincian (kartu Hitung "Lihat rincian biaya" dan laporan ERP), teks yang panjang membuat angkanya pindah ke baris sendiri atau teks terjepit. Diminta: teks panjang otomatis turun jadi 2 baris, dan angka hasil ikut sejajar dengan baris ke-2 teks.
 - Penyebab: wadah baris memakai `flex-wrap:wrap`. Bila teks + angka tidak muat satu baris, browser memindahkan SELURUH angka ke baris baru. (Dua aturan terpisah: `.rw` untuk kartu, `.erw` untuk laporan ERP.)
@@ -13,7 +23,8 @@ Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelum
 - Tes baru: `tests/baris-rincian.test.mjs` (penjaga statis: aturan CSS dan struktur HTML yang diandalkan CSS), `tests/e2e/baris-rincian.e2e.py` (E2E ke-22: mengukur posisi nyata di Chromium pada lebar 320 dan 412 px). Sudah diuji sabotase: dengan CSS lama kedua tes GAGAL, dengan CSS baru lulus.
 - Versi: `js/version.js` dan `package.json` naik ke 9.50 (nama cache Service Worker ikut berganti, sehingga HP pemilik memuat CSS baru).
 - Bukti: di SANDBOX sesi (bukan GitHub Actions): `npm test` exit 0 (termasuk golden-master identik vs v5.82, `baris-rincian` 17 pernyataan, `dokumentasi` 76 pernyataan) dan 22/22 E2E lulus, `fail=0` (`baris-rincian` 62 pernyataan di Chromium nyata).
-- Belum terbukti: tampilan di HP asli pemilik dan GitHub Actions v9.50. Lihat langkah uji manual di `LANJUT-DI-SINI.md`.
+- Bukti tambahan: GitHub Actions pemilik (8 Nov 2026, log dari pemilik): `npm test` lulus (termasuk `baris-rincian` 17 pernyataan) dan 22/22 E2E lulus, `fail=0` (termasuk `baris-rincian` 62 pernyataan).
+- Belum terbukti: tampilan di HP asli pemilik (belum ada tangkapan layar sesudah perbaikan). Lihat langkah uji manual di `LANJUT-DI-SINI.md`.
 
 ## v9.49 - Tahap 9C: aksi di tab Hitung, Promosi, Etalase lebih cepat (8 Nov 2026)
 - Pemilik: tiga tab masih berat dengan 1.000 produk. Pengukuran menunjukkan pindah tab sudah cepat; yang berat adalah aksi di dalam tab (`scripts/ukur-aksi.py`, CPU x4).

@@ -1,18 +1,25 @@
-# LANJUT-DI-SINI (v10) - posisi setelah v9.50 (perbaikan tampilan baris rincian; sebelumnya Tahap 9C, v9.49)
+# LANJUT-DI-SINI (v10) - posisi setelah v9.51 (perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
 
 Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat perubahan ada di `CHANGELOG.md`, peta modul/fixture/skrip/daftar periksa rilis di `docs/PANDUAN-PERAWATAN.md`. WAJIB memperbarui CHANGELOG dan dokumen ini di setiap sesi yang mengubah paket (dijaga `tests/dokumentasi.test.mjs`). Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
 
 ## Posisi
-- Tahap 0-8 selesai. Tahap 9A/9B (v9.48) dan 9C (v9.49, aksi tab Hitung/Promosi/Etalase lebih cepat) selesai dan LULUS di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21 E2E lulus, `fail=0`. Paket terbaru: v9.50 (hanya CSS + tes + dokumentasi di atas v9.49; lihat bagian "v9.50" di bawah).
+- Tahap 0-8 selesai. Tahap 9A/9B (v9.48) dan 9C (v9.49, aksi tab Hitung/Promosi/Etalase lebih cepat) selesai dan LULUS di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21 E2E lulus, `fail=0`. Paket terbaru: v9.51 (v9.50 dan v9.51 hanya perbaikan tampilan CSS + tes + dokumentasi di atas v9.49; v9.51 juga mengubah satu baris urutan elemen di `js/etalase-halaman.js`; lihat bagian "v9.50" dan "v9.51" di bawah). v9.50 LULUS di GitHub Actions pemilik (npm test + 22 E2E, `fail=0`).
 - Sisa kinerja yang diketahui (kerjakan hanya bila HP pemilik masih berat): buka aplikasi 1.000 produk (~5 dtk pada simulasi x4), `refreshLabels()` per `upd()`, hitungan promo di `money.js` (rumus dibekukan).
 - Tahap berikutnya BELUM ada. Langkah 3 (Hitung berhalaman) dan langkah 4 (`upd` per ketikan) hanya dikerjakan bila angka/kesan dari HP pemilik menunjukkan masih berat. Bila sudah lancar, keduanya dilewati. Jangan membuat tahap baru tanpa permintaan pemilik.
+
+## v9.51 - penanda halaman Etalase rapi dan presisi (sesi 8 Nov 2026)
+- Permintaan pemilik: gaya penanda halaman sudah disukai, tetapi ukuran/susunan acak (di HP "Berikutnya" jatuh sendirian). Minta dibuat proper dan presisi.
+- Akar masalah: `.pgn` di `css/app.css` memakai `flex-wrap:wrap`. Perbaikan: grid. Baris 1 dua tombol selebar sama, baris 2 "Hal. [n] dari N" (kotak angka tepat di tengah), baris 3 info. Lebar maksimum 440px. Gaya visual tidak diubah. Satu baris JS: `nav.append(prev, next, mid, info)` di `js/etalase-halaman.js` (urutan DOM = urutan tampilan).
+- Tes: `tests/penanda-halaman.test.mjs` (statis) dan `tests/e2e/penanda-halaman.e2e.py` (E2E ke-23, geometri nyata 320/360/412/1024 px). Uji sabotase: CSS lama membuat keduanya gagal. Jangan mengembalikan `flex-wrap`.
+- Bukti sandbox sesi: di SANDBOX sesi (bukan GitHub Actions): `npm test` exit 0 (golden-master identik vs v5.82; `penanda-halaman` 13 pernyataan; `dokumentasi` 76 pernyataan) dan 23/23 E2E lulus, `fail=0` (`penanda-halaman` 173 pernyataan di Chromium nyata). GitHub Actions v9.51 BELUM dijalankan; HP asli BELUM dilihat.
+- Uji manual pemilik: pasang v9.51, muat ulang sekali, buka Etalase dengan lebih dari 50 produk live: dua tombol sama lebar di atas, "Hal. [1] dari N" di tengah, "Produk 1-50 dari N" paling bawah; ketuk "Berikutnya": tidak ada yang bergeser.
 
 ## v9.50 - baris rincian: teks panjang turun ke baris ke-2, angka sejajar (sesi 8 Nov 2026)
 - Permintaan pemilik: di "Lihat rincian biaya" (kartu Hitung) dan laporan ERP, teks panjang harus otomatis turun jadi 2 baris dan angkanya sejajar dengan baris ke-2 teks (bukan pindah ke baris sendiri).
 - Akar masalah: `flex-wrap:wrap` pada `.rw` dan `.erw` di `css/app.css`. Perbaikan: `nowrap` + angka `flex:0 0 auto` + `align-items:last baseline` (cadangan `flex-end`). Hanya CSS; tidak ada JS/rumus yang berubah. Komentar "v9.50" di `css/app.css` menjelaskan syaratnya.
 - Ikut terbantu karena memakai pola yang sama: baris di Penjualan, panel Cek pesanan nyata, daftar catatan tarif (Setelan).
 - Tes: `tests/baris-rincian.test.mjs` (statis) dan `tests/e2e/baris-rincian.e2e.py` (E2E ke-22, ukur geometri di Chromium, 320 dan 412 px). Uji sabotase: CSS lama membuat keduanya gagal. Jangan mengembalikan `flex-wrap:wrap` pada baris ini; bila suatu baris baru butuh susunan lain, buat kelas baru.
-- Bukti sandbox sesi: di SANDBOX sesi (bukan GitHub Actions): `npm test` exit 0 (termasuk golden-master identik vs v5.82, `baris-rincian` 17 pernyataan, `dokumentasi` 76 pernyataan) dan 22/22 E2E lulus, `fail=0` (`baris-rincian` 62 pernyataan di Chromium nyata). GitHub Actions v9.50 BELUM dijalankan; HP asli BELUM dilihat.
+- Bukti sandbox sesi: di SANDBOX sesi (bukan GitHub Actions): `npm test` exit 0 (termasuk golden-master identik vs v5.82, `baris-rincian` 17 pernyataan, `dokumentasi` 76 pernyataan) dan 22/22 E2E lulus, `fail=0` (`baris-rincian` 62 pernyataan di Chromium nyata). GitHub Actions pemilik (8 Nov 2026, log dari pemilik): `npm test` lulus (termasuk `baris-rincian` 17 pernyataan) dan 22/22 E2E lulus, `fail=0` (termasuk `baris-rincian` 62 pernyataan). HP asli: belum ada tangkapan layar sesudah perbaikan.
 - Uji manual pemilik (2 menit): (1) pasang v9.50 dan muat ulang sekali (Service Worker berganti versi); (2) tab Hitung, buka "Lihat rincian biaya" pada produk yang kena voucher: baris "Voucher Toko 8% (Voucher Toko Migrasi 8%)" turun 2 baris, angkanya sejajar dengan baris ke-2; (3) tab ERP: baris "Voucher, diskon & pengembalian dana" turun 2 baris, angka sejajar; (4) putar HP ke samping dan kembali: tidak ada yang bergeser aneh; (5) kirim tangkapan layar bila ada yang masih janggal.
 
 ## Yang dikerjakan di Tahap 8
@@ -28,7 +35,7 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat pe
 | 1 | `js/legacy/`, `legacy-app.js`, `parts.json` tidak ada | Terpenuhi (hilang sejak v9.38; kini dijaga tes) |
 | 2 | 0 variabel global lintas berkas | Terpenuhi untuk LINTAS BERKAS (hanya `app-core.js` yang punya nama bersama; modul lain memakai sambungan eksplisit). Peta masih mencatat 90 nama lintas BAGIAN di dalam `app-core.js`: variabel privat satu modul, bukan global. Menghapusnya = merancang ulang akar perakitan; belum dikerjakan, perlu persetujuan pemilik |
 | 3 | `npm test` exit 0, golden-master identik | Lulus di GitHub Actions pemilik (v9.48) |
-| 4 | E2E lulus di GitHub Actions pemilik | LULUS v9.49: 21 skrip, `fail=0`. v9.50 menambah skrip ke-22 (`baris-rincian`): lulus di sandbox sesi, belum di Actions (angka "13 E2E / 242 pernyataan" di rencana lama sudah usang) |
+| 4 | E2E lulus di GitHub Actions pemilik | LULUS v9.49: 21 skrip, `fail=0`. v9.50 menambah skrip ke-22 (`baris-rincian`): LULUS di Actions pemilik; v9.51 menambah skrip ke-23 (`penanda-halaman`): lulus di sandbox sesi, belum di Actions (angka "13 E2E / 242 pernyataan" di rencana lama sudah usang) |
 | 5 | Uji manual Bagian 7 | Belum dilakukan |
 | 6 | Uji sabotase tetap menangkap perubahan | Tes sabotase lama tetap ada dan lulus |
 

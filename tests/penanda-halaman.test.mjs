@@ -1,0 +1,22 @@
+/* v9.51: penanda halaman Etalase (Sebelumnya / Hal. n dari N / Berikutnya / info). Penjaga statis tata letak grid;
+   bukti ukur di browser nyata: tests/e2e/penanda-halaman.e2e.py. Jangan kembalikan flex-wrap: di HP tombol "Berikutnya" jatuh sendirian. */
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+const root=new URL('..',import.meta.url).pathname;
+const read=f=>fs.readFileSync(path.join(root,f),'utf8');
+let n=0;const ok=(v,m)=>{assert.ok(v,m);n++};
+const css=read('css/app.css');
+const rule=sel=>{const m=new RegExp('(?:^|\\n)'+sel.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*\\{([^}]*)\\}').exec(css);return m&&m[1]};
+const pgn=rule('.pgn'),btn=rule('.pgn button'),pgm=rule('.pgn .pgm'),pgi=rule('.pgn .pgi'),inp=rule('.pgn input');
+for(const [k,r] of [['.pgn',pgn],['.pgn button',btn],['.pgn .pgm',pgm],['.pgn .pgi',pgi],['.pgn input',inp]])ok(r,'aturan '+k+' harus ada');
+ok(/display:\s*grid/.test(pgn)&&/grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/.test(pgn),'.pgn grid dua kolom sama lebar (tombol selebar sama)');
+ok(!/flex-wrap/.test(pgn)&&!/display:\s*flex/.test(pgn),'.pgn tidak boleh kembali ke flex-wrap');
+ok(/max-width:\s*\d+px/.test(pgn)&&/margin:[^;]*auto/.test(pgn),'.pgn dibatasi lebarnya dan di tengah (layar besar)');
+ok(/grid-column:\s*1\s*\/\s*-1/.test(pgm)&&/grid-column:\s*1\s*\/\s*-1/.test(pgi),'.pgm dan .pgi membentang selebar baris');
+ok(/grid-template-columns:\s*minmax\(0,\s*1fr\)\s+auto\s+minmax\(0,\s*1fr\)/.test(pgm),'.pgm tiga kolom: kotak angka tepat di tengah');
+ok(/min-height:\s*44px/.test(btn)&&/height:\s*44px/.test(inp),'tombol dan kotak angka sama tinggi (44px)');
+ok(/\.pgn\[hidden\]\{display:none\}/.test(css),'atribut hidden tetap menyembunyikan penanda (grid menimpa hidden bila aturan ini hilang)');
+const js=read('js/etalase-halaman.js');
+ok(/nav\.append\(prev, next, mid, info\)/.test(js),'urutan elemen: Sebelumnya, Berikutnya, Hal., info (sama dengan tampilan)');
+console.log(`Penanda halaman (v9.51): ${n} pernyataan lulus.`);

@@ -95,9 +95,9 @@ Sumber kebenaran hasil hitung adalah `source/Kalsara-v5_82.html` (dipakai golden
 
 ## 5. Tes
 - `npm test` (Node 22): unit, diferensial, golden-master, audit arsitektur. Cepat (menit).
-- E2E Chromium nyata: GitHub -> Actions -> Uji E2E Browser -> Run workflow (22 skrip di `tests/e2e/`). Lokal: `python3 tests/e2e/<nama>.e2e.py`.
+- E2E Chromium nyata: GitHub -> Actions -> Uji E2E Browser -> Run workflow (23 skrip di `tests/e2e/`). Lokal: `python3 tests/e2e/<nama>.e2e.py`.
 - Kinerja: `python3 scripts/ukur-aksi.py . <port> 1000 100 4` (CPU x4 = perkiraan HP menengah, BUKAN HP asli).
-- Daftar periksa rilis: (1) ubah kode minimal; (2) `npm test`; (3) 22 E2E; (4) naikkan versi di `js/version.js` + `package.json`; (5) perbarui dokumen (aturan emas no. 5); (6) ZIP; (7) pemilik menjalankan Actions; (8) catat hasil Actions di CHANGELOG/LANJUT.
+- Daftar periksa rilis: (1) ubah kode minimal; (2) `npm test`; (3) 23 E2E; (4) naikkan versi di `js/version.js` + `package.json`; (5) perbarui dokumen (aturan emas no. 5); (6) ZIP; (7) pemilik menjalankan Actions; (8) catat hasil Actions di CHANGELOG/LANJUT.
 
 ## 6. Hal yang tetap diminta pemilik (jangan lupa)
 - Uji manual Bagian 7 pada SALINAN data (tutup cepat, restore lalu muat ulang, >1.000 produk, offline, profil kosong).
@@ -118,3 +118,14 @@ Aturan agar tidak rusak lagi:
 4. Teks harus langsung anak wadah (teks polos atau `span`), angka satu elemen. Menambah elemen ketiga di baris ini mengubah tata letaknya: buat kelas baru.
 5. Bila mengubah aturan ini: jalankan `node tests/baris-rincian.test.mjs` dan `python3 tests/e2e/baris-rincian.e2e.py`. Keduanya sudah diuji sabotase (CSS lama membuat gagal). Jangan melemahkan tes agar lulus.
 6. Bila tampilan perlu diperiksa dengan mata: buka tab Hitung dan ERP pada lebar 320 px dan 412 px, cari baris dengan teks panjang (mis. "Voucher Toko 8% (Voucher Toko Migrasi 8%)", "Voucher, diskon & pengembalian dana").
+
+## 8. Konvensi tampilan: penanda halaman Etalase (v9.51)
+Dua penanda (atas `#shpt`, bawah `#shpg`) dibuat oleh `makePager` di `js/etalase-halaman.js`; gayanya di `css/app.css` (aturan `.pgn`, `.pgn button`, `.pgn .pgm`, `.pgn input`, `.pgn .pgi`).
+
+Susunan yang dijaga (sama di semua lebar layar): baris 1 dua tombol selebar sama (grid dua kolom `1fr 1fr`, tinggi 44px); baris 2 "Hal. [n] dari N" (grid tiga kolom `1fr auto 1fr`: "Hal." rata kanan, "dari N" rata kiri, sehingga kotak angka tepat di tengah); baris 3 info "Produk a-b dari N" di tengah. Lebar maksimum 440px.
+
+Aturan agar tidak rusak lagi:
+1. Jangan kembali ke `flex-wrap`: di HP tombol "Berikutnya" jatuh sendirian.
+2. Urutan elemen di DOM harus `prev, next, mid, info` (sama dengan urutan tampilan, agar tombol Tab tidak melompat). Tes E2E lain memakai `#shpg button` ke-0 (Sebelumnya) dan ke-1 (Berikutnya).
+3. Aturan `.pgn[hidden]{display:none}` wajib ada: `display:grid` menimpa atribut `hidden` bila aturan itu hilang.
+4. Bila mengubah ukuran/susunan: jalankan `node tests/penanda-halaman.test.mjs` dan `python3 tests/e2e/penanda-halaman.e2e.py` (mengukur 320/360/412/1024 px; sudah diuji sabotase).

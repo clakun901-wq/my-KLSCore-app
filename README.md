@@ -1,6 +1,6 @@
 # Kalsara - Micro-ERP e-commerce, 100% di sisi klien (basis Kalsara v5.82)
 
-**Versi paket: v9.50 (perbaikan tampilan baris rincian: teks panjang turun ke baris ke-2, angka sejajar; di atas Tahap 9C v9.49). v9.49 lulus di GitHub Actions pemilik (npm test dan 21 E2E, `fail=0`); v9.50 lulus di sandbox sesi (22 E2E), belum dijalankan di GitHub Actions.** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (22 E2E) dan uji manual lulus.
+**Versi paket: v9.51 (perbaikan tampilan: penanda halaman Etalase rapi dan presisi; baris rincian teks panjang turun ke baris ke-2 dengan angka sejajar; di atas Tahap 9C v9.49). v9.50 lulus di GitHub Actions pemilik (npm test dan 22 E2E, `fail=0`); v9.51 lulus di sandbox sesi (23 E2E), belum dijalankan di GitHub Actions.** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (23 E2E) dan uji manual lulus.
 
 Aplikasi berjalan penuh di peramban: tanpa server, tanpa build tool, tanpa CDN saat berjalan. Logika bisnis dan hasil hitung identik dengan v5.82 (dibuktikan tes golden-master dan diferensial).
 
@@ -25,7 +25,7 @@ Aplikasi berjalan penuh di peramban: tanpa server, tanpa build tool, tanpa CDN s
 
 ## Menguji
 - `npm test`: unit, diferensial terhadap kode lama, golden-master terhadap v5.82, audit arsitektur (butuh Node 22).
-- E2E di Chromium nyata: GitHub -> Actions -> **Uji E2E Browser** -> Run workflow (menjalankan `npm test` lalu 22 skrip `tests/e2e/*.e2e.py`).
+- E2E di Chromium nyata: GitHub -> Actions -> **Uji E2E Browser** -> Run workflow (menjalankan `npm test` lalu 23 skrip `tests/e2e/*.e2e.py`).
 - Aturan: satu tes gagal = berhenti dan perbaiki; jangan melemahkan tes agar lulus.
 
 ## Batasan yang masih terbuka
