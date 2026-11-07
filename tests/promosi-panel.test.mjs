@@ -23,7 +23,9 @@ assert.equal(restored.length,original.length,'jumlah pernyataan di factory harus
 for(let i=0;i<original.length;i++)assert.equal(restored[i],original[i],`pernyataan panel/tampilan #${i+1} berubah`);
 for(const name of connectorNames){
   assert.ok(mod.includes('D.'+name),`modul harus memakai sambungan D.${name}`);
-  assert.ok(core.includes(`get ${name}(){return ${name}}`)||core.includes(`get ${name}(){return ${name}}`),`app-core harus menyediakan getter untuk ${name}`);
+  // v9.43a: setTimeout adalah fungsi bawaan peramban; getter-nya wajib berbentuk terikat (bind) ke window, diperiksa ketat di blok bawah.
+  const bound = name==='setTimeout' && core.includes('get setTimeout(){return window.setTimeout.bind(window)}');
+  assert.ok(bound||core.includes(`get ${name}(){return ${name}}`),`app-core harus menyediakan getter untuk ${name}`);
 }
 assert.ok(/get PSEL\(\)\{return PSEL\},set PSEL\(v\)\{PSEL=v\}/.test(core),'PSEL harus dibaca dan ditulis lewat getter/setter karena bagian 20 dan 60 juga menggunakannya');
 assert.ok(/function prRender\(\)\{return PromosiPanel\.prRender\.apply\(null,arguments\)\}/.test(core),'nama prRender tetap tersedia sebagai penerus untuk bagian lain');
@@ -38,3 +40,14 @@ const sabFactory=sabAst.body.find(x=>x.type==='ExportNamedDeclaration'&&x.declar
 const sabBody=sabFactory.body.body.slice(0,-1).map(x=>restore(norm(sabotaged.slice(x.start,x.end))));
 assert.throws(()=>{for(let i=0;i<original.length;i++)assert.equal(sabBody[i],original[i]);},'SABOTASE: perubahan selector harus tertangkap');
 console.log(`Promosi panel (Tahap 7a): ${original.length} pernyataan identik vs fixture v9.42; ${connectorNames.length} sambungan eksplisit; sabotase selector tertangkap.`);
+
+// v9.43a: fungsi bawaan peramban (setTimeout) yang diteruskan lewat objek sambungan HARUS diikat ke window,
+// kalau tidak peramban melempar 'Illegal invocation' saat dipanggil sebagai D.setTimeout(...).
+{
+  const core = fs.readFileSync(new URL('../js/app-core.js', import.meta.url), 'utf8');
+  const m = core.match(/var PromosiPanel=createPromosiPanel\(\{[\s\S]*?\}\);/);
+  if (!m) throw new Error('blok sambungan PromosiPanel tidak ditemukan');
+  const line = m[0].split('\n').find(l => /get setTimeout\(\)/.test(l)) || '';
+  if (!/window\.setTimeout\.bind\(window\)/.test(line)) throw new Error('setTimeout pada sambungan PromosiPanel harus diikat ke window (bind)');
+  console.log('Promosi panel: setTimeout sambungan terikat ke window.');
+}

@@ -24,14 +24,14 @@ Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berup
 | 20-hitung-etalase.js | 1.570 | 25 | 9 | 16 | 25 | 31 |
 | 30-penjualan.js | 826 | 6 | 0 | 6 | 6 | 19 |
 | 40-voucher-panel.js | 976 | 2 | 0 | 2 | 2 | 16 |
-| 50-promosi.js | 9.352 | 25 | 20 | 5 | 11 | 23 |
+| 50-promosi.js | 9.501 | 25 | 20 | 5 | 11 | 23 |
 | 60-tab-impor-sinkron.js | 1.508 | 13 | 12 | 1 | 10 | 27 |
 | 70-xlsx-reader.js | 171 | 0 | 0 | 0 | 0 | 8 |
 | 80-cadangan-tema.js | 2.026 | 14 | 9 | 5 | 11 | 22 |
 | 90-erp.js | 262 | 1 | 0 | 1 | 1 | 2 |
 | 95-boot.js | 449 | 1 | 0 | 1 | 0 | 12 |
 | 99-pwa.js | 44 | 0 | 0 | 0 | 0 | 3 |
-| **Jumlah** | **19.011** | **120** | **50** | **70** | **90** (nama unik) | |
+| **Jumlah** | **19.160** | **120** | **50** | **70** | **90** (nama unik) | |
 
 Cara membaca: "Dipakai berkas lain" = berapa nama buatan berkas ini yang dipakai berkas lain. "Memakai nama berkas lain" = berapa nama milik berkas lain yang dipakai di berkas ini. Berkas dengan angka keduanya kecil paling mudah dipindah lebih dulu.
 
@@ -312,7 +312,7 @@ Tidak ada.
 
 **Akses dinamis** (`window[...]`, `eval`, `new Function`): tidak ada.
 
-**Nama yang dibaca/ditulis lewat `window.` atau `globalThis.`** di legacy: `Blob` (baca) di 60-tab-impor-sinkron.js:1; `FileReader` (baca) di 60-tab-impor-sinkron.js:1; `KalsaraMoney` (baca) di 00-core.js:6, 10-calc.js:7, 50-promosi.js:6, 50-promosi.js:46, 50-promosi.js:46, 50-promosi.js:46; `KalsaraWorker` (baca) di 10-calc.js:11; `URL` (baca) di 60-tab-impor-sinkron.js:1; `fetch` (baca) di 60-tab-impor-sinkron.js:1, 60-tab-impor-sinkron.js:1; `setTimeout` (baca) di 60-tab-impor-sinkron.js:1.
+**Nama yang dibaca/ditulis lewat `window.` atau `globalThis.`** di legacy: `Blob` (baca) di 60-tab-impor-sinkron.js:1; `FileReader` (baca) di 60-tab-impor-sinkron.js:1; `KalsaraMoney` (baca) di 00-core.js:6, 10-calc.js:7, 50-promosi.js:6, 50-promosi.js:46, 50-promosi.js:46, 50-promosi.js:46; `KalsaraWorker` (baca) di 10-calc.js:11; `URL` (baca) di 60-tab-impor-sinkron.js:1; `fetch` (baca) di 60-tab-impor-sinkron.js:1, 60-tab-impor-sinkron.js:1; `setTimeout` (baca) di 50-promosi.js:126, 60-tab-impor-sinkron.js:1.
 
 **Fungsi bersarang** (dideklarasikan di dalam fungsi lain, bukan global): tidak ada.
 
@@ -353,11 +353,10 @@ Tidak ada.
 | `pf` | impor (./format.js) | 1 | 0 |
 | `prodSig` | impor (./helpers.js) | 1 | 0 |
 | `rp` | impor (./format.js) | 21 | 0 |
-| `setTimeout` | peramban | 1 | 0 |
 | `today` | impor (./format.js) | 9 | 0 |
 | `uid` | impor (./helpers.js) | 2 | 0 |
 | `undefined` | bawaan JS | 4 | 0 |
-| `window` | peramban | 9 | 0 |
+| `window` | peramban | 11 | 0 |
 
 ## 7. Batas pemeriksa (yang TIDAK terlihat)
 

@@ -9,6 +9,11 @@ Untuk AI di percakapan baru: baca berkas ini dan `LANJUT-DI-SINI-v2.md` (aturan 
 - Pemindahan 7a: 47 pernyataan dipindah dan dibandingkan satu per satu dengan fixture v9.42; 38 sambungan eksplisit ke nama/state yang tetap berada di `app-core.js`; `PSEL` dibaca/ditulis lewat getter/setter. Fungsi yang masih dipakai bagian lain tetap tersedia lewat penerus.
 - Sisa bagian 50 di `app-core.js`: **9.352 byte, 26 pernyataan tingkat atas**. Yang sengaja ditunda ke 7b termasuk `migPt`, `psig`, `ptp`, `CFG`, aturan/data voucher, dan pembuat promosi.
 
+## Koreksi v9.43a/b (setelah GitHub Actions pemilik)
+
+- v9.43a: `js/signals.js` tidak lagi memuat pustaka dari CDN (aturan A5/B1); tes penjaga ditambah di `tests/pwa.test.mjs`.
+- v9.43b: GitHub Actions pemilik menemukan `tahap7a` GAGAL (17 E2E lain lulus). Dua penyebab: (1) BUG NYATA akibat pemindahan 7a: getter `setTimeout` di sambungan PromosiPanel tidak terikat ke window sehingga pemilih produk melempar 'Illegal invocation' (diperbaiki dengan `.bind(window)`, dijaga tes unit baru); (2) E2E memeriksa data tersimpan terlalu cepat sebelum jeda simpan 350 ms (kini menunggu sampai tertulis). Hasil sandbox sesi setelah perbaikan: `npm test` exit 0 dan 18/18 E2E lulus di Chromium. GitHub Actions v9.43b: BELUM ADA.
+
 ## Bukti dan status pengujian
 
 - Baseline v9.42: pemilik mengirim log `npm test` exit 0 dan **17/17 E2E** lulus di Chromium nyata pada lingkungannya.

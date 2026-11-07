@@ -43,11 +43,21 @@ try:
   discount.fill('10');pg.wait_for_timeout(200)
   check(price.input_value().replace('.','').replace(',','').isdigit() and int(price.input_value().replace('.','').replace(',',''))>0,'mengisi diskon otomatis mengisi harga promo yang setara')
   async_saved="async()=>{await KStore.flush();return JSON.parse(KStore.getItem('kalsara_v3'))}"
-  d=pg.evaluate(async_saved)
+  # Penyimpanan data memakai jeda 350 ms (debounce). Tunggu sampai data benar-benar tertulis, jangan menebak waktu.
+  def saved_until(pred,limit=8000):
+   t0=time.time()
+   while True:
+    d=pg.evaluate(async_saved)
+    try:
+     if pred(d) or (time.time()-t0)*1000>limit: return d
+    except (IndexError,KeyError): 
+     if (time.time()-t0)*1000>limit: return d
+    pg.wait_for_timeout(200)
+  d=saved_until(lambda d:len(d.get('pr',[]))==1 and len(d['pr'][0].get('it',[]))==1 and d['pr'][0]['it'][0].get('d')==10)
   check(len(d.get('pr',[]))==1 and d['pr'][0]['n']=='Promo Panel Tahap 7a' and d['pr'][0]['it'][0]['p']=='p7' and d['pr'][0]['it'][0]['d']==10,'perubahan nama, produk, dan diskon tersimpan')
   pg.locator('#prl .pe [data-del]').click();pg.wait_for_timeout(150);pg.click('#dy');pg.wait_for_timeout(350)
   check(pg.locator('#prl .pe').count()==0,'hapus promosi menghilangkan kartu setelah konfirmasi')
-  d=pg.evaluate(async_saved);check(len(d.get('pr',[]))==0,'penghapusan promosi ikut tersimpan')
+  d=saved_until(lambda d:len(d.get('pr',[]))==0);check(len(d.get('pr',[]))==0,'penghapusan promosi ikut tersimpan')
   check(not errs,'tidak ada pageerror selama alur promosi: '+str(errs))
   ctx.close();b.close()
   # Sabotase nyata pada salinan sesi browser: mematikan listener pemilih jenis harus terdeteksi.

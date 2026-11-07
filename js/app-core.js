@@ -199,7 +199,7 @@ var PromosiPanel=createPromosiPanel({
  get pst(){return pst},
  get ptp(){return ptp},
  get rp(){return rp},
- get setTimeout(){return setTimeout},
+ get setTimeout(){return window.setTimeout.bind(window)},/* harus diikat ke window: dipanggil lewat objek sambungan (D.setTimeout) fungsi bawaan peramban melempar 'Illegal invocation' */
  get tmod(){return tmod},
  get toast(){return toast},
  get today(){return today},
