@@ -11,7 +11,7 @@ function stk(r){var A=getA();if(!(r.m>0||r.n))return{lv:'',h:''};
  w=function(l,t,k){return{lv:l,h:'<div class="wn '+l+'">&#9888; '+t+(k?b:'')+'</div>'}};
  if(r.s==null)return w('y','Stok belum diisi. Cek jumlah stok asli di Seller Centre.',0);
  if(r.s<=0)return w('r','Stok habis. Nonaktifkan produk atau isi ulang stok di Shopee.',1);
- if(r.s<=skHi())return w('r','Stok hampir habis ('+r.s+' pcs). Segera isi ulang di supplier dan Shopee.',1); if(r.s<=A.sl)return w('y','Stok menipis ('+r.s+' pcs). Cek stok supplier dan Shopee.',1);
+ if(r.s<=skHi())return w('r','Stok hampir habis ('+r.s+' pcs). Segera isi ulang stok.',1); if(r.s<=A.sl)return w('y','Stok menipis ('+r.s+' pcs). Cek stok di Shopee dan sumber barang.',1);
  if(A.sdy>0&&d!==null&&d>=A.sdy)return w('y','Stok terakhir dicek '+d+' hari lalu. Cek ulang jumlah asli di Shopee.',1);
  return{lv:'',h:'<div class="stk">Stok '+r.s.toLocaleString('id-ID')+' pcs, '+(d===null?'tanggal cek belum tercatat':d===0?'dicek hari ini':'dicek '+d+' hari lalu')+b+'</div>'}}
 function warns(o,rev){var A=getA();

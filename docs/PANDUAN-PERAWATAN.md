@@ -119,6 +119,9 @@ Aturan agar tidak rusak lagi:
 5. Bila mengubah aturan ini: jalankan `node tests/baris-rincian.test.mjs` dan `python3 tests/e2e/baris-rincian.e2e.py`. Keduanya sudah diuji sabotase (CSS lama membuat gagal). Jangan melemahkan tes agar lulus.
 6. Bila tampilan perlu diperiksa dengan mata: buka tab Hitung dan ERP pada lebar 320 px dan 412 px, cari baris dengan teks panjang (mis. "Voucher Toko 8% (Voucher Toko Migrasi 8%)", "Voucher, diskon & pengembalian dana").
 
+## 7b. Penggantian label v9.52 (tests/helpers/label-v9_52.mjs)
+Fixture lama membeku teks sebelum v9.52. `tests/helpers/label-v9_52.mjs` memuat daftar tertutup penggantian label lama ke baru dan mengecek jumlah kemunculannya per fixture. Bila label diubah lagi, tambah pasangan di sana (pasangan yang lebih panjang lebih dulu) dan sesuaikan jumlah yang diharapkan di tes pemakainya.
+
 ## 8. Konvensi tampilan: penanda halaman Etalase (v9.51)
 Dua penanda (atas `#shpt`, bawah `#shpg`) dibuat oleh `makePager` di `js/etalase-halaman.js`; gayanya di `css/app.css` (aturan `.pgn`, `.pgn button`, `.pgn .pgm`, `.pgn input`, `.pgn .pgi`).
 

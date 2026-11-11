@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createKartuUpdate} from '../js/kartu-update.js';
-const fixture=fs.readFileSync(new URL('./fixtures/kartu-update.pre_v9_33.js.txt',import.meta.url),'utf8');
+import {relabelV952} from './helpers/label-v9_52.mjs';
+const fixture=relabelV952(fs.readFileSync(new URL('./fixtures/kartu-update.pre_v9_33.js.txt',import.meta.url),'utf8'),3,'fixture kartu-update'); /* v9.52: link sumber barang + dua teks jalur kosong */
 const source=fs.readFileSync(new URL('../js/kartu-update.js',import.meta.url),'utf8');
 let n=0; const ok=(v,m)=>{assert.ok(v,m);n++}; const eq=(a,b,m)=>{assert.deepEqual(a,b,m);n++};
 const expected=fixture.replace('function updRow(r){var H=','function updRow(r){var A=getA();var H=');
@@ -55,7 +56,7 @@ const mutations=[
  ['stok',"var kk=stk(r);", "var kk={lv:'',h:''};"],
  ['reset untung',"r.u=undefined;r.lv='';", "r.u=0;r.lv='';"],
  ['hasil kalkulasi',"var o=calc(r);", "var o=null;"],
- ['jalur kosong',"Isi modal supplier, hasil muncul otomatis di sini.","Lengkapi modal supplier."] ,
+ ['jalur kosong',"Isi modal per pcs, hasil muncul otomatis di sini.","Lengkapi modal supplier."] ,
  ['jalur galat',"var eh=errH(o.err);","var eh='';"],
  ['agregat',"g.n++;g.sm+=o.M;g.su+=o.u;", "g.n++;g.sm+=o.M;g.su+=0;"],
  ['peringatan',"var wx=warns(o,false),im=impas(r,o.R);", "var wx={lv:'',m:0,sh:[]},im=impas(r,o.R);"],

@@ -6,11 +6,11 @@ function updRow(r){var A=getA();var H=!!r.hy,g=r._ag={n:0,sm:0,su:0,nw:0,ns:0};
   r.box.querySelectorAll('input[data-o]').forEach(function(x){var k=x.dataset.o;x.placeholder=k=='gx'?fmt(gfac()>0?Math.round(goRate({o:Object.assign({},r.o,{gx:null})})*10000/gfac())/100:goRate({o:Object.assign({},r.o,{gx:null})})):k=='ad'?fmt(adRate({o:Object.assign({},r.o,{ad:null})})):k=='dv'&&A.pa=='no'?'Nonaktif':fmt(A[k])});
   var th=r.box.querySelector('.tph');if(th){try{var gmn=r.o&&r.o.gx!==null&&r.o.gx!==undefined,amn=r.o&&r.o.ad!==null&&r.o.ad!==undefined;th.textContent='Dipakai sekarang: admin '+fmt(adRate(r))+'%'+(amn?' (manual)':'')+', Gratis Ongkir XTRA '+fmt(goRate(r))+'%'+(gmn?' (manual)':'')+(gfac()<100?' (sudah dikali keringanan '+fmt(gfac())+'%)':'')+'.'}catch(e){}}
   var dl=r.box.querySelector('input[data-o="dv"]');if(dl&&dl.previousElementSibling)dl.previousElementSibling.textContent=(A.dm=='nom'?'Diskon coret (Rp)':'Diskon coret (%)')+(A.pa=='no'?' - Promo Toko nonaktif':'');
-  KDOM.setHTML(r.lkx, /^https?:\/\//i.test(r.lnk||'')?'<a href="'+esc(r.lnk)+'" target="_blank" rel="noopener noreferrer">Buka link supplier</a>':'');
+  KDOM.setHTML(r.lkx, /^https?:\/\//i.test(r.lnk||'')?'<a href="'+esc(r.lnk)+'" target="_blank" rel="noopener noreferrer">Buka link sumber barang</a>':'');
   KDOM.setHTML(r.mhl, (r.mh&&r.mh.length)?'<div class="stk">Riwayat modal</div>'+r.mh.slice().reverse().map(function(h){return'<div class="stk">'+dtx(h.d)+': '+rp(h.a)+' ke '+rp(h.b)+' ('+(h.b>=h.a?'+':'')+pc1((h.b-h.a)/h.a*100)+'%)</div>'}).join(''):'');
  }
   var kk=stk(r);r.sl=kk.lv;if(kk.lv)g.ns++;H&&KDOM.setHTML(r.sk, kk.h);r.u=undefined;r.lv='';var o=calc(r);H&&KDOM.setHTML(r.cxr, '');if(!o||o.err){H&&KDOM.setHTML(r.ac, acH(r,null));H&&KDOM.setHTML(r.bg, bdH(r,null))}
-  if(!o){H&&KDOM.setHTML(r.el, '<div class="empty">Isi modal supplier, hasil muncul otomatis di sini.</div>');H&&KDOM.setHTML(r.cs, '<div class="em">Isi modal supplier, hasil muncul otomatis di sini.</div>');if(r.cx>0)H&&KDOM.setHTML(r.cxr, '<div class="empty">Isi modal supplier dulu.</div>');return}
+  if(!o){H&&KDOM.setHTML(r.el, '<div class="empty">Isi modal per pcs, hasil muncul otomatis di sini.</div>');H&&KDOM.setHTML(r.cs, '<div class="em">Isi modal per pcs, hasil muncul otomatis di sini.</div>');if(r.cx>0)H&&KDOM.setHTML(r.cxr, '<div class="empty">Isi modal supplier dulu.</div>');return}
   if(o.err){var eh=errH(o.err);H&&KDOM.setHTML(r.el, eh);H&&KDOM.setHTML(r.cs, '<div class="em">'+eh+'</div>');if(r.cx>0)H&&KDOM.setHTML(r.cxr, eh);return}
   g.n++;g.sm+=o.M;g.su+=o.u;H&&KDOM.setHTML(r.ac, acH(r,o));H&&KDOM.setHTML(r.bg, bdH(r,o));
   var okc=o.u>=r.t?'ok':'bad';

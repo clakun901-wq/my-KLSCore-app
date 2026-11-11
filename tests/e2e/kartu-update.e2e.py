@@ -25,7 +25,7 @@ try:
   check('Stok hampir habis' in card.locator('.sk').text_content(),'updRow mengisi peringatan stok kritis')
   res=card.locator('.res').text_content();check('Ke mana harga jual pergi' in res and 'Lihat rincian biaya' in res,'updRow mengisi hasil, bar ringkasan, dan rincian biaya')
   card.locator('details').last.locator('summary').click();pg.wait_for_timeout(250)
-  check('Buka link supplier' in card.locator('.lkx').text_content(),'updRow mengisi tautan supplier')
+  check('Buka link sumber barang' in card.locator('.lkx').text_content(),'updRow mengisi tautan supplier')
   check('Riwayat modal' in card.locator('.mhl').text_content(),'updRow mengisi riwayat perubahan modal')
   check(not errs,'tidak ada error JavaScript: '+str(errs))
   ctx.close();b.close()

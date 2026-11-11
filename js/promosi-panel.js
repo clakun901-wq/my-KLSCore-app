@@ -117,7 +117,7 @@ function pkOpen(sel){if(PKS)return;PKS=sel;
  var opts=Array.prototype.filter.call(sel.options,function(o){return o.value!==''}),ph=sel.options[0]?sel.options[0].text:'Pilih produk',
  hay=opts.map(function(o){var r=D.State.rows.filter(function(x){return x.id===o.value})[0];return(o.text+' '+(r?(r.sku||'')+' '+(r.sup||''):'')).toLowerCase()});
  var b=D.document.createElement('div');b.id='pkb';b.className='pkb';
- D.KDOM.setHTML(b, '<div class="pks" role="dialog" aria-modal="true" aria-label="'+D.esc(ph)+'"><div class="pkt">'+D.esc(ph.replace(/^\+\s*/,''))+'</div><div class="pkh"><input id="pki" type="search" placeholder="Cari produk, SKU, atau supplier" aria-label="Cari produk" autocomplete="off"><button type="button" id="pkx" aria-label="Tutup">&#10005;</button></div><div class="pkn" id="pkn"></div><div id="pkl"></div></div>');
+ D.KDOM.setHTML(b, '<div class="pks" role="dialog" aria-modal="true" aria-label="'+D.esc(ph)+'"><div class="pkt">'+D.esc(ph.replace(/^\+\s*/,''))+'</div><div class="pkh"><input id="pki" type="search" placeholder="Cari produk, SKU, atau sumber barang" aria-label="Cari produk" autocomplete="off"><button type="button" id="pkx" aria-label="Tutup">&#10005;</button></div><div class="pkn" id="pkn"></div><div id="pkl"></div></div>');
  D.document.body.appendChild(b);
  var inp=D.$('pki'),lst=D.$('pkl'),cnt=D.$('pkn');
  function draw(){var q=inp.value.toLowerCase().split(/\s+/).filter(Boolean),h='',n=0;opts.forEach(function(o,i){if(q.every(function(w){return hay[i].indexOf(w)>=0})){n++;h+='<button type="button" class="pkr" data-v="'+D.esc(o.value)+'">'+D.esc(o.text)+'</button>'}});cnt.textContent=n?n+' produk':'';D.KDOM.setHTML(lst, h||'<div class="pke">Tidak ada produk yang cocok.</div>')}

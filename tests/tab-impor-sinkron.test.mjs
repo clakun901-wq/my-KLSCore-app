@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import * as acorn from '../scripts/vendor/acorn.mjs';
+import {relabelV952} from './helpers/label-v9_52.mjs';
 let n=0; const ok=(v,m)=>{assert.ok(v,m);n++};
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
-const fixture=read('./fixtures/app-core.bagian60.pre_v9_41.js.txt');
+const fixture=relabelV952(read('./fixtures/app-core.bagian60.pre_v9_41.js.txt'),5,'fixture tab impor/sinkron'); /* v9.52: header CSV ekspor/templat dan satu teks info */
 const mod=read('../js/tab-impor-sinkron.js');
 const sw=read('../sw.js');
 const noComment=s=>s.replace(/\/\*[\s\S]*?\*\//g,' ');

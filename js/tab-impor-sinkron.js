@@ -10,7 +10,7 @@ $('t0').onclick=function(){tab(0)};$('t1').onclick=function(){tab(1)};$('t2').on
 $('add').onclick=function(){if(State.rows.length>=ROW_MAX){toast('Maksimal '+ROW_MAX+' produk');return}$('q').value='';$('ff').value='all';$('so').value='0';add();var c=$('list').lastChild;c.scrollIntoView({block:'center'});c.querySelector('input').focus();upd(false)};
 $('col').onclick=function(){var all=State.rows.length&&State.rows.every(function(r){return r.c});State.rows.forEach(function(r){r.c=!all;r.box.classList.toggle('cl',!all);var tg=r.box.querySelector('.tg');if(tg)tg.setAttribute('aria-expanded',all)});colL();persist()};
 $('rst').onclick=function(){ask('Kosongkan semua produk? Semua data produk akan terhapus.','Ya, kosongkan',function(){State.rows=[];KDOM.setHTML($('list'), '');add();upd(true);toast('Semua produk dikosongkan')})};
-var HD=['Produk','Isi paket','Stok Shopee','Tanggal cek stok','Supplier','SKU','Link supplier','Modal supplier','Biaya Management Partner','Biaya packing','Total modal','Target untung','Harga listing awal','Harga diskon coret','Voucher toko','Harga setelah voucher','Tarif administrasi (%)','Tarif Gratis Ongkir XTRA (%)','Tarif Promo XTRA (%)','Tarif Video XTRA (%)','Tarif Live XTRA (%)','Biaya administrasi','Biaya Gratis Ongkir XTRA','Biaya Promo XTRA','Biaya Video XTRA','Biaya Live XTRA','Biaya pembayaran','Biaya layanan pesanan','Total Biaya Shopee','Premi','PPh 22','Biaya iklan','Cadangan retur','Ongkir ditanggung','Saldo masuk','Untung bersih','Margin (%)','Harga impas (diskon coret)'];
+var HD=['Produk','Isi paket','Stok Shopee','Tanggal cek stok','Sumber barang','SKU','Link sumber barang','Modal / HPP per pcs','Biaya Management Partner','Biaya packing','Total modal','Target untung','Harga listing awal','Harga diskon coret','Voucher toko','Harga setelah voucher','Tarif administrasi (%)','Tarif Gratis Ongkir XTRA (%)','Tarif Promo XTRA (%)','Tarif Video XTRA (%)','Tarif Live XTRA (%)','Biaya administrasi','Biaya Gratis Ongkir XTRA','Biaya Promo XTRA','Biaya Video XTRA','Biaya Live XTRA','Biaya pembayaran','Biaya layanan pesanan','Total Biaya Shopee','Premi','PPh 22','Biaya iklan','Cadangan retur','Ongkir ditanggung','Saldo masuk','Untung bersih','Margin (%)','Harga impas (diskon coret)'];
 function tbl(){var o=[HD];
  State.rows.forEach(function(r){var c=calc(r);if(c&&!c.err){var im=impas(r,c.R);o.push([(r.n||'-').replace(/[\t\r\n]+/g,' '),r.q>0?r.q:1,r.s==null?'':r.s,r.sd||'',r.sup||'',r.sku||'',r.lnk||'',r.m,r.d,r.p,tmod(r),r.t,c.M,c.L,c.v,c.P,fmt(c.R.ad),fmt(c.R.gx),fmt(c.R.px),fmt(c.R.vx),fmt(c.R.lv),c.b.ad,c.b.gx,c.b.px,c.b.vx,c.b.lv,c.b.pay,c.b.fx,c.sh,c.pm,c.tax,c.ads,c.rt,State.A.og,c.s,c.u,pc1(c.P>0?c.u/c.P*100:0),im===null?'':im])}});
  return o}
@@ -35,7 +35,7 @@ function dl(name,text,mime,alt,onFail){
  toast(ok?'Unduhan dimulai. Jika file tidak muncul, '+h+'.':'Unduhan tidak tersedia. '+h.charAt(0).toUpperCase()+h.slice(1)+'.');
 }
 $('xr').onclick=function(){var o=tbl();if(o.length<2){toast('Belum ada hasil untuk diunduh');return}dl('hasil-kalsara.csv',csv(o),'text/csv;charset=utf-8','Salin hasil')};
-$('xt').onclick=function(){dl('template-produk-kalsara.csv',(csv([['Nama produk','Modal supplier','Biaya Management Partner','Biaya packing','Target untung','Isi paket (opsional)','Stok Shopee (opsional)','Supplier (opsional)','SKU (opsional)','Link supplier (opsional)','Tarif Gratis Ongkir XTRA % (opsional)'],['Contoh produk A',25000,1000,500,5000,1,20,'Toko ABC','KAOS-01','https://contoh.com/produk',2]])),'text/csv;charset=utf-8','')};
+$('xt').onclick=function(){dl('template-produk-kalsara.csv',(csv([['Nama produk','Modal / HPP per pcs','Biaya Management Partner','Biaya packing','Target untung','Isi paket (opsional)','Stok Shopee (opsional)','Sumber barang (opsional)','SKU (opsional)','Link sumber barang (opsional)','Tarif Gratis Ongkir XTRA % (opsional)'],['Contoh produk A',25000,1000,500,5000,1,20,'Toko ABC','KAOS-01','https://contoh.com/produk',2]])),'text/csv;charset=utf-8','')};
 function parseCsv(t){
  parseCsv.bad=false;t=String(t||'').replace(/^\ufeff/,'');
  var l1=t.split(/\r?\n/,1)[0]||'',ds=[';','\t',','],counts=ds.map(function(d){
@@ -129,7 +129,7 @@ function bdH(r,o){r.ay=0;if(!(r.ha>0||r.hd>0))return '<span class="bd">Produk ba
  return '<span class="bd tz'+(r.ay>0?' bad':'')+'">'+t+'</span>'}
 function acH(r,o){
  if(!(r.ha>0)&&!(r.hd>0))return '';
- if(!o||o.err)return '<div class="stk">'+(o&&o.err?'Harga produk belum bisa dihitung, periksa tab Hitung.':'Isi modal supplier dulu untuk menilai harga aktual.')+'</div>';
+ if(!o||o.err)return '<div class="stk">'+(o&&o.err?'Harga produk belum bisa dihitung, periksa tab Hitung.':'Isi modal per pcs dulu untuk menilai harga aktual.')+'</div>';
  var R=o.R,L=actL(r,R);
  var a=fwdL(L,r,R),mg=a.P>0?a.u/a.P*100:0,st=a.u<0?'RUGI':(a.u<r.t?'Di bawah target':'Sesuai target'),ok=a.u>=r.t,h='';
  h+='<div class="pf '+(ok?'ok':'bad')+'"><span>Untung di harga aktual<small>'+st+' &bull; margin '+pc1(mg)+'%</small></span><b>'+rp(a.u)+'</b></div>';

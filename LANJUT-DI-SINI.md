@@ -1,4 +1,4 @@
-# LANJUT-DI-SINI (v10) - posisi setelah v9.51 (perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
+# LANJUT-DI-SINI (v10) - posisi setelah v9.52 (label umum bukan khusus dropship; sebelumnya v9.51: perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
 
 Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat perubahan ada di `CHANGELOG.md`, peta modul/fixture/skrip/daftar periksa rilis di `docs/PANDUAN-PERAWATAN.md`. WAJIB memperbarui CHANGELOG dan dokumen ini di setiap sesi yang mengubah paket (dijaga `tests/dokumentasi.test.mjs`). Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
 
@@ -6,6 +6,10 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat pe
 - Tahap 0-8 selesai. Tahap 9A/9B (v9.48) dan 9C (v9.49, aksi tab Hitung/Promosi/Etalase lebih cepat) selesai dan LULUS di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21 E2E lulus, `fail=0`. Paket terbaru: v9.51 (v9.50 dan v9.51 hanya perbaikan tampilan CSS + tes + dokumentasi di atas v9.49; v9.51 juga mengubah satu baris urutan elemen di `js/etalase-halaman.js`; lihat bagian "v9.50" dan "v9.51" di bawah). v9.50 (22 E2E) dan v9.51 (23 E2E) LULUS di GitHub Actions pemilik (npm test + E2E, `fail=0`).
 - Sisa kinerja yang diketahui (kerjakan hanya bila HP pemilik masih berat): buka aplikasi 1.000 produk (~5 dtk pada simulasi x4), `refreshLabels()` per `upd()`, hitungan promo di `money.js` (rumus dibekukan).
 - Tahap berikutnya BELUM ada. Langkah 3 (Hitung berhalaman) dan langkah 4 (`upd` per ketikan) hanya dikerjakan bila angka/kesan dari HP pemilik menunjukkan masih berat. Bila sudah lancar, keduanya dilewati. Jangan membuat tahap baru tanpa permintaan pemilik.
+
+## v9.52 - label umum, tidak khusus dropship (sesi 12 Nov 2026)
+- Permintaan pemilik: label jangan terkesan khusus dropship. Hanya teks tampilan berubah (daftar lengkap di CHANGELOG v9.52). Fitur sinkron supplier dan nama field data (`sup`, `lnk`) sengaja tetap. Tes fixture lama memakai `tests/helpers/label-v9_52.mjs`.
+- Status: BELUM dijalankan di GitHub Actions pemilik. Pemilik perlu menjalankan `npm test` dan 23 E2E di sana, lalu uji manual di HP (kartu produk, peringatan stok, impor CSV templat baru).
 
 ## v9.51 - penanda halaman Etalase rapi dan presisi (sesi 8 Nov 2026)
 - Permintaan pemilik: gaya penanda halaman sudah disukai, tetapi ukuran/susunan acak (di HP "Berikutnya" jatuh sendirian). Minta dibuat proper dan presisi.

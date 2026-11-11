@@ -2,8 +2,9 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as acorn from '../scripts/vendor/acorn.mjs';
+import {relabelV952} from './helpers/label-v9_52.mjs';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
-const fixture=read('./fixtures/app-core.bagian50a.pre_v9_43.js.txt');
+const fixture=relabelV952(read('./fixtures/app-core.bagian50a.pre_v9_43.js.txt'),1,'fixture panel promosi'); /* v9.52: satu label placeholder pencarian */
 const mod=read('../js/promosi-panel.js');
 const core=read('../js/app-core.js');
 const noComment=s=>s.replace(/\/\*[\s\S]*?\*\//g,' ');

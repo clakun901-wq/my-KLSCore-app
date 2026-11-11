@@ -4,6 +4,14 @@ Aturan: SETIAP sesi yang mengubah paket menambah satu entri di paling atas (terb
 
 Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelumnya diringkas ulang dari `arsip/MIGRATION-STATUS.md` (arsip lengkap); v9.36 sampai v9.39 tidak punya bagian sendiri di arsip, jadi hanya disebut sebagai rangkaian tahap 6.
 
+## v9.52 - Label umum, tidak khusus dropship (12 Nov 2026)
+- Permintaan pemilik: aplikasi terasa khusus dropship karena kata "supplier" ada di banyak label. Penjual yang membuat atau menyimpan barang sendiri tidak punya supplier.
+- Perubahan (HANYA teks tampilan): "Modal supplier" jadi "Modal / HPP per pcs"; "Nama supplier" jadi "Sumber barang (opsional)"; "Link produk supplier" jadi "Link sumber barang (opsional)"; ringkasan "Supplier dan riwayat modal" jadi "Sumber barang dan riwayat modal"; peringatan stok merah jadi "Segera isi ulang stok." dan kuning jadi "Cek stok di Shopee dan sumber barang."; kolom pencarian dan teks bantuan memakai "sumber barang"; header CSV ekspor dan templat impor ikut diganti.
+- Sengaja TIDAK diubah: fitur "Sinkron modal dan stok dari supplier" (nilai tambah bagi yang memakainya), nama field data (`sup`, `lnk`), urutan kolom CSV (impor memakai posisi kolom, bukan nama header), dan semua rumus.
+- Berkas: `index.html`, `js/hitung-etalase.js`, `js/kartu-update.js`, `js/warnings.js`, `js/promosi-panel.js`, `js/tab-impor-sinkron.js`, `js/version.js`.
+- Tes: tes kesetaraan terhadap fixture lama (promosi-panel, warnings, kartu-update, tab-impor-sinkron, hitung-etalase) memakai daftar penggantian tertutup di `tests/helpers/label-v9_52.mjs` dengan jumlah kemunculan yang dicek tepat; `tests/e2e/kartu-update.e2e.py` memakai teks tautan baru.
+- Bukti: lihat `state_tracker.txt` (hasil di sandbox sesi). GitHub Actions pemilik: BELUM dijalankan.
+
 ## v9.51 - Tampilan: penanda halaman Etalase rapi dan presisi (8 Nov 2026)
 - Pemilik: gaya penanda halaman ("Sebelumnya", "Hal. 1 dari 10", "Berikutnya", "Produk 1-50 dari 500") sudah disukai, tetapi ukuran dan susunannya acak: di HP tombol "Berikutnya" jatuh sendirian di baris kedua.
 - Penyebab: `.pgn` memakai `flex-wrap:wrap`; tiga blok berdampingan tidak muat di lebar HP, sehingga pecah tidak beraturan.

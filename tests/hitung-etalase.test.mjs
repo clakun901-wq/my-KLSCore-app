@@ -5,9 +5,10 @@ import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import * as acorn from '../scripts/vendor/acorn.mjs';
 import {legacyPart, appCoreSource} from './helpers/legacy-source.mjs';
+import {relabelV952} from './helpers/label-v9_52.mjs';
 let n=0; const ok=(v,m)=>{assert.ok(v,m);n++};
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
-const fixture=read('./fixtures/app-core.bagian20.pre_v9_42.js.txt');
+const fixture=relabelV952(read('./fixtures/app-core.bagian20.pre_v9_42.js.txt'),4,'fixture hitung-etalase'); /* v9.52: empat label kartu produk */
 const mod=read('../js/hitung-etalase.js');
 const sw=read('../sw.js');
 const core=appCoreSource();

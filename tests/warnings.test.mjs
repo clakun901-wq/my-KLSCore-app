@@ -3,13 +3,14 @@ import fs from 'node:fs';
 import {createWarnings} from '../js/warnings.js';
 import {rp, fmt} from '../js/format.js';
 import {dtx} from '../js/helpers.js';
+import {relabelV952} from './helpers/label-v9_52.mjs';
 /* Differential: peringatan stok/margin v9.30 (pc1, skHi, stk, warns, WN, mchg; dibekukan di fixtures dari js/legacy/20-hitung-etalase.js baris 49-73)
    vs modul baru js/warnings.js. Kode lama dijalankan dengan A/calc/fwd palsu yang SAMA dengan yang disuntikkan ke versi baru.
    Bagian kunci: setelah A DITUGASKAN ULANG (restore backup), versi baru harus memakai ambang batas baru, bukan salinan lama.
    Bagian akhir = SABOTASE: tiap sisipan `var A=getA();` yang dirusak/dihapus, dan versi yang menyimpan salinan A, HARUS terdeteksi tes ini. */
 let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; };
 const eq = (a, b, m) => { assert.deepEqual(a, b, m); n++; };
-const fixture = fs.readFileSync(new URL('./fixtures/warnings.pre_v9_31.js.txt', import.meta.url), 'utf8');
+const fixture = relabelV952(fs.readFileSync(new URL('./fixtures/warnings.pre_v9_31.js.txt', import.meta.url), 'utf8'), 2, 'fixture warnings'); /* v9.52: dua kalimat peringatan stok */
 const modSrc = fs.readFileSync(new URL('../js/warnings.js', import.meta.url), 'utf8');
 
 /* ---- 1. isi modul == teks lama + tepat empat sisipan yang didokumentasikan ---- */
