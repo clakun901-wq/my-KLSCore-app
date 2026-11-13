@@ -1,4 +1,4 @@
-# LANJUT-DI-SINI (v10) - posisi setelah v9.53 (ganti nama aplikasi menjadi Wulfeg; sebelumnya v9.52: label umum bukan khusus dropship; sebelumnya v9.51: perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
+# LANJUT-DI-SINI (v10) - posisi setelah v9.54 (impor CSV ramah pengguna; sebelumnya v9.53: ganti nama aplikasi menjadi Wulfeg; sebelumnya v9.52: label umum bukan khusus dropship; sebelumnya v9.51: perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
 
 Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat perubahan ada di `CHANGELOG.md`, peta modul/fixture/skrip/daftar periksa rilis di `docs/PANDUAN-PERAWATAN.md`. WAJIB memperbarui CHANGELOG dan dokumen ini di setiap sesi yang mengubah paket (dijaga `tests/dokumentasi.test.mjs`). Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
 
@@ -6,6 +6,12 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat pe
 - Tahap 0-8 selesai. Tahap 9A/9B (v9.48) dan 9C (v9.49, aksi tab Hitung/Promosi/Etalase lebih cepat) selesai dan LULUS di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21 E2E lulus, `fail=0`. Paket terbaru: v9.51 (v9.50 dan v9.51 hanya perbaikan tampilan CSS + tes + dokumentasi di atas v9.49; v9.51 juga mengubah satu baris urutan elemen di `js/etalase-halaman.js`; lihat bagian "v9.50" dan "v9.51" di bawah). v9.50 (22 E2E) dan v9.51 (23 E2E) LULUS di GitHub Actions pemilik (npm test + E2E, `fail=0`).
 - Sisa kinerja yang diketahui (kerjakan hanya bila HP pemilik masih berat): buka aplikasi 1.000 produk (~5 dtk pada simulasi x4), `refreshLabels()` per `upd()`, hitungan promo di `money.js` (rumus dibekukan).
 - Tahap berikutnya BELUM ada. Langkah 3 (Hitung berhalaman) dan langkah 4 (`upd` per ketikan) hanya dikerjakan bila angka/kesan dari HP pemilik menunjukkan masih berat. Bila sudah lancar, keduanya dilewati. Jangan membuat tahap baru tanpa permintaan pemilik.
+
+## v9.54 - impor CSV ramah pengguna (sesi 13 Nov 2026)
+- Permintaan pemilik: perbaiki temuan dialog impor ("78 baris bermodal di bawah Rp100", "78 tarif tidak terbaca") agar pengguna baru dan lama tidak kesulitan, ramah pengguna tetapi tetap aman. Akar masalah: impor membaca kolom menurut urutan, sedangkan file yang diimpor adalah file hasil unduhan (38 kolom). Detail dan daftar berkas di CHANGELOG v9.54.
+- Logika baru ada di `js/impor-csv.js` (modul murni); `imp(t)` di `js/tab-impor-sinkron.js` hanya memanggilnya. Fixture beku tetap dipakai kecuali pernyataan `imp` (satu pengecualian sempit di `tests/tab-impor-sinkron.test.mjs`).
+- Status: sandbox sesi saja (`npm test` exit 0, 24 E2E). BELUM dijalankan di GitHub Actions pemilik; HP asli belum diuji. Uji manual pemilik: impor ulang `hasil-wulfeg.csv` ke aplikasi berisi produknya (harus muncul "Semua N produk di file sudah ada", tidak ada yang ganda), lalu impor file berisi beberapa produk baru (dialog "Impor N produk baru?" dengan modal benar).
+- Tidak diubah: rumus, `impGo`, template impor, impor harga/stok Shopee, sinkron supplier. Kunci penyimpanan `kalsara_*` tetap.
 
 ## v9.53 - ganti nama aplikasi Kalsara menjadi Wulfeg (sesi 13 Nov 2026)
 - Permintaan pemilik: nama baru Wulfeg. Hanya teks tampilan, nama berkas unduhan, dan ikon yang berubah (daftar di CHANGELOG v9.53). Kunci penyimpanan dan nama internal `kalsara_*` SENGAJA dipertahankan agar data/cadangan lama tetap terbaca; jangan diganti tanpa migrasi data.

@@ -23,6 +23,13 @@ const moved=factory.body.body.slice(0,-1).map(x=>norm(mod.slice(x.start,x.end)))
 ok(nSub===1,'tepat satu pembacaan PSIG diganti getPSIG()');
 ok(/createTabImporSinkron\(\{[^}]*psig,getPSIG,/.test(mod.slice(0,mod.indexOf('{',mod.indexOf('createTabImporSinkron'))+400)),'dependensi getPSIG dideklarasikan');
 ok(!/\bPSIG\b/.test(norm(mod).replace(/getPSIG/g,'').replace('psig()!==','')),'tidak ada rujukan telanjang ke PSIG di modul');
+// v9.54: SATU pernyataan boleh berbeda dari fixture beku: function imp(t) (impor CSV dikenali dari judul kolom, lihat js/impor-csv.js). Pernyataan lain tetap harus identik.
+const IMP='function imp(t){';
+const iO=original.findIndex(x=>x.startsWith(IMP)),iM=moved.findIndex(x=>x.startsWith(IMP));
+ok(iO>=0&&iM>=0&&original.filter(x=>x.startsWith(IMP)).length===1&&moved.filter(x=>x.startsWith(IMP)).length===1,'tepat satu imp() di fixture dan di modul');
+ok(/bacaImpor\(d,num\)/.test(moved[iM])&&/pisahKembar\(/.test(moved[iM])&&/susunDialogImpor\(/.test(moved[iM])&&moved[iM].includes('Tidak ada baris valid.'),'imp() baru memakai modul impor-csv dan tetap menahan baris tak valid');
+ok(/^import \{bacaImpor,pisahKembar,susunDialogImpor\} from '\.\/impor-csv\.js';$/m.test(mod),'impor-csv.js diimpor secara eksplisit');
+original[iO]=moved[iM];
 ok(original.length===moved.length,'jumlah pernyataan bagian 60 sama dengan isi factory');
 const a=[...original].sort(),b=[...moved].sort();
 for(let i=0;i<a.length;i++){assert.equal(b[i],a[i],'pernyataan berubah/hilang: '+a[i].slice(0,90));n++}

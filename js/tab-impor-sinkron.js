@@ -1,5 +1,6 @@
 import {State} from './state.js';
 import {KStore} from './storage.js';
+import {bacaImpor,pisahKembar,susunDialogImpor} from './impor-csv.js';
 
 // Semua akses ke aplikasi induk disuntikkan agar modul tidak bergantung pada global bersama.
 /* v9.48: PSIG dibaca lewat getPSIG() SETIAP kali. Sebelumnya nilainya tersalin sekali saat pemasangan (selalu string kosong), sehingga
@@ -62,12 +63,17 @@ function impGxK(v){var s=String(v==null?'':v).trim().toUpperCase(),m=s.match(/^(
 function impGxO(v){var k=impGxK(v);if(k)return k.g2?{gc:k.gc,g2:k.g2}:{gc:k.gc};var g=impGx(v);return(g===null||isNaN(g))?{}:{gx:g}}
 function impGxStat(d){var n=0,bad=0,low=0;d.forEach(function(x){if(impGxK(x[10])){n++;return}var g=impGx(x[10]);if(g===null)return;if(isNaN(g)){bad++;return}n++;if(g>0&&g<1&&String(x[10]).indexOf('%')<0)low++});
  var m='';if(n>0)m+=' Tarif Gratis Ongkir XTRA per produk diisi di '+n+' produk.';if(bad>0)m+=' '+bad+' tarif Gratis Ongkir XTRA tidak terbaca (harus angka 0 sampai 100) dan diabaikan.';if(low>0)m+=' Perhatian: '+low+' tarif Gratis Ongkir XTRA di bawah 1 tanpa tanda %. Pastikan itu persen (2 berarti 2%), bukan pecahan (0,02).';return m}
-function imp(t){var d=parseCsv(t);if(parseCsv.bad){toast('Ada tanda kutip (") yang tidak ditutup di file. Periksa file lalu coba lagi');return}if(d.length&&isNaN(Number(String(d[0][1]||'').replace(/\./g,'').replace(',','.'))))d.shift();
- var all=d.length;d=d.filter(function(x){return num(x[1])>0});
- if(!d.length){toast('Tidak ada baris valid. Kolom: nama, modal, Management Partner, packing, target');return}
- var sk=all-d.length,lo=d.filter(function(x){return num(x[1])<100}).length,
- pv=d.slice(0,3).map(function(x){return (String(x[0]||'').trim().slice(0,25)||'(tanpa nama)')+' modal '+rp(num(x[1]))}).join('; ');
- ask('Impor '+d.length+' produk? Contoh: '+pv+'.'+(sk>0?' '+sk+' baris dilewati (modal kosong atau 0).':'')+(lo>0?' Perhatian: '+lo+' baris bermodal di bawah Rp100, periksa format angka.':'')+impGxStat(d),'Ya, impor',function(){impGo(d)})}
+function imp(t){var d=parseCsv(t);if(parseCsv.bad){toast('Ada tanda kutip (") yang tidak ditutup di file. Periksa file lalu coba lagi');return}
+ /* v9.54: kolom dikenali dari judul (urutan bebas, file hasil unduhan juga bisa); SKU yang sudah ada tidak diduplikasi; catatan dalam bahasa awam. */
+ var rd=bacaImpor(d,num);if(rd.salah){ask(rd.salah,'Mengerti',function(){});return}
+ d=rd.rows;var all=d.length;d=d.filter(function(x){return num(x[1])>0});
+ if(!d.length){ask('Tidak ada baris valid. '+rd.kosong,'Mengerti',function(){});return}
+ var sk=all-d.length,kv=pisahKembar(d,State.rows.map(function(r){return r.sku})),bw=kv.baru;
+ if(!bw.length){ask('Semua '+d.length+' produk di file sudah ada di aplikasi (SKU sama), jadi tidak ada yang diimpor. Untuk memperbarui modal atau stok produk yang sudah ada, pakai "Sinkron modal dan stok" di bawah.','Mengerti',function(){});return}
+ var ada=State.rows.filter(function(r){return r.n||r.m||r.d||r.p||r.t}).length,muat=Math.max(0,Math.min(ROW_MAX-ada,bw.length)),
+ lo=bw.filter(function(x){return num(x[1])<100}).length,
+ pv=bw.slice(0,3).map(function(x){return (String(x[0]||'').trim().slice(0,25)||'(tanpa nama)')+' modal '+rp(num(x[1]))}).join('; ');
+ ask(susunDialogImpor({format:rd.format,baru:bw.length,contoh:pv,sudahAda:kv.sudahAda,kembarFile:kv.kembarFile,dilewati:sk,rendah:lo,gx:impGxStat(bw),melebihi:bw.length-muat,max:ROW_MAX,muat:muat,ada:ada}),'Ya, impor',function(){impGo(bw)})}
 function impGo(d){var old=State.rows.filter(function(r){return r.n||r.m||r.d||r.p||r.t}).map(strip);State.rows=[];KDOM.setHTML($('list'), '');old.forEach(function(r){add(r)});
  var k=Math.min(ROW_MAX-State.rows.length,d.length);
  d.slice(0,k).forEach(function(x){add({n:String(x[0]||'').trim().slice(0,120),m:num(x[1]),d:num(x[2]),p:num(x[3]),t:num(x[4]),q:num(x[5]),s:(x[6]===undefined||String(x[6]).trim()==='')?null:num(x[6]),sd:(x[6]===undefined||String(x[6]).trim()==='')?'':today(),sup:String(x[7]||'').trim().slice(0,120),sku:String(x[8]||'').trim().slice(0,60),lnk:String(x[9]||'').trim().slice(0,300),o:impGxO(x[10])})});

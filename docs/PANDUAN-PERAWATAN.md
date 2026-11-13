@@ -42,6 +42,7 @@ Akar perakitan: `index.html` -> `js/main.js` (titik masuk, penyimpanan, Worker) 
 | js/erp.js | Tab ERP: impor CSV/XLSX Shopee, biaya operasional, laba rugi |
 | js/xlsx-reader.js | Pembaca XLSX untuk impor |
 | js/tab-impor-sinkron.js | Perpindahan tab, impor, sinkron |
+| js/impor-csv.js | Pembaca impor CSV (modul murni): kolom dikenali dari judul, pisah SKU kembar, teks dialog impor (v9.54) |
 | js/penyimpanan-cadangan.js | Status penyimpanan, cadangan, pengingat cadangan |
 | js/pengaturan.js | Setelan toko, catatan tarif, tema, bantuan, onboarding |
 | js/backup.js, js/backup-format.js | Orkestrasi cadangan dan pembaca teks cadangan |
@@ -95,9 +96,9 @@ Sumber kebenaran hasil hitung adalah `source/Kalsara-v5_82.html` (dipakai golden
 
 ## 5. Tes
 - `npm test` (Node 22): unit, diferensial, golden-master, audit arsitektur. Cepat (menit).
-- E2E Chromium nyata: GitHub -> Actions -> Uji E2E Browser -> Run workflow (23 skrip di `tests/e2e/`). Lokal: `python3 tests/e2e/<nama>.e2e.py`.
+- E2E Chromium nyata: GitHub -> Actions -> Uji E2E Browser -> Run workflow (24 skrip di `tests/e2e/`). Lokal: `python3 tests/e2e/<nama>.e2e.py`.
 - Kinerja: `python3 scripts/ukur-aksi.py . <port> 1000 100 4` (CPU x4 = perkiraan HP menengah, BUKAN HP asli).
-- Daftar periksa rilis: (1) ubah kode minimal; (2) `npm test`; (3) 23 E2E; (4) naikkan versi di `js/version.js` + `package.json`; (5) perbarui dokumen (aturan emas no. 5); (6) ZIP; (7) pemilik menjalankan Actions; (8) catat hasil Actions di CHANGELOG/LANJUT.
+- Daftar periksa rilis: (1) ubah kode minimal; (2) `npm test`; (3) 24 E2E; (4) naikkan versi di `js/version.js` + `package.json`; (5) perbarui dokumen (aturan emas no. 5); (6) ZIP; (7) pemilik menjalankan Actions; (8) catat hasil Actions di CHANGELOG/LANJUT.
 
 ## 6. Hal yang tetap diminta pemilik (jangan lupa)
 - Uji manual Bagian 7 pada SALINAN data (tutup cepat, restore lalu muat ulang, >1.000 produk, offline, profil kosong).
