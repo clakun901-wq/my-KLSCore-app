@@ -42,6 +42,8 @@ Akar perakitan: `index.html` -> `js/main.js` (titik masuk, penyimpanan, Worker) 
 | js/erp.js | Tab ERP: impor CSV/XLSX Shopee, biaya operasional, laba rugi |
 | js/xlsx-reader.js | Pembaca XLSX untuk impor |
 | js/tab-impor-sinkron.js | Perpindahan tab, impor, sinkron |
+| js/impor-shopee.js | Pembaca file Mass Update Shopee (modul murni): satu variasi = satu produk, modal kosong, pisah SKU/nama kembar, teks dialog (v9.55) |
+| js/kartu-sambutan.js | Kartu sambutan aplikasi kosong di tab Hitung; dipasang dari js/main.js (v9.55) |
 | js/impor-csv.js | Pembaca impor CSV (modul murni): kolom dikenali dari judul, pisah SKU kembar, teks dialog impor (v9.54) |
 | js/penyimpanan-cadangan.js | Status penyimpanan, cadangan, pengingat cadangan |
 | js/pengaturan.js | Setelan toko, catatan tarif, tema, bantuan, onboarding |
@@ -75,6 +77,7 @@ Bila sebuah modul yang dijaga fixture HARUS diubah (mis. perbaikan kinerja):
 |---|---|
 | core.pre_v9_20, tariff.pre_v9_21, pricing.pre_v9_22 | format, tarif, pipa harga |
 | calc-cache.pre_v9_24, voucher-rules.pre_v9_25, penjualan.pre_v9_26, voucher-panel.pre_v9_27 | cache kalkulator, voucher, penjualan, panel voucher |
+| shopee-informasi-penjualan.xlsx, shopee-informasi-dasar.xlsx | berkas Mass Update Seller Centre yang SUDAH DIANONIMKAN (v9.55; ID toko, SKU, dan nama produk asli diganti data contoh, struktur sama): bukan fixture beku kode, melainkan data uji untuk impor-shopee dan E2E sambutan; jangan diubah |
 | ui.pre_v9_28, helpers.pre_v9_29, tarif-ui.pre_v9_30, warnings.pre_v9_31, hasil-view.pre_v9_32, kartu-update.pre_v9_33, etalase-view.pre_v9_35 | modul tahap 6 |
 | app-core.bagian80.pre_v9_40, app-core.bagian60.pre_v9_41, app-core.bagian20.pre_v9_42 | cadangan/tema, tab/impor, hitung/etalase |
 | app-core.bagian50a.pre_v9_43, app-core.bagian50-data.pre_v9_44 | panel promosi, data promosi |
@@ -96,9 +99,9 @@ Sumber kebenaran hasil hitung adalah `source/Kalsara-v5_82.html` (dipakai golden
 
 ## 5. Tes
 - `npm test` (Node 22): unit, diferensial, golden-master, audit arsitektur. Cepat (menit).
-- E2E Chromium nyata: GitHub -> Actions -> Uji E2E Browser -> Run workflow (24 skrip di `tests/e2e/`). Lokal: `python3 tests/e2e/<nama>.e2e.py`.
+- E2E Chromium nyata: GitHub -> Actions -> Uji E2E Browser -> Run workflow (25 skrip di `tests/e2e/`). Lokal: `python3 tests/e2e/<nama>.e2e.py`.
 - Kinerja: `python3 scripts/ukur-aksi.py . <port> 1000 100 4` (CPU x4 = perkiraan HP menengah, BUKAN HP asli).
-- Daftar periksa rilis: (1) ubah kode minimal; (2) `npm test`; (3) 24 E2E; (4) naikkan versi di `js/version.js` + `package.json`; (5) perbarui dokumen (aturan emas no. 5); (6) ZIP; (7) pemilik menjalankan Actions; (8) catat hasil Actions di CHANGELOG/LANJUT.
+- Daftar periksa rilis: (1) ubah kode minimal; (2) `npm test`; (3) 25 E2E; (4) naikkan versi di `js/version.js` + `package.json`; (5) perbarui dokumen (aturan emas no. 5); (6) ZIP; (7) pemilik menjalankan Actions; (8) catat hasil Actions di CHANGELOG/LANJUT.
 
 ## 6. Hal yang tetap diminta pemilik (jangan lupa)
 - Uji manual Bagian 7 pada SALINAN data (tutup cepat, restore lalu muat ulang, >1.000 produk, offline, profil kosong).

@@ -15,7 +15,7 @@ def prod(i,nama,sku,m): return dict(id=f'p{i}',n=nama,m=m,d=2200,p=720,t=6000,q=
 try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH') or None)
-  seed="localStorage.setItem('kalsara_v3',%s)"%json.dumps(json.dumps(dict(A={},rows=[prod(0,'Cangkir Pemanas','OMHZ5WSV',39400),prod(1,'Kain Lap Microfiber','7ROR2FBL',2500)],pr=[],sl=[],ts=1)))
+  seed="localStorage.setItem('kalsara_v3',%s)"%json.dumps(json.dumps(dict(A={},rows=[prod(0,'Cangkir Pemanas','SKU-A1',39400),prod(1,'Kain Lap Microfiber','SKU-B2',2500)],pr=[],sl=[],ts=1)))
   ctx=b.new_context(viewport={'width':412,'height':900},service_workers='block');ctx.add_init_script(seed)
   pg=ctx.new_page();errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto(f'http://127.0.0.1:{PORT}/index.html');pg.wait_for_selector('#sy',state='attached',timeout=20000);pg.wait_for_timeout(1000)
@@ -29,14 +29,14 @@ try:
    return pg.locator('#dlgm').inner_text()
   try:
    # 1. File hasil unduhan yang SEMUA produknya sudah ada: tidak boleh ada yang masuk, pesan jelas
-   t=impor(HEAD+'\n'+baris('Cangkir Pemanas','OMHZ5WSV',39400)+'\n'+baris('Kain Lap Microfiber','7ROR2FBL',2500)+'\n')
+   t=impor(HEAD+'\n'+baris('Cangkir Pemanas','SKU-A1',39400)+'\n'+baris('Kain Lap Microfiber','SKU-B2',2500)+'\n')
    check('Semua 2 produk di file sudah ada' in t,'semua produk sudah ada dijelaskan: '+t)
    check('Rp 1;' not in t and 'tidak terbaca' not in t and 'periksa format angka' not in t,'pesan membingungkan lama hilang')
    check(pg.locator('#dy').inner_text()=='Mengerti','tombol dialog "Mengerti" (bukan impor)')
    pg.click('#dy');pg.wait_for_timeout(300)
    check(len(saved()['rows'])==2,'tidak ada produk ganda')
    # 2. Dua produk baru + satu yang sudah ada: modal terbaca benar, dialog menjelaskan
-   t=impor(HEAD+'\n'+baris('Cangkir Pemanas','OMHZ5WSV',39400)+'\n'+baris('Barang Baru Satu','NEW0001',15000)+'\n'+baris('Barang Baru Dua','NEW0002',27500)+'\n')
+   t=impor(HEAD+'\n'+baris('Cangkir Pemanas','SKU-A1',39400)+'\n'+baris('Barang Baru Satu','NEW0001',15000)+'\n'+baris('Barang Baru Dua','NEW0002',27500)+'\n')
    check(t.startswith('Impor 2 produk baru?'),'dialog menyebut 2 produk baru: '+t)
    check('modal Rp 15.000' in t,'modal terbaca dari kolom modal (bukan Isi paket): '+t)
    check('1 produk sudah ada' in t and 'hasil unduhan aplikasi' in t,'catatan SKU sudah ada dan file hasil: '+t)
@@ -47,7 +47,7 @@ try:
    check(rs['NEW0001']['m']==15000 and rs['NEW0002']['m']==27500,'modal tersimpan benar')
    check(rs['NEW0001']['d']==2200 and rs['NEW0001']['p']==720 and rs['NEW0001']['t']==6000,'Management Partner, packing, target tersimpan')
    check(rs['NEW0001']['s']==35 and rs['NEW0001']['q']==1,'stok dan isi paket tersimpan')
-   check(rs['OMHZ5WSV']['m']==39400,'produk lama tidak berubah')
+   check(rs['SKU-A1']['m']==39400,'produk lama tidak berubah')
    # 3. Templat resmi masih bekerja
    t=impor('Nama produk;Modal / HPP per pcs;Biaya Management Partner;Biaya packing;Target untung;Isi paket (opsional);Stok Shopee (opsional);Sumber barang (opsional);SKU (opsional);Link sumber barang (opsional);Tarif Gratis Ongkir XTRA % (opsional)\nContoh produk A;25000;1000;500;5000;1;20;Toko ABC;KAOS-01;https://c.com;2\n')
    check(t.startswith('Impor 1 produk baru?') and 'Tarif Gratis Ongkir XTRA per produk diisi di 1 produk' in t,'templat resmi dibaca penuh: '+t)

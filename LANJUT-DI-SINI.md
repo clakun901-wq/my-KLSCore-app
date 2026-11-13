@@ -1,4 +1,4 @@
-# LANJUT-DI-SINI (v10) - posisi setelah v9.54 (impor CSV ramah pengguna; sebelumnya v9.53: ganti nama aplikasi menjadi Wulfeg; sebelumnya v9.52: label umum bukan khusus dropship; sebelumnya v9.51: perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
+# LANJUT-DI-SINI (v10) - posisi setelah v9.55 (kartu sambutan dan impor Shopee Mass Update; sebelumnya v9.54: impor CSV ramah pengguna; sebelumnya v9.53: ganti nama aplikasi menjadi Wulfeg; sebelumnya v9.52: label umum bukan khusus dropship; sebelumnya v9.51: perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
 
 Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat perubahan ada di `CHANGELOG.md`, peta modul/fixture/skrip/daftar periksa rilis di `docs/PANDUAN-PERAWATAN.md`. WAJIB memperbarui CHANGELOG dan dokumen ini di setiap sesi yang mengubah paket (dijaga `tests/dokumentasi.test.mjs`). Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
 
@@ -6,6 +6,12 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat pe
 - Tahap 0-8 selesai. Tahap 9A/9B (v9.48) dan 9C (v9.49, aksi tab Hitung/Promosi/Etalase lebih cepat) selesai dan LULUS di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21 E2E lulus, `fail=0`. Paket terbaru: v9.51 (v9.50 dan v9.51 hanya perbaikan tampilan CSS + tes + dokumentasi di atas v9.49; v9.51 juga mengubah satu baris urutan elemen di `js/etalase-halaman.js`; lihat bagian "v9.50" dan "v9.51" di bawah). v9.50 (22 E2E) dan v9.51 (23 E2E) LULUS di GitHub Actions pemilik (npm test + E2E, `fail=0`).
 - Sisa kinerja yang diketahui (kerjakan hanya bila HP pemilik masih berat): buka aplikasi 1.000 produk (~5 dtk pada simulasi x4), `refreshLabels()` per `upd()`, hitungan promo di `money.js` (rumus dibekukan).
 - Tahap berikutnya BELUM ada. Langkah 3 (Hitung berhalaman) dan langkah 4 (`upd` per ketikan) hanya dikerjakan bila angka/kesan dari HP pemilik menunjukkan masih berat. Bila sudah lancar, keduanya dilewati. Jangan membuat tahap baru tanpa permintaan pemilik.
+
+## v9.55 - kartu sambutan dan tambah produk dari file Shopee Mass Update (sesi 13 Nov 2026)
+- Permintaan pemilik: (A) kartu sambutan untuk aplikasi kosong; (B) tambah produk dari file Mass Update Seller Centre (Informasi Penjualan dan Informasi Dasar). Paket v9.55 versi pertama (hanya kartu) hilang, jadi dibangun ulang dari v9.54.
+- Keputusan (saran asisten, diterima pemilik dengan melanjutkan): satu variasi = satu produk; modal kosong (0) saat impor; harga masuk ke Harga listing awal, stok ke Stok Shopee; duplikat lewat SKU, atau nama persis sama bila SKU kosong. `app-core.js` tidak disentuh.
+- Status: sandbox sesi saja (`npm test` exit 0, 25 E2E). BELUM dijalankan di GitHub Actions pemilik; HP asli belum diuji.
+- Langkah berikut yang masuk akal: kartu "Total produk" menghitung dua baris kosong bawaan (perilaku lama, tidak diubah); penanda khusus "modal belum diisi" belum ada; impor ulang untuk MEMPERBARUI harga/stok produk yang sudah ada tetap lewat fitur "Impor harga dan stok Shopee (via SKU)".
 
 ## v9.54 - impor CSV ramah pengguna (sesi 13 Nov 2026)
 - Permintaan pemilik: perbaiki temuan dialog impor ("78 baris bermodal di bawah Rp100", "78 tarif tidak terbaca") agar pengguna baru dan lama tidak kesulitan, ramah pengguna tetapi tetap aman. Akar masalah: impor membaca kolom menurut urutan, sedangkan file yang diimpor adalah file hasil unduhan (38 kolom). Detail dan daftar berkas di CHANGELOG v9.54.

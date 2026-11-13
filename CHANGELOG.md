@@ -4,6 +4,14 @@ Aturan: SETIAP sesi yang mengubah paket menambah satu entri di paling atas (terb
 
 Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelumnya diringkas ulang dari `arsip/MIGRATION-STATUS.md` (arsip lengkap); v9.36 sampai v9.39 tidak punya bagian sendiri di arsip, jadi hanya disebut sebagai rangkaian tahap 6.
 
+## v9.55 - Kartu sambutan dan tambah produk dari file Shopee (13 Nov 2026)
+- Permintaan pemilik: (A) aplikasi kosong menampilkan kartu "Masukkan produk Anda" dengan tombol langsung ke template dan impor; (B) produk bisa ditambahkan dari file Mass Update Seller Centre supaya nama dan SKU tidak diketik ulang. Catatan jujur: paket v9.55 versi pertama (hanya kartu) hilang dari sandbox dan dari pemilik, jadi kartu dibangun ulang dari v9.54 bersama fitur ini.
+- Kartu sambutan: tampil di tab Hitung selama belum ada produk berisi (aplikasi baru membuat dua baris kosong; itu tidak dihitung). Tombol: unduh template impor, pilih file CSV (dialog impor v9.54 tetap muncul), ambil dari file Shopee, atau isi satu produk (fokus ke kolom nama). Hilang otomatis saat ada data; muncul lagi bila semua produk dikosongkan. Kartu "Mulai cepat: 3 langkah" tipe toko tetap di atasnya.
+- Tambah produk dari Shopee: file Informasi Penjualan (paling lengkap: nama, variasi, SKU, harga, stok) atau Informasi Dasar (hanya nama dan SKU). Satu variasi menjadi satu produk bernama "Nama produk - Nama variasi" (dipotong aman di 120 huruf, nama variasi dipertahankan). Harga masuk ke Harga listing awal, stok ke Stok Shopee. Modal TIDAK ada di file Shopee, jadi 0 dan diisi sendiri. Duplikat dicegah lewat SKU; bila SKU kosong lewat nama yang persis sama. Produk lama tidak diubah.
+- Berkas: `js/impor-shopee.js` (BARU, modul murni), `js/kartu-sambutan.js` (BARU), `js/xlsx-reader.js` (fungsi spRun/spFile), `js/main.js` (satu baris pasang kartu), `index.html` (kartu #sm, tombol #spb), `sw.js`, `js/version.js`, `package.json`, dokumen. `js/app-core.js` dan rumus TIDAK diubah.
+- Tes: `tests/impor-shopee.test.mjs` (BARU, memakai baris contoh bergaya file Mass Update), `tests/e2e/sambutan.e2e.py` (E2E ke-25).
+- Belum terbukti: GitHub Actions pemilik BELUM dijalankan; HP asli belum diuji.
+
 ## v9.54 - Impor CSV ramah pengguna (13 Nov 2026)
 - Permintaan pemilik: aplikasi akan dipublikasikan; pengguna baru maupun lama tidak boleh kesulitan saat impor. Temuan: mengimpor file hasil unduhan aplikasi (`hasil-wulfeg.csv`, 38 kolom, 78 produk) menampilkan "78 baris bermodal di bawah Rp100" (contoh modal Rp 1) dan "78 tarif Gratis Ongkir XTRA tidak terbaca".
 - Penyebab (terbukti dari file pemilik): impor membaca kolom menurut URUTAN templat (11 kolom). Di file hasil, kolom ke-2 adalah "Isi paket" (1) sehingga terbaca sebagai modal Rp 1, dan kolom ke-11 adalah "Total modal" (mis. 42.320) sehingga terbaca sebagai tarif di luar 0-100. Bila pemilik menekan "Ya, impor", 78 produk akan GANDA dengan modal Rp 1.
@@ -11,7 +19,7 @@ Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelum
 - Berkas: `js/impor-csv.js` (BARU, modul murni), `js/tab-impor-sinkron.js` (hanya `imp(t)` dan satu baris impor modul), `css/app.css` (`.dbx p`: baris baru + gulir), `index.html` (teks petunjuk), `sw.js` (daftar cache), `js/version.js`, `package.json`, `.github/workflows/e2e.yml`, dokumen.
 - Tidak berubah: rumus, hasil hitung, `impGo`, `impGxStat`, `parseCsv`, template impor, impor harga/stok Shopee (via SKU) dan sinkron supplier.
 - Tes: `tests/impor-csv.test.mjs` (BARU, 26 pernyataan, termasuk baris file pemilik dan sabotase bug lama), `tests/e2e/impor-csv.e2e.py` (E2E ke-24, 20 pernyataan di Chromium nyata), `tests/tab-impor-sinkron.test.mjs` (SATU pengecualian sempit terhadap fixture beku: pernyataan `function imp(t)`; pernyataan lain tetap identik).
-- Bukti: di SANDBOX sesi (bukan GitHub Actions): lihat `state_tracker.txt`. Dicoba juga dengan file asli pemilik (`hasil-kalsara (4).csv`, 78 produk) pada aplikasi berisi 60 produk yang sama: dialog "Impor 18 produk baru?" dengan catatan 60 produk sudah ada. GitHub Actions pemilik: BELUM dijalankan. HP asli belum dilihat.
+- Bukti: di SANDBOX sesi (bukan GitHub Actions): lihat `state_tracker.txt`. Dicoba juga dengan file asli pemilik (`hasil-kalsara.csv`, 78 produk) pada aplikasi berisi 60 produk yang sama: dialog "Impor 18 produk baru?" dengan catatan 60 produk sudah ada. GitHub Actions pemilik: BELUM dijalankan. HP asli belum dilihat.
 
 ## v9.53 - Ganti nama aplikasi dari Kalsara menjadi Wulfeg (13 Nov 2026)
 - Permintaan pemilik: nama baru "Wulfeg" menggantikan "Kalsara" (nama dipilih pemilik; ketersediaan nama belum dicek di Play Store, domain, dan DJKI).

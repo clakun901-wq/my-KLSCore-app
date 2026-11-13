@@ -9,14 +9,14 @@ const csv=t=>t.trim().split(/\r?\n/).map(l=>l.split(';'));
 
 /* 1. File hasil unduhan aplikasi (judul asli v9.53, baris asli dipotong) */
 const HASIL_HEAD='Produk;Isi paket;Stok Shopee;Tanggal cek stok;Sumber barang;SKU;Link sumber barang;Modal / HPP per pcs;Biaya Management Partner;Biaya packing;Total modal;Target untung;Harga listing awal;Harga diskon coret;Voucher toko;Harga setelah voucher;Tarif administrasi (%);Tarif Gratis Ongkir XTRA (%);Tarif Promo XTRA (%);Tarif Video XTRA (%);Tarif Live XTRA (%);Biaya administrasi;Biaya Gratis Ongkir XTRA;Biaya Promo XTRA;Biaya Video XTRA;Biaya Live XTRA;Biaya pembayaran;Biaya layanan pesanan;Total Biaya Shopee;Premi;PPh 22;Biaya iklan;Cadangan retur;Ongkir ditanggung;Saldo masuk;Untung bersih;Margin (%);Harga impas (diskon coret)';
-const HASIL_ROW='One Two Cups Cangkir Pemanas Air Elektrik Mobil Travel Mug 450ml - NJ88 - Silver;1;35;2026-10-31;;OMHZ5WSV;https://www.jakmall.com/x#1;39400;2200;720;42320;6000;77900;58425;2000;56425;6,5;1,75;4,5;0;0;3668;987;2539;0;0;0;0;7194;282;282;0;0;0;48667;6347;11,2;51066';
-const HASIL_ROW2='TaffHOME Kain Lap Microfiber;1;50;2026-10-31;;7ROR2FBL;https://www.jakmall.com/y#2;2500;2200;720;5420;0;8900;6675;0;6675;6,5;1,75;4,5;0;0;434;117;300;0;0;0;0;851;33;33;0;0;0;5758;338;5,1;6283';
+const HASIL_ROW='Cangkir Pemanas Air Elektrik Mobil Travel Mug 450ml - Silver;1;35;2026-10-31;;SKU-A1;https://contoh.com/x#1;39400;2200;720;42320;6000;77900;58425;2000;56425;6,5;1,75;4,5;0;0;3668;987;2539;0;0;0;0;7194;282;282;0;0;0;48667;6347;11,2;51066';
+const HASIL_ROW2='Kain Lap Microfiber;1;50;2026-10-31;;SKU-B2;https://contoh.com/y#2;2500;2200;720;5420;0;8900;6675;0;6675;6,5;1,75;4,5;0;0;434;117;300;0;0;0;0;851;33;33;0;0;0;5758;338;5,1;6283';
 const rh=bacaImpor(csv(HASIL_HEAD+'\n'+HASIL_ROW+'\n'+HASIL_ROW2),num);
 ok(rh.format==='hasil'&&!rh.salah,'file hasil unduhan dikenali sebagai hasil');
 eq(rh.rows.length,2,'dua baris data (judul dibuang)');
 ok(num(rh.rows[0][1])===39400,'modal diambil dari kolom Modal / HPP per pcs, bukan Isi paket (bug lama: Rp 1)');
 eq([rh.rows[0][2],rh.rows[0][3],rh.rows[0][4]],['2200','720','6000'],'Management Partner, packing, target');
-eq([rh.rows[0][5],rh.rows[0][6],rh.rows[0][8]],['1','35','OMHZ5WSV'],'isi paket, stok, SKU');
+eq([rh.rows[0][5],rh.rows[0][6],rh.rows[0][8]],['1','35','SKU-A1'],'isi paket, stok, SKU');
 eq(rh.rows[0][10],'','tarif dari file hasil TIDAK diimpor (sudah tarif efektif; menghindari keringanan dihitung dua kali)');
 ok(rh.rows.every(r=>r.length===11),'setiap baris dinormalkan ke 11 kolom templat');
 

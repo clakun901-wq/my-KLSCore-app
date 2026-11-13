@@ -1,4 +1,5 @@
 import { parseIDR } from './money.js';
+import { bacaShopee, pisahBaru, susunDialogShopee } from './impor-shopee.js';
 
 export function createXlsxReader({ $, today, toast, ask, upd, srt, add, strip, getRows, replaceRows, KDOM, num, parseCsv, KStore }) {
 /*5.62: impor harga dan stok dari xlsx/CSV, dicocokkan lewat SKU*/
@@ -64,6 +65,24 @@ function hxFile(f){var nm=(f.name||'').toLowerCase(),fr=new FileReader();fr.oner
   fr.readAsArrayBuffer(f)}
  else if(/\.xls$/.test(nm)){toast('Format .xls lama tidak didukung. Simpan ulang sebagai .xlsx atau CSV')}
  else{fr.onload=function(){var t=String(fr.result),d=parseCsv(t);if(parseCsv.bad||/^\s*</.test(t)||d.length<2){toast('Isi file tidak terbaca. Pastikan formatnya CSV');return}hxRun(d)};fr.readAsText(f)}}
+/*9.55: tambah produk BARU dari file Mass Update Shopee (Informasi Penjualan / Informasi Dasar). Satu variasi = satu produk, modal kosong.*/
+function spRun(d){var rd=bacaShopee(d);if(rd.salah){ask(rd.salah,'Mengerti',function(){});return}
+ var old=getRows().map(strip),kv=pisahBaru(rd.items,old),bw=kv.baru;
+ if(!bw.length){ask('Semua '+rd.items.length+' produk di file sudah ada di aplikasi (SKU atau nama sama), jadi tidak ada yang diimpor.','Mengerti',function(){});return}
+ var ada=old.filter(function(r){return r.n||r.m||r.d||r.p||r.t}).length,mx=1000/*sama dengan ROW_MAX di hitung-etalase.js*/,muat=Math.max(0,Math.min(mx-ada,bw.length)),
+ pv=bw.slice(0,3).map(function(i){return i.n.slice(0,30)}).join('; ');
+ ask(susunDialogShopee({baru:bw.length,contoh:pv,punyaHarga:rd.punyaHarga,variasi:rd.items.length-rd.produk,sudahAda:kv.sudahAda,kembarFile:kv.kembarFile,tanpaSku:bw.filter(function(i){return !i.sku}).length,melebihi:bw.length-muat,max:mx,muat:muat}),'Ya, impor',function(){
+  var keep=old.filter(function(r){return r.n||r.m||r.d||r.p||r.t});replaceRows([]);KDOM.setHTML($('list'),'');keep.forEach(function(r){add(r)});
+  bw.slice(0,muat).forEach(function(i){var o={n:i.n,m:0,d:0,p:0,t:0,q:0,sku:i.sku,sup:'',lnk:'',s:null,sd:''};if(i.ha>0)o.ha=i.ha;if(i.s!=null){o.s=i.s;o.sd=today()}add(o)});
+  if(!getRows().length)add();upd(true);srt();toast(muat+' produk dari Shopee ditambahkan. Isi modalnya di tab Hitung')})}
+function spFile(f){var nm=(f.name||'').toLowerCase(),fr=new FileReader();fr.onerror=function(){toast('File tidak bisa dibaca')};
+ if(/\.xlsx$/.test(nm)){if(!window.DecompressionStream){toast('Browser belum bisa membaca Excel. Simpan sebagai CSV lalu pilih lagi');return}
+  fr.onload=function(){try{hxXlsx(fr.result).then(spRun,function(){toast('File Excel tidak terbaca. Pakai file .xlsx asli dari Seller Centre')})}catch(e){toast('File Excel tidak terbaca. Pakai file .xlsx asli dari Seller Centre')}};fr.readAsArrayBuffer(f)}
+ else if(/\.xls$/.test(nm)){toast('Format .xls lama tidak didukung. Pakai file .xlsx asli dari Seller Centre')}
+ else{fr.onload=function(){var t=String(fr.result),d=parseCsv(t);if(parseCsv.bad||/^\s*</.test(t)||d.length<2){toast('Isi file tidak terbaca. Pakai file .xlsx asli dari Seller Centre');return}spRun(d)};fr.readAsText(f)}}
+$('spb').onclick=function(){$('spf').click()};
+$('spf').onchange=function(){var f=this.files[0];this.value='';if(f)spFile(f)};
+document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[data-sp]'))$('spf').click()});
 $('hxb').onclick=function(){$('hxf').click()};
 $('hxf').onchange=function(){var f=this.files[0];this.value='';if(f)hxFile(f)};
 document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[data-hx]'))$('hxf').click()});

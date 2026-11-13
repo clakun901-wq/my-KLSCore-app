@@ -9,6 +9,7 @@ import '../components/product-card.js';
 import {State} from './state.js';
 import {installEtalaseHalaman,ukuranDariAlamat} from './etalase-halaman.js';
 import {createKinerja,kinerjaAktif} from './kinerja.js';
+import {pasangKartuSambutan} from './kartu-sambutan.js';
 
 try { await initStorage(); }
 catch (e) {
@@ -111,6 +112,7 @@ globalThis.KalsaraWorker={compute};
 globalThis.KalsaraKinerja=createKinerja({enabled:kinerjaAktif(location.search,k=>KStore.getItem(k)),getRowsCount:()=>State.rows.length});
 globalThis.KEtalaseHalaman=installEtalaseHalaman({size:ukuranDariAlamat(location.search),getKey:()=>[State.TS,State.rows,State.A,State.PRM]});
 await import('./app-core.js');
+pasangKartuSambutan({doc:document,getRows:()=>State.rows});
 
 // Optional permanent backup through the browser's File System Access API.
 // The original backup/restore UI remains intact; these helpers are also exposed for integration.
