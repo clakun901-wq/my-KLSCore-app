@@ -25,7 +25,8 @@ function advance(ms) {
 const TODAY = '2026-11-04';
 
 /* ---- sumber legacy lama, dijalankan dengan variabel bebas dari E ---- */
-const fixture = fs.readFileSync(new URL('./fixtures/penjualan.pre_v9_26.js.txt', import.meta.url), 'utf8');
+import {renameWulfeg} from './helpers/nama-wulfeg.mjs';
+const fixture = renameWulfeg(fs.readFileSync(new URL('./fixtures/penjualan.pre_v9_26.js.txt', import.meta.url), 'utf8'), 1, 'fixture penjualan'); /* nama berkas unduhan: kalsara -> wulfeg */
 const names = ['$', 'esc', 'today', 'rp', 'num', 'toast', 'ask', 'uid', 'KDOM', 'calc', 'fwdL', 'vbest', 'actL', 'ptp', 'CFG', 'pst', 'VoucherRules', 'CalcCache', 'setStock', 'persist', 'salesRows', 'copySales', 'showCpBox', 'dl', 'csv', 'SALES_MAX'];
 const makeOld = new Function('E', "'use strict';var {" + names.join(',') + '}=E;var PRM=[],rows=[];' + fixture +
   '\nreturn {rpt:rpt,sold:sold,curP:curP,VUSE:VUSE,rlAll:rlAll,ymd:ymd,getSales:function(){return SALES},setSales:function(v){SALES=v},getPRM:function(){return PRM},setPRM:function(v){PRM=v},getRows:function(){return rows},setRows:function(v){rows=v}};');

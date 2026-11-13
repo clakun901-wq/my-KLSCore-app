@@ -35,7 +35,7 @@ function ensureWorker() {
     if (data.ok) p.resolve(data.result);
     else p.reject(new Error(data.error || 'Operasi Worker gagal'));
   };
-  instance.onerror = event => resetWorker(new Error(event.message || 'Worker Kalsara gagal dijalankan'));
+  instance.onerror = event => resetWorker(new Error(event.message || 'Worker Wulfeg gagal dijalankan'));
   worker = instance;
   return instance;
 }
@@ -52,7 +52,7 @@ export function compute(type, payload, transfer = []) {
       pending.delete(id);
       p.reject(new Error('Operasi Worker melewati batas waktu 60 detik: ' + type));
       // A timed-out synchronous task can block this worker; replace it for future work.
-      resetWorker(new Error('Worker Kalsara direset setelah batas waktu'));
+      resetWorker(new Error('Worker Wulfeg direset setelah batas waktu'));
     }, REQUEST_TIMEOUT_MS);
     pending.set(id, {resolve, reject, timer});
     try { instance.postMessage({id, type, payload}, transfer); }

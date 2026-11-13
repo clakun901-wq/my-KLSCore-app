@@ -133,7 +133,7 @@ export async function initStorage(options = {}) {
   try { await navigator.storage.persist(); } catch {}
   const marker = await readMarker();
   const lock = await acquireWriterLock();
-  if (!lock.held) throw coded('another-tab','Kalsara sedang terbuka di tab atau jendela lain. Tutup yang lain, lalu muat ulang halaman ini agar data tidak bentrok.');
+  if (!lock.held) throw coded('another-tab','Wulfeg sedang terbuka di tab atau jendela lain. Tutup yang lain, lalu muat ulang halaman ini agar data tidak bentrok.');
 
   let opened = null, openError = null;
   try {
@@ -163,7 +163,7 @@ export async function initStorage(options = {}) {
     lock.release();
     // Baca ulang: impor pertama menulis penanda sebelum gagal; jangan jatuh ke jurnal bila penanda sudah ada.
     const current = await readMarker();
-    if (marker.authoritative === 'sqlite' || current.authoritative === 'sqlite') throw coded('sqlite-required','Database SQLite Kalsara tidak dapat dibuka (' + openError.message + '). Data terbaru berada di SQLite, jadi aplikasi tidak memakai jurnal lama yang sudah usang. Pastikan file vendor/sqlite-wasm tersedia, lalu muat ulang.', openError);
+    if (marker.authoritative === 'sqlite' || current.authoritative === 'sqlite') throw coded('sqlite-required','Database SQLite Wulfeg tidak dapat dibuka (' + openError.message + '). Data terbaru berada di SQLite, jadi aplikasi tidak memakai jurnal lama yang sudah usang. Pastikan file vendor/sqlite-wasm tersedia, lalu muat ulang.', openError);
     console.warn('SQLite tidak tersedia; memakai jurnal OPFS.', openError);
     mode = 'journal';
     await replayJournal();
@@ -187,7 +187,7 @@ function enqueueTask(key, run, rollback) {
     if (writeVersions.get(key) === version) {
       try { await rollback(); } catch (e) { console.error('Gagal memulihkan keadaan setelah penulisan gagal.',e); }
     }
-    console.error('Gagal menyimpan perubahan Kalsara.',error);
+    console.error('Gagal menyimpan perubahan Wulfeg.',error);
     dispatchStorageError(error.message);
   }).finally(() => { pendingWrites--; });
 }
@@ -329,7 +329,7 @@ export const KStore = {
 export async function backupToFile() {
   if (!window.showSaveFilePicker) throw new Error('File System Access API tidak tersedia di browser ini.');
   const data=await KStore.exportSnapshot();
-  const handle=await window.showSaveFilePicker({suggestedName:'kalsara-backup.json',types:[{description:'Cadangan Kalsara',accept:{'application/json':['.json']}}]});
+  const handle=await window.showSaveFilePicker({suggestedName:'wulfeg-backup.json',types:[{description:'Cadangan Wulfeg',accept:{'application/json':['.json']}}]});
   const writer=await handle.createWritable();
   try { await writer.write(data); await writer.close(); } catch(e) { try { await writer.abort(); } catch {} throw e; }
 }

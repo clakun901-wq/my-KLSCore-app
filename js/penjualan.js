@@ -56,7 +56,7 @@ function rpt(){var m=RM=='m',k=m?RO:RD,td=today(),S=st.SALES.filter(function(s){
 $('v4').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var D=b.dataset;
  if(D.rm){RM=D.rm;rpt();return}
  if(D.rn){var n=+D.rn;if(RM=='m'){var d=new Date(RO+'-15T12:00:00');d.setMonth(d.getMonth()+n);RO=ymd(d).slice(0,7)}else{var d2=new Date(RD+'T12:00:00');d2.setDate(d2.getDate()+n);RD=ymd(d2)}rpt();return}
- if(D.exp!==undefined){var sr=salesRows();if(!sr){toast('Belum ada penjualan untuk diekspor');return}dl('penjualan-kalsara-'+today()+'.csv',csv(sr),'text/csv;charset=utf-8','Salin CSV',function(){showCpBox(csv(sr).replace(/^\ufeff/,''))});return}
+ if(D.exp!==undefined){var sr=salesRows();if(!sr){toast('Belum ada penjualan untuk diekspor');return}dl('penjualan-wulfeg-'+today()+'.csv',csv(sr),'text/csv;charset=utf-8','Salin CSV',function(){showCpBox(csv(sr).replace(/^\ufeff/,''))});return}
  if(D.excp!==undefined){copySales();return}
  if(D.cpsel!==undefined){var ct=$('cptx');if(ct){ct.focus();ct.select()}return}
  if(D.rl){var on=!rlOn(D.rl);rlSet(D.rl,on);rlUi(D.rl);if(on)toast('Tombol hapus terbuka 10 detik');return}

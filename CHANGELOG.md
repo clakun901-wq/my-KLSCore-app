@@ -1,8 +1,16 @@
-# Catatan perubahan (CHANGELOG) Kalsara
+# Catatan perubahan (CHANGELOG) Wulfeg
 
 Aturan: SETIAP sesi yang mengubah paket menambah satu entri di paling atas (terbaru di atas), memakai nomor `paket` dari `js/version.js`. Tes `tests/dokumentasi.test.mjs` gagal bila entri versi saat ini tidak ada. Entri berisi: apa yang berubah (bahasa awam), berkas yang disentuh, bukti uji (dan di mana dijalankan), serta hal yang belum terbukti.
 
 Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelumnya diringkas ulang dari `arsip/MIGRATION-STATUS.md` (arsip lengkap); v9.36 sampai v9.39 tidak punya bagian sendiri di arsip, jadi hanya disebut sebagai rangkaian tahap 6.
+
+## v9.53 - Ganti nama aplikasi dari Kalsara menjadi Wulfeg (13 Nov 2026)
+- Permintaan pemilik: nama baru "Wulfeg" menggantikan "Kalsara" (nama dipilih pemilik; ketersediaan nama belum dicek di Play Store, domain, dan DJKI).
+- Perubahan (HANYA teks tampilan dan nama berkas unduhan): judul halaman, nama di header, huruf avatar (K jadi W), footer, panduan, banner "Versi baru", nama PWA di `manifest.webmanifest`, pesan toast dan galat (terpasang, penyimpanan tidak bisa dibuka, aplikasi terbuka di tab lain, worker), pesan cadangan tidak valid, judul dialog bagikan cadangan, serta nama berkas unduhan (`cadangan-wulfeg-<tanggal>.txt`, `penjualan-wulfeg-<tanggal>.csv`, `hasil-wulfeg.csv`, `template-produk-wulfeg.csv`, `wulfeg-backup.json`). Ikon aplikasi (192, 512, maskable, apple-touch) dibuat ulang dengan huruf W.
+- Sengaja TIDAK diubah: semua kunci penyimpanan dan nama internal (`kalsara_*`, `__kalsara_*`, IndexedDB `KalsaraERP`, berkas jurnal `kalsara-*`, kunci Web Locks, kolam dan berkas SQLite `kalsara-sahpool`/`kalsara.sqlite3`, peristiwa `kalsara-storage-error`, elemen `<kalsara-product-card>`, variabel global `Kalsara*`, nama cache SW `kalsara-v...`). Alasannya: mengganti kunci akan membuat data dan cadangan lama pemilik tidak terbaca. Nama berkas sumber historis (`source/Kalsara-v5_82.html`) dan fixture beku juga tidak diubah.
+- Berkas: `index.html`, `manifest.webmanifest`, `progress.html`, `icons/*.png`, `js/pwa.js`, `js/main.js`, `js/backup-format.js`, `js/storage.js`, `js/penyimpanan-cadangan.js`, `js/penjualan.js`, `js/tab-impor-sinkron.js`, `js/worker-client.js`, `js/version.js`, `package.json`, dokumen.
+- Tes: `tests/helpers/nama-wulfeg.mjs` (daftar penggantian tertutup dengan jumlah kemunculan dicek tepat) dipakai tes kesetaraan penjualan, penyimpanan-cadangan, dan tab-impor-sinkron terhadap fixture beku; `tests/backup-format.test.mjs`, `tests/e2e/penjualan.e2e.py`, `tests/e2e/tahap4.e2e.py` memakai nama berkas/pesan baru. Seluruh `npm test` (unit) lulus di sesi ini, dan 23 skrip E2E (`npm run test:e2e`) lulus di Chromium nyata di sandbox sesi (BUKAN GitHub Actions pemilik).
+- Belum terbukti: belum dijalankan di GitHub Actions pemilik; ikon baru dan tampilan nama belum dilihat langsung di HP. Pemilik yang sudah memasang PWA lama mungkin perlu membuka ulang/memasang ulang agar nama dan ikon baru muncul di layar utama.
 
 ## v9.52 - Label umum, tidak khusus dropship (12 Nov 2026)
 - Permintaan pemilik: aplikasi terasa khusus dropship karena kata "supplier" ada di banyak label. Penjual yang membuat atau menyimpan barang sendiri tidak punya supplier.

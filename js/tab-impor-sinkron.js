@@ -34,8 +34,8 @@ function dl(name,text,mime,alt,onFail){
  var h=alt?'gunakan tombol '+alt:'buka aplikasi lewat browser biasa';
  toast(ok?'Unduhan dimulai. Jika file tidak muncul, '+h+'.':'Unduhan tidak tersedia. '+h.charAt(0).toUpperCase()+h.slice(1)+'.');
 }
-$('xr').onclick=function(){var o=tbl();if(o.length<2){toast('Belum ada hasil untuk diunduh');return}dl('hasil-kalsara.csv',csv(o),'text/csv;charset=utf-8','Salin hasil')};
-$('xt').onclick=function(){dl('template-produk-kalsara.csv',(csv([['Nama produk','Modal / HPP per pcs','Biaya Management Partner','Biaya packing','Target untung','Isi paket (opsional)','Stok Shopee (opsional)','Sumber barang (opsional)','SKU (opsional)','Link sumber barang (opsional)','Tarif Gratis Ongkir XTRA % (opsional)'],['Contoh produk A',25000,1000,500,5000,1,20,'Toko ABC','KAOS-01','https://contoh.com/produk',2]])),'text/csv;charset=utf-8','')};
+$('xr').onclick=function(){var o=tbl();if(o.length<2){toast('Belum ada hasil untuk diunduh');return}dl('hasil-wulfeg.csv',csv(o),'text/csv;charset=utf-8','Salin hasil')};
+$('xt').onclick=function(){dl('template-produk-wulfeg.csv',(csv([['Nama produk','Modal / HPP per pcs','Biaya Management Partner','Biaya packing','Target untung','Isi paket (opsional)','Stok Shopee (opsional)','Sumber barang (opsional)','SKU (opsional)','Link sumber barang (opsional)','Tarif Gratis Ongkir XTRA % (opsional)'],['Contoh produk A',25000,1000,500,5000,1,20,'Toko ABC','KAOS-01','https://contoh.com/produk',2]])),'text/csv;charset=utf-8','')};
 function parseCsv(t){
  parseCsv.bad=false;t=String(t||'').replace(/^\ufeff/,'');
  var l1=t.split(/\r?\n/,1)[0]||'',ds=[';','\t',','],counts=ds.map(function(d){

@@ -40,7 +40,7 @@ try:
         # 2. cadangan terunduh, lalu status berubah jadi "hari ini" dan pengingat hilang
         with pg.expect_download(timeout=8000) as d: pg.evaluate("document.getElementById('bk').click()")
         bk = json.loads(open(d.value.path(), encoding='utf8').read())
-        check(len(bk['rows']) == 3 and d.value.suggested_filename == 'cadangan-kalsara-%s.txt' % datetime.date.today().isoformat(), 'cadangan terunduh: 3 produk, nama berkas bertanggal')
+        check(len(bk['rows']) == 3 and d.value.suggested_filename == 'cadangan-wulfeg-%s.txt' % datetime.date.today().isoformat(), 'cadangan terunduh: 3 produk, nama berkas bertanggal')
         pg.wait_for_timeout(300)
         check('Cadangan terakhir: hari ini' in pg.inner_text('#sy') and pg.evaluate("document.getElementById('bkr').hidden") is True, 'sesudah cadangan: status "hari ini" dan pengingat disembunyikan')
         # 4. tab ber-pembungkus: klik Tarif -> panel Cek tarif tampil, tab terpilih; panah dan End berpindah tab

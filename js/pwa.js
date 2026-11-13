@@ -24,7 +24,7 @@ $('pwu').onclick=function(){if(!swReg){toast('Pembaruan hanya bisa dicek dari al
  toast('Memeriksa pembaruan...');
  swReg.update().then(function(){setTimeout(function(){if($('nvb').hidden)toast('Sudah versi terbaru ('+APPV+')')},1500)},function(){toast('Tidak bisa memeriksa. Cek koneksi internet')})};
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();dip=e;if(!isSA())$('pwi').hidden=false});
-window.addEventListener('appinstalled',function(){dip=null;$('pwi').hidden=true;pwSt();toast('Kalsara terpasang')});
+window.addEventListener('appinstalled',function(){dip=null;$('pwi').hidden=true;pwSt();toast('Wulfeg terpasang')});
 $('pwi').onclick=function(){if(!dip)return;dip.prompt();dip.userChoice.then(function(){dip=null;$('pwi').hidden=true},function(){})};
 pwSt();
 

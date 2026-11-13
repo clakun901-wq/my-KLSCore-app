@@ -18,13 +18,13 @@ function bkFull(lt){return Backup.full(lt)}
 function bkDo(lt,use){bkFull(lt).then(function(r){if(!r.t){toast('Gagal membuat cadangan');return}
  if(r.err){ask('Data ERP tidak bisa dibaca ('+r.err+'). Cadangan ini HANYA memuat data utama (produk, promo, penjualan), bukan data ERP. Lanjutkan?','Ya, tanpa ERP',function(){use(r)});return}
  use(r)})}
-$('bk').onclick=function(){bkDo(false,function(r){dl('cadangan-kalsara-'+today()+'.txt',r.t,'text/plain;charset=utf-8','Salin cadangan');bkMark()})};
+$('bk').onclick=function(){bkDo(false,function(r){dl('cadangan-wulfeg-'+today()+'.txt',r.t,'text/plain;charset=utf-8','Salin cadangan');bkMark()})};
 function bpInfo(){var n=$('bpt').value.length;$('bpm').textContent=n?n.toLocaleString('id-ID')+' karakter di kotak.':''}
 /*5.22: bagikan cadangan lewat menu bagikan HP; jika tidak tersedia, jatuh ke unduhan biasa*/
 $('bsh').onclick=function(){bkDo(false,function(r){var t=r.t,
- nm='cadangan-kalsara-'+today()+'.txt',fb=function(){toast('Menu bagikan tidak tersedia di sini. Cadangan diunduh sebagai gantinya.');dl(nm,t,'text/plain;charset=utf-8','Salin cadangan');bkMark()};
+ nm='cadangan-wulfeg-'+today()+'.txt',fb=function(){toast('Menu bagikan tidak tersedia di sini. Cadangan diunduh sebagai gantinya.');dl(nm,t,'text/plain;charset=utf-8','Salin cadangan');bkMark()};
  try{var f=new File([t],nm,{type:'text/plain'});
-  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'Cadangan Kalsara'}).then(function(){bkMark();toast('Cadangan dibagikan')},function(e){if(e&&e.name=='AbortError')toast('Dibatalkan');else fb()});return}}catch(e){}
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'Cadangan Wulfeg'}).then(function(){bkMark();toast('Cadangan dibagikan')},function(e){if(e&&e.name=='AbortError')toast('Dibatalkan');else fb()});return}}catch(e){}
  fb()})};
 function showBp(txt){$('bpw').hidden=false;if(txt!==undefined)$('bpt').value=txt;bpInfo();$('bpt').focus()}
 $('bpt').addEventListener('input',bpInfo);

@@ -6,5 +6,5 @@ assert.deepEqual(parseBackupText('\ufeff  backup: ' + JSON.stringify(valid) + ' 
 assert.equal(parseBackupText('teks tanpa JSON').message, 'Cadangan tidak valid: tidak ada data.');
 assert.equal(parseBackupText('{"A":{},"rows":[').ok, false);
 assert.equal(parseBackupText('{"A":{},"rows":[]}').ok, true);
-assert.equal(parseBackupText('{"rows":[]}').message, 'Cadangan tidak valid: bukan data Kalsara.');
+assert.equal(parseBackupText('{"rows":[]}').message, 'Cadangan tidak valid: bukan data Wulfeg.');
 console.log('Backup format: 6 assertions passed.');

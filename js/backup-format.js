@@ -14,6 +14,6 @@ export function parseBackupText(text) {
     return { ok: false, message };
   }
   if (!data || !data.A || !Array.isArray(data.rows))
-    return { ok: false, message: 'Cadangan tidak valid: bukan data Kalsara.' };
+    return { ok: false, message: 'Cadangan tidak valid: bukan data Wulfeg.' };
   return { ok: true, data };
 }

@@ -122,6 +122,10 @@ Aturan agar tidak rusak lagi:
 ## 7b. Penggantian label v9.52 (tests/helpers/label-v9_52.mjs)
 Fixture lama membeku teks sebelum v9.52. `tests/helpers/label-v9_52.mjs` memuat daftar tertutup penggantian label lama ke baru dan mengecek jumlah kemunculannya per fixture. Bila label diubah lagi, tambah pasangan di sana (pasangan yang lebih panjang lebih dulu) dan sesuaikan jumlah yang diharapkan di tes pemakainya.
 
+
+## 7c. Penggantian nama v9.53 (tests/helpers/nama-wulfeg.mjs)
+Aplikasi berganti nama dari Kalsara menjadi Wulfeg. Hanya teks tampilan, nama berkas unduhan, dan ikon yang diganti. Kunci penyimpanan dan nama internal (`kalsara_*`, `__kalsara_*`, `KalsaraERP`, `kalsara-*`, elemen `kalsara-product-card`, global `Kalsara*`) TIDAK diganti karena data dan cadangan lama pemilik memakainya; mengubahnya butuh migrasi data. `tests/helpers/nama-wulfeg.mjs` memuat daftar tertutup penggantian nama berkas/judul di fixture beku (cadangan, penjualan, hasil, templat) dengan jumlah kemunculan yang dicek tepat.
+
 ## 8. Konvensi tampilan: penanda halaman Etalase (v9.51)
 Dua penanda (atas `#shpt`, bawah `#shpg`) dibuat oleh `makePager` di `js/etalase-halaman.js`; gayanya di `css/app.css` (aturan `.pgn`, `.pgn button`, `.pgn .pgm`, `.pgn input`, `.pgn .pgi`).
 

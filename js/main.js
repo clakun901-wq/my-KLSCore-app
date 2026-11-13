@@ -16,7 +16,7 @@ catch (e) {
   const box = document.createElement('div');
   box.setAttribute('role','alert');
   box.style.cssText = 'margin:24px auto;max-width:520px;padding:16px;border:1px solid #c33;border-radius:8px;font:15px/1.5 system-ui,sans-serif';
-  box.textContent = 'Kalsara tidak dapat membuka penyimpanan data. ' + (e && e.message ? e.message : '');
+  box.textContent = 'Wulfeg tidak dapat membuka penyimpanan data. ' + (e && e.message ? e.message : '');
   document.body.replaceChildren(box);
   throw e;
 }

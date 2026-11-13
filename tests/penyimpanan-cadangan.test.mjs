@@ -9,7 +9,8 @@ import * as acorn from '../scripts/vendor/acorn.mjs';
 import { legacyPart } from './helpers/legacy-source.mjs';
 let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; };
 const read = f => fs.readFileSync(new URL(f, import.meta.url), 'utf8');
-const orig = read('./fixtures/app-core.bagian80.pre_v9_40.js.txt');
+import {renameWulfeg} from './helpers/nama-wulfeg.mjs';
+const orig = renameWulfeg(read('./fixtures/app-core.bagian80.pre_v9_40.js.txt'), 3, 'fixture cadangan-tema'); /* nama berkas dan judul cadangan: kalsara -> wulfeg */
 const simpan = read('../js/penyimpanan-cadangan.js'), atur = read('../js/pengaturan.js'), sw = read('../sw.js');
 
 const noComment = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ');

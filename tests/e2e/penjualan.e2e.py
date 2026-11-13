@@ -85,7 +85,7 @@ try:
 
         # 6. Ekspor CSV
         with pg.expect_download(timeout=8000) as dli: pg.click('#rpv [data-exp]')
-        dlf = dli.value; check(dlf.suggested_filename.startswith('penjualan-kalsara-') and dlf.suggested_filename.endswith('.csv'), 'nama berkas CSV')
+        dlf = dli.value; check(dlf.suggested_filename.startswith('penjualan-wulfeg-') and dlf.suggested_filename.endswith('.csv'), 'nama berkas CSV')
         txt = open(dlf.path(), encoding='utf-8-sig').read(); check(txt.startswith('Tanggal;Jam;Produk') and 'Rak Buku' in txt and txt.count('\n') >= 3, 'isi CSV: judul kolom + 3 penjualan')
         pg.click('#rpv [data-excp]'); pg.wait_for_timeout(500)
         check(pg.evaluate("(()=>{var b=document.getElementById('cpbox');return !!b&&(!b.hidden||/Salin|disalin/i.test(document.getElementById('tt').textContent))})()"), 'Salin CSV: tersalin atau kotak manual terbuka')
