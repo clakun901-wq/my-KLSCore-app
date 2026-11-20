@@ -54,6 +54,7 @@ Akar perakitan: `index.html` -> `js/main.js` (titik masuk, penyimpanan, Worker) 
 | js/worker-client.js | Jembatan ke Web Worker (timeout, malas) |
 | js/signals.js | Mesin reaktif lokal (Signals) |
 | js/theme.js | Preferensi tampilan |
+| js/tips.js | Ikon ⓘ penjelas istilah (v9.57): kamus `BY_ID` (label `for=` di index.html) dan `BY_TEXT` (label/baris buatan JS) + popover melayang; dipasang `MutationObserver`. Menambah istilah = tambah satu entri kamus (satu kalimat + `Contoh:` berisi angka); `tests/tips.test.mjs` memeriksa kuncinya benar-benar ada di tampilan |
 | js/pwa.js | Pemasangan PWA dan panel Pembaruan |
 | js/kinerja.js | Pengukur kinerja (aktif hanya dengan `?perf=1`) |
 | workers/compute.worker.js | Hitung berat di luar utas utama |
@@ -129,6 +130,9 @@ Fixture lama membeku teks sebelum v9.52. `tests/helpers/label-v9_52.mjs` memuat 
 
 ## 7c. Penggantian nama v9.53 (tests/helpers/nama-wulfeg.mjs)
 Aplikasi berganti nama dari Kalsara menjadi Wulfeg. Hanya teks tampilan, nama berkas unduhan, dan ikon yang diganti. Kunci penyimpanan dan nama internal (`kalsara_*`, `__kalsara_*`, `KalsaraERP`, `kalsara-*`, elemen `kalsara-product-card`, global `Kalsara*`) TIDAK diganti karena data dan cadangan lama pemilik memakainya; mengubahnya butuh migrasi data. `tests/helpers/nama-wulfeg.mjs` memuat daftar tertutup penggantian nama berkas/judul di fixture beku (cadangan, penjualan, hasil, templat) dengan jumlah kemunculan yang dicek tepat.
+
+## 7d. Penggantian label v9.57 (Management Partner jadi biaya tambahan)
+Pasangan penggantian v9.57 ada di akhir daftar `tests/helpers/label-v9_52.mjs` (dijalankan setelah pasangan v9.52). `hasil-view.test.mjs` mengganti labelnya langsung saat membaca fixture. Impor CSV tetap mengenali judul lama "Management Partner" (file lama tetap terbaca).
 
 ## 8. Konvensi tampilan: penanda halaman Etalase (v9.51)
 Dua penanda (atas `#shpt`, bawah `#shpg`) dibuat oleh `makePager` di `js/etalase-halaman.js`; gayanya di `css/app.css` (aturan `.pgn`, `.pgn button`, `.pgn .pgm`, `.pgn input`, `.pgn .pgi`).

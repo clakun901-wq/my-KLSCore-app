@@ -11,7 +11,10 @@ import {esc, dtx} from '../js/helpers.js';
    Bagian akhir = SABOTASE: tiap sisipan `var A=getA();` yang dirusak/dihapus, versi yang menyimpan salinan A, dan perubahan teks keluaran, HARUS terdeteksi tes ini. */
 let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; };
 const eq = (a, b, m) => { assert.deepEqual(a, b, m); n++; };
-const fixture = fs.readFileSync(new URL('./fixtures/hasil-view.pre_v9_32.js.txt', import.meta.url), 'utf8');
+const fixtureRaw = fs.readFileSync(new URL('./fixtures/hasil-view.pre_v9_32.js.txt', import.meta.url), 'utf8');
+/* v9.57: satu label rincian berganti (hanya teks tampilan); teks lama dipakai apa adanya selain itu */
+ok(fixtureRaw.split('Modal + Management Partner + packing').length === 2, 'label lama harus tepat satu kali di fixture');
+const fixture = fixtureRaw.replace('Modal + Management Partner + packing', 'Modal + biaya tambahan + packing');
 const modSrc = fs.readFileSync(new URL('../js/hasil-view.js', import.meta.url), 'utf8');
 
 /* ---- 1. isi modul == teks lama + tepat dua sisipan yang didokumentasikan ---- */

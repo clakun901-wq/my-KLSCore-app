@@ -7,7 +7,7 @@
 var FIELDS=[
  {k:0,nama:'Nama produk',re:/^(nama produk|nama|produk|nama barang|barang)$/},
  {k:1,nama:'Modal / HPP per pcs',re:/^(modal hpp per pcs|modal supplier|modal per pcs|hpp per pcs|modal|hpp|harga modal)$/},
- {k:2,nama:'Biaya Management Partner',re:/^(biaya )?management partner$/},
+ {k:2,nama:'Biaya tambahan per pesanan (opsional)',re:/^(biaya )?(management partner|tambahan( per (pesanan|pcs|paket))?)( opsional)?$/},
  {k:3,nama:'Biaya packing',re:/^(biaya )?packing$/},
  {k:4,nama:'Target untung',re:/^target untung$/},
  {k:5,nama:'Isi paket',re:/^isi paket( opsional)?$/},
@@ -46,7 +46,7 @@ export function bacaImpor(d,num){
  /* Tanpa judul yang dikenal: perilaku lama (urutan templat). Baris pertama dibuang bila kolom modalnya bukan angka. */
  var r=d.slice();
  if(r.length&&isNaN(Number(String(r[0][1]||'').replace(/\./g,'').replace(',','.'))))r.shift();
- return{rows:r,format:'urutan',salah:null,kosong:'Urutan kolom: nama, modal, Management Partner, packing, target. Atau pakai "Unduh template impor".'}}
+ return{rows:r,format:'urutan',salah:null,kosong:'Urutan kolom: nama, modal, biaya tambahan, packing, target. Atau pakai "Unduh template impor".'}}
 
 /* Pisahkan baris yang SKU-nya sudah ada di aplikasi atau kembar di dalam file (SKU kosong tidak pernah dianggap kembar). */
 export function pisahKembar(rows,skuAda){

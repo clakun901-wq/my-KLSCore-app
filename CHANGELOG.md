@@ -4,6 +4,22 @@ Aturan: SETIAP sesi yang mengubah paket menambah satu entri di paling atas (terb
 
 Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelumnya diringkas ulang dari `arsip/MIGRATION-STATUS.md` (arsip lengkap); v9.36 sampai v9.39 tidak punya bagian sendiri di arsip, jadi hanya disebut sebagai rangkaian tahap 6.
 
+## v9.57 - Footer dari version.js, ikon ⓘ penjelas istilah, label biaya tambahan (20 Nov 2026)
+- Permintaan pemilik: (1) footer masih tertulis "versi 5.82 (29 Okt 2026)" padahal paket v9.56; (2) ikon ⓘ di tiap istilah berisi satu kalimat dan contoh angka, ganti label seperlunya; (3) footer membaca version.js, hapus "Progressive Web App" di header.
+- Footer: teks tertulis tangan dihapus dari `index.html`; `js/main.js` mengisi `<footer id="ver">` dengan `KALSARA_VERSION.paket` ("Wulfeg · versi 9.57"). Tanggal sengaja dihapus: tanggal tertulis tangan adalah sumber basinya. Nomor logika bisnis (5.82) tetap tampil di panel Pembaruan.
+- Header: `<p class="pwa">` dan gayanya dihapus.
+- Ikon ⓘ: modul baru `js/tips.js` (kamus 50 istilah label Setelan/Voucher/Diskon + 39 istilah kartu produk dan baris hasil; semua kalimat memuat "Contoh:" berisi angka). Popover melayang di body, jadi struktur label/baris rincian tidak berubah. Ikon muncul juga di kartu yang dibuat ulang (MutationObserver). Terdaftar di `sw.js` CORE.
+- Label: "Biaya Management Partner" menjadi "Biaya tambahan per pesanan (opsional)" di kartu produk, rincian, panel Promosi, panduan, header CSV ekspor/templat. Catatan: bukan "per pcs" karena rumus `tmod` memakai biaya ini sekali per pesanan (tidak dikali isi paket). Impor CSV tetap menerima judul lama dan judul "tambahan".
+- Berkas: index.html, css/app.css, js/main.js, js/tips.js (baru), js/hitung-etalase.js, js/hasil-view.js, js/kartu-update.js, js/tab-impor-sinkron.js, js/impor-csv.js, js/promosi-panel.js, js/promosi-data.js, sw.js, version.js (9.57), package.json, README, dokumen, tests/tips.test.mjs (baru), tests/helpers/label-v9_52.mjs dan lima tes fixture, tests/e2e/baris-rincian.e2e.py.
+- Bukti uji: `npm test` di sandbox sesi. Belum terbukti: E2E browser, GitHub Actions, HP asli.
+
+## v9.56 - Tarif Gratis Ongkir XTRA 1 Des 2026 disesuaikan dengan Seller Centre (20 Nov 2026)
+- Permintaan pemilik: tarif di aplikasi harus sama dengan halaman "Update Program Opsional Shopee" (dua tangkapan layar, 20 Nov 2026).
+- Perbaikan: tabel `GO2` Kategori G ukuran khusus 12% menjadi 12,5% (kategori lain sudah cocok). Batas Rp60.000 biasa dan Rp80.000 khusus sudah benar.
+- Baru: tabel `GOAD` (promo khusus pengguna iklan, berlaku 1 Des 2026) per kategori, biasa/khusus: A 1/3, B 4,5/6,5, C 5/7, D 7/9, E 7,5/9,5, F 8/10, G 8,5/10,5, H 9/11. Pengaturan baru `gai` (Tidak/Ya) di Program XTRA; syarat Shopee: biaya iklan bersih minimal 4% dari penjualan 30 hari terakhir. Promo tidak berlaku untuk tarif manual atau tabel kustom, dan `gad` (potongan satu angka, tarif lama) tidak dikurangkan lagi bila promo aktif.
+- Berkas: js/tariff.js, js/app-core.js (DEF), js/helpers.js (SGL, +gai), index.html, tests/tariff.test.mjs, tests/helpers.test.mjs, fixture tariff/helpers (G 12,5 dan gai), laporan/PETA-GLOBAL.md, version.js, package.json, README.
+- Bukti uji: `npm test` lulus penuh di sandbox (termasuk 2965 pernyataan tes tarif). Belum terbukti: tes e2e browser dan GitHub Actions belum dijalankan; tabel `GO` sebelum 1 Des tidak diverifikasi (tidak ada di tangkapan layar). Catatan: salinan Kalsara v5.82 di source/ masih memuat G khusus 12 (sumber asli, tidak diubah).
+
 ## v9.55 - Kartu sambutan dan tambah produk dari file Shopee (13 Nov 2026)
 - Permintaan pemilik: (A) aplikasi kosong menampilkan kartu "Masukkan produk Anda" dengan tombol langsung ke template dan impor; (B) produk bisa ditambahkan dari file Mass Update Seller Centre supaya nama dan SKU tidak diketik ulang. Catatan jujur: paket v9.55 versi pertama (hanya kartu) hilang dari sandbox dan dari pemilik, jadi kartu dibangun ulang dari v9.54 bersama fitur ini.
 - Kartu sambutan: tampil di tab Hitung selama belum ada produk berisi (aplikasi baru membuat dua baris kosong; itu tidak dihitung). Tombol: unduh template impor, pilih file CSV (dialog impor v9.54 tetap muncul), ambil dari file Shopee, atau isi satu produk (fokus ke kolom nama). Hilang otomatis saat ada data; muncul lagi bila semua produk dikosongkan. Kartu "Mulai cepat: 3 langkah" tipe toko tetap di atasnya.

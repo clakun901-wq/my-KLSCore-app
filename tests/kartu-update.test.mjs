@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createKartuUpdate} from '../js/kartu-update.js';
 import {relabelV952} from './helpers/label-v9_52.mjs';
-const fixture=relabelV952(fs.readFileSync(new URL('./fixtures/kartu-update.pre_v9_33.js.txt',import.meta.url),'utf8'),3,'fixture kartu-update'); /* v9.52: link sumber barang + dua teks jalur kosong */
+const fixture=relabelV952(fs.readFileSync(new URL('./fixtures/kartu-update.pre_v9_33.js.txt',import.meta.url),'utf8'),4,'fixture kartu-update'); /* v9.52: link sumber barang + dua teks jalur kosong */
 const source=fs.readFileSync(new URL('../js/kartu-update.js',import.meta.url),'utf8');
 let n=0; const ok=(v,m)=>{assert.ok(v,m);n++}; const eq=(a,b,m)=>{assert.deepEqual(a,b,m);n++};
 const expected=fixture.replace('function updRow(r){var H=','function updRow(r){var A=getA();var H=');

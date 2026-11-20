@@ -2,8 +2,9 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as acorn from '../scripts/vendor/acorn.mjs';
+import {relabelV952} from './helpers/label-v9_52.mjs';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
-const baseline=read('./fixtures/app-core.bagian50-data.pre_v9_44.js.txt');
+const baseline=relabelV952(read('./fixtures/app-core.bagian50-data.pre_v9_44.js.txt'),1,'fixture promosi-data'); /* v9.57: satu label rincian (Management Partner jadi biaya tambahan) */
 const mod=read('../js/promosi-data.js');
 const norm=s=>s.replace(/\/\*[\s\S]*?\*\//g,' ').replace(/\s+/g,' ').trim();
 const fn=(s,name)=>{

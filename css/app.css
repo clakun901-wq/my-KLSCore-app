@@ -354,7 +354,6 @@ nav button{position:relative}nav button.dot::after{content:"";position:absolute;
 /* v5.46 geser untuk hapus + hapus massal */
 .q4s{position:relative;border-radius:14px;overflow:hidden;margin-bottom:8px}.q4s .q4l{margin-bottom:0;position:relative;touch-action:pan-y;transition:transform .2s}.q4s.dr .q4l{transition:none}.q4x{position:absolute;right:0;top:0;bottom:0;width:96px;border:0;background:var(--bad);color:#fff;font:inherit;font-weight:700;cursor:pointer;visibility:hidden}.q4s.op .q4x,.q4s.dr .q4x{visibility:visible}.q4z{margin-top:14px}
 /* v5.44 header dan tombol panduan */
-header p.pwa{font-style:italic;letter-spacing:.2px}
 .hb{gap:0;border:1px solid var(--line);background:var(--card);box-shadow:var(--sh);font-weight:700}.hb svg{width:15px;height:15px;margin-right:7px;color:var(--accent)}
 /* v5.42 header Etalase lebih rapi */
 .hd{flex-wrap:wrap;row-gap:6px}
@@ -422,3 +421,12 @@ nav{grid-template-columns:repeat(7,minmax(0,1fr))!important}#v6 select{margin-bo
 .pgn .pgm span{text-align:left} /* "Hal." rata kanan, "dari N" rata kiri: kotak angka tepat di tengah, di bawah celah antara dua tombol */
 .pgn input{width:64px;box-sizing:border-box;height:44px;text-align:center;font-size:16px;font-weight:700;border-radius:12px;border:1px solid var(--inpl);background:var(--inp);color:var(--ink)}
 .pgn .pgi{grid-column:1/-1;text-align:center;font-size:12.5px;color:var(--mute)}
+/* v9.57: ikon ⓘ penjelas istilah (js/tips.js). Tombol 28px agar mudah diketuk, tampak kecil lewat margin negatif; glyph dari ::before supaya textContent label tidak berubah. */
+.ib{display:inline-grid;place-items:center;width:28px;height:28px;margin:-6px -4px -6px 0;padding:0;border:0;border-radius:50%;background:none;color:var(--mute);font:inherit;font-size:15px;line-height:1;vertical-align:middle;cursor:pointer;flex:none;font-family:system-ui,"Segoe UI Symbol",sans-serif}
+.ib::before{content:"\24D8"}
+.ib:hover,.ib[aria-expanded="true"]{color:var(--accent)}
+.ib:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* di baris rincian ikon dikecilkan dan tidak boleh menyempitkan teks (E2E baris-rincian 320px: teks pendek tetap 1 baris) */
+.rw>.ib{width:20px;height:20px;font-size:13px;margin:-4px auto -4px -10px}
+#tipb{position:fixed;z-index:1300;max-width:min(300px,calc(100vw - 16px));padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);box-shadow:var(--sh);font-size:12.5px;font-weight:400;line-height:1.5;text-align:left}
+#tipb[hidden]{display:none}

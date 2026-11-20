@@ -17,7 +17,18 @@ export const LABEL_V952=[
  ["Cari produk, SKU, atau supplier","Cari produk, SKU, atau sumber barang"],
   ["'Supplier (opsional)'","'Sumber barang (opsional)'"],
  ["'Link supplier (opsional)'","'Link sumber barang (opsional)'"],
- ["Isi modal supplier dulu untuk menilai","Isi modal per pcs dulu untuk menilai"]
+ ["Isi modal supplier dulu untuk menilai","Isi modal per pcs dulu untuk menilai"],
+ /* v9.57: "Management Partner" menjadi "biaya tambahan" (HANYA teks tampilan, header CSV, dan label). Dijalankan SETELAH pasangan v9.52 di atas.
+    Pasangan header ekspor dan templat harus lebih dulu daripada pasangan umum. */
+ ["'Modal / HPP per pcs','Biaya Management Partner','Biaya packing','Total modal'","'Modal / HPP per pcs','Biaya tambahan per pesanan','Biaya packing','Total modal'"],
+ ["['Nama produk','Modal / HPP per pcs','Biaya Management Partner','Biaya packing'","['Nama produk','Modal / HPP per pcs','Biaya tambahan per pesanan (opsional)','Biaya packing'"],
+ ["['d','Biaya Management Partner']","['d','Biaya tambahan per pesanan (opsional)']"],
+ ["Modal + Management Partner + packing","Modal + biaya tambahan + packing"],
+ ["Biaya hadiah (modal + Management Partner + packing)","Biaya hadiah (modal + biaya tambahan + packing)"],
+ ["hanya biaya modal, Management Partner, dan packing hadiah","hanya biaya modal, biaya tambahan, dan packing hadiah"],
+ ["' pcs + Management Partner + packing)'","' pcs + biaya tambahan + packing)'"],
+ ["ditambah biaya Management Partner dan packing sekali.","ditambah biaya tambahan dan packing sekali."],
+ ["Tidak ada baris valid. Kolom: nama, modal, Management Partner, packing, target","Tidak ada baris valid. Kolom: nama, modal, biaya tambahan, packing, target"]
 ];
 /* Mengembalikan fixture dengan label baru; `expected` = jumlah penggantian yang harus terjadi di fixture itu. */
 export function relabelV952(text,expected,name){

@@ -19,7 +19,7 @@ Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berup
 
 | Berkas | Ukuran (byte) | Nama yang didefinisikan | …fungsi | …variabel | Dipakai berkas lain | Memakai nama berkas lain |
 |---|---:|---:|---:|---:|---:|---:|
-| 00-core.js | 617 | 4 | 0 | 4 | 3 | 0 |
+| 00-core.js | 626 | 4 | 0 | 4 | 3 | 0 |
 | 10-calc.js | 1.210 | 29 | 0 | 29 | 21 | 2 |
 | 20-hitung-etalase.js | 1.657 | 25 | 9 | 16 | 25 | 32 |
 | 30-penjualan.js | 826 | 6 | 0 | 6 | 6 | 19 |
@@ -31,7 +31,7 @@ Aplikasi ini masih memuat 12 bagian kode di `js/app-core.js` (sampai v9.37 berup
 | 90-erp.js | 262 | 1 | 0 | 1 | 1 | 2 |
 | 95-boot.js | 487 | 0 | 0 | 0 | 0 | 13 |
 | 99-pwa.js | 68 | 0 | 0 | 0 | 0 | 3 |
-| **Jumlah** | **13.719** | **122** | **50** | **72** | **92** (nama unik) | |
+| **Jumlah** | **13.728** | **122** | **50** | **72** | **92** (nama unik) | |
 
 Cara membaca: "Dipakai berkas lain" = berapa nama buatan berkas ini yang dipakai berkas lain. "Memakai nama berkas lain" = berapa nama milik berkas lain yang dipakai di berkas ini. Berkas dengan angka keduanya kecil paling mudah dipindah lebih dulu.
 

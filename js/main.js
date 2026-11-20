@@ -2,6 +2,7 @@ import {initStorage,KStore,backupToFile} from './storage.js';
 import {compute} from './worker-client.js';
 import {mergeLegacyRows,mergeMigrationConflicts,compareLegacyKey} from './migration.js';
 import './version.js';
+import {pasangTips} from './tips.js';
 import './money.js';
 import './dom.js';
 import './signals.js';
@@ -10,6 +11,11 @@ import {State} from './state.js';
 import {installEtalaseHalaman,ukuranDariAlamat} from './etalase-halaman.js';
 import {createKinerja,kinerjaAktif} from './kinerja.js';
 import {pasangKartuSambutan} from './kartu-sambutan.js';
+
+/* v9.57: footer membaca nomor paket dari js/version.js (satu-satunya sumber); tidak ada nomor versi tertulis di index.html. */
+{const v=document.getElementById('ver');if(v)v.textContent='Wulfeg \u00b7 versi '+globalThis.KALSARA_VERSION.paket;}
+/* v9.57: ikon \u24d8 penjelas istilah (js/tips.js). */
+pasangTips();
 
 try { await initStorage(); }
 catch (e) {

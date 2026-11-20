@@ -51,7 +51,7 @@ const PK = ['ad', 'gx', 'px', 'vx', 'lv', 'pm', 'cg', 'cp', 'cvx', 'clv', 'cpb']
   const seen = new Set(); for (let i = 0; i < 2000; i++) seen.add(uid()); ok(seen.size > 1990, 'uid nyata hampir selalu unik'); ok(/^[0-9a-z]+$/.test(uid()), 'uid hanya base36'); }
 
 /* SGL: tabel label identik, 22 kunci, gf termasuk */
-eq(SGL, Old.SGL, 'SGL identik'); eq(Object.keys(SGL).length, 22, '22 kunci SGL'); ok('gf' in SGL && 'tbl' in SGL, 'gf dan tbl ada');
+eq(SGL, Old.SGL, 'SGL identik'); eq(Object.keys(SGL).length, 23, '23 kunci SGL (v9.56: +gai)'); ok('gf' in SGL && 'tbl' in SGL, 'gf dan tbl ada');
 
 /* feeSig: A acak dengan nilai undefined/null/objek (tbl), gfac acak, A diganti di tengah jalan */
 { const R = rng(23); let sawU = 0, sawGf = 0, sawTbl = 0, sawSwap = 0;

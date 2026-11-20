@@ -14,7 +14,7 @@ def check(c, m):
 # (jenis, teks, angka). 'rw' = teks + <b> (kartu Hitung/Promosi); 'erw' = span.erl + span.era (laporan ERP).
 ROWS = [
     ('rw', 'Voucher Toko 8% (Voucher Toko Migrasi 8%)', '- Rp 6.498', True),
-    ('rw', 'Modal + Management Partner + packing', 'Rp 54.050', True),
+    ('rw', 'Modal + biaya tambahan + packing', 'Rp 54.050', True),
     ('rw', 'Harga setelah voucher', 'Rp 74.730', False),
     ('erw', 'Voucher, diskon &amp; pengembalian dana', '-Rp337.500', True),
     ('erw', 'Biaya Gratis Ongkir XTRA / layanan', '-Rp180.000', True),

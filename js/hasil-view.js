@@ -9,7 +9,7 @@ function revHtml(r,o,im){var A=getA();
  return '<div class="rw">Harga jual yang dicek<b>'+rp(q.L)+'</b></div>'+
  (q.v?'<div class="rw">'+esc(q.vs||'Voucher toko')+'<b>- '+rp(q.v)+'</b></div><div class="rw">Harga setelah voucher<b>'+rp(q.P)+'</b></div>':'')+
  '<div class="rw">Total Biaya Shopee<b>'+rp(q.sh)+'</b></div><div class="rw">Premi + PPh 22<b>'+rp(q.pm+q.tax)+'</b></div>'+(q.ads?'<div class="rw">Biaya iklan<b>'+rp(q.ads)+'</b></div>':'')+(q.rt?'<div class="rw">Cadangan retur<b>'+rp(q.rt)+'</b></div>':'')+(A.og?'<div class="rw">Ongkir ditanggung<b>'+rp(A.og)+'</b></div>':'')+
- '<div class="rw">Saldo masuk toko<b>'+rp(q.s)+'</b></div><div class="rw">Modal + Management Partner + packing<b>'+rp(tm)+'</b></div>'+
+ '<div class="rw">Saldo masuk toko<b>'+rp(q.s)+'</b></div><div class="rw">Modal + biaya tambahan + packing<b>'+rp(tm)+'</b></div>'+
  '<div class="rw">'+(q.u<0?'Rugi bersih':'Untung bersih')+'<b class="'+(q.u<0?'bad':q.u<A.wu||x.m<A.wm?'':'ok')+'">'+(q.u<0?'- ':'')+rp(Math.abs(q.u))+'</b></div>'+
  '<div class="rw">Margin (dari harga jual)<b>'+pc1(x.m)+'%</b></div>'+
  (d===null?'':'<div class="rw">Selisih dari harga impas<b>'+(d>=0?rp(d)+' di atas':rp(-d)+' di bawah')+'</b></div>')+WN(x)}
