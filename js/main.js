@@ -11,6 +11,7 @@ import {State} from './state.js';
 import {installEtalaseHalaman,ukuranDariAlamat} from './etalase-halaman.js';
 import {createKinerja,kinerjaAktif} from './kinerja.js';
 import {pasangKartuSambutan} from './kartu-sambutan.js';
+import {pasangImporPemula} from './impor-pemula.js';
 
 /* v9.57: footer membaca nomor paket dari js/version.js (satu-satunya sumber); tidak ada nomor versi tertulis di index.html. */
 {const v=document.getElementById('ver');if(v)v.textContent='Wulfeg \u00b7 versi '+globalThis.KALSARA_VERSION.paket;}
@@ -119,6 +120,7 @@ globalThis.KalsaraKinerja=createKinerja({enabled:kinerjaAktif(location.search,k=
 globalThis.KEtalaseHalaman=installEtalaseHalaman({size:ukuranDariAlamat(location.search),getKey:()=>[State.TS,State.rows,State.A,State.PRM]});
 await import('./app-core.js');
 pasangKartuSambutan({doc:document,getRows:()=>State.rows});
+pasangImporPemula({doc:document,win:window});
 
 // Optional permanent backup through the browser's File System Access API.
 // The original backup/restore UI remains intact; these helpers are also exposed for integration.

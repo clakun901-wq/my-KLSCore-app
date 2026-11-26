@@ -28,7 +28,7 @@ const IMP='function imp(t){';
 const iO=original.findIndex(x=>x.startsWith(IMP)),iM=moved.findIndex(x=>x.startsWith(IMP));
 ok(iO>=0&&iM>=0&&original.filter(x=>x.startsWith(IMP)).length===1&&moved.filter(x=>x.startsWith(IMP)).length===1,'tepat satu imp() di fixture dan di modul');
 ok(/bacaImpor\(d,num\)/.test(moved[iM])&&/pisahKembar\(/.test(moved[iM])&&/susunDialogImpor\(/.test(moved[iM])&&moved[iM].includes('Tidak ada baris valid.'),'imp() baru memakai modul impor-csv dan tetap menahan baris tak valid');
-ok(/^import \{bacaImpor,pisahKembar,susunDialogImpor\} from '\.\/impor-csv\.js';$/m.test(mod),'impor-csv.js diimpor secara eksplisit');
+ok(/^import \{bacaImpor,pisahKembar,susunDialogImpor,barisModalKosong\} from '\.\/impor-csv\.js';$/m.test(mod),'impor-csv.js diimpor secara eksplisit (v9.58: + barisModalKosong untuk nomor baris bermasalah)');
 original[iO]=moved[iM];
 ok(original.length===moved.length,'jumlah pernyataan bagian 60 sama dengan isi factory');
 const a=[...original].sort(),b=[...moved].sort();

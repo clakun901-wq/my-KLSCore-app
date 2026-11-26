@@ -49,8 +49,11 @@ try:
    check(rs['NEW0001']['s']==35 and rs['NEW0001']['q']==1,'stok dan isi paket tersimpan')
    check(rs['SKU-A1']['m']==39400,'produk lama tidak berubah')
    # 3. Templat resmi masih bekerja
-   t=impor('Nama produk;Modal / HPP per pcs;Biaya Management Partner;Biaya packing;Target untung;Isi paket (opsional);Stok Shopee (opsional);Sumber barang (opsional);SKU (opsional);Link sumber barang (opsional);Tarif Gratis Ongkir XTRA % (opsional)\nContoh produk A;25000;1000;500;5000;1;20;Toko ABC;KAOS-01;https://c.com;2\n')
+   t=impor('Nama produk;Modal / HPP per pcs;Biaya Management Partner;Biaya packing;Target untung;Isi paket (opsional);Stok Shopee (opsional);Sumber barang (opsional);SKU (opsional);Link sumber barang (opsional);Tarif Gratis Ongkir XTRA % (opsional)\nKaos Polos Hitam;25000;1000;500;5000;1;20;Toko ABC;KAOS-01;https://c.com;2\n')
    check(t.startswith('Impor 1 produk baru?') and 'Tarif Gratis Ongkir XTRA per produk diisi di 1 produk' in t,'templat resmi dibaca penuh: '+t)
+   # v9.58: baris contoh bawaan templat TIDAK diimpor sebagai produk sungguhan
+   t2=impor('Nama produk;Modal / HPP per pcs;Biaya packing;Target untung;SKU (opsional)\nCONTOH - GANTI DENGAN PRODUK ANDA;25000;500;5000;SKU-001\nContoh produk A;25000;500;5000;SKU-002\nGelas Kopi;8000;300;1500;GLS-01\n')
+   check(t2.startswith('Impor 1 produk baru?') and 'Gelas Kopi' in t2 and '2 baris contoh dari template dilewati' in t2,'baris contoh dilewati, produk asli masuk: '+t2)
    pg.click('#dn');pg.wait_for_timeout(300)
    check(len(saved()['rows'])==4,'Batal tidak mengimpor')
    # 4. Kolom wajib hilang: pesan jelas, tidak ada yang masuk

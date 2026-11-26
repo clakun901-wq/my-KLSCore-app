@@ -28,6 +28,9 @@ export function petaJudul(head){
   for(var j=0;j<FIELDS.length;j++){if(peta[j]<0&&FIELDS[j].re.test(x)){peta[j]=i;cocok++;break}}});
  return{peta:peta,cocok:cocok,hasil:hasil}}
 
+/* v9.58: baris contoh bawaan templat ("CONTOH - GANTI DENGAN PRODUK ANDA", "Contoh produk A") tidak ikut diimpor sebagai produk sungguhan. */
+export function barisContoh(nama){var n=String(nama==null?'':nama).trim();return /^contoh\s*[-\u2013\u2014:]/i.test(n)||/^contoh produk [a-z]$/i.test(n)}
+
 /* d = baris hasil parseCsv (baris pertama kemungkinan judul). num = pembaca angka aplikasi.
    Hasil: {rows:[11 kolom kanonik], format:'templat'|'hasil'|'urutan', salah:null|teks, kosong:teks petunjuk bila tak ada baris bermodal} */
 export function bacaImpor(d,num){
@@ -41,12 +44,20 @@ export function bacaImpor(d,num){
   var rows=d.slice(1).map(function(x){return pj.peta.map(function(ix,k){
    if(ix<0||(pj.hasil&&k===10))return '';
    return x[ix]==null?'':x[ix]})});
-  return{rows:rows,format:pj.hasil?'hasil':'templat',salah:null,
-   kosong:'Periksa isi kolom "Modal / HPP per pcs": semua barisnya kosong atau 0.'}}
+  return saring(rows,2,pj.hasil?'hasil':'templat','Periksa isi kolom "Modal / HPP per pcs": semua barisnya kosong atau 0.')}
  /* Tanpa judul yang dikenal: perilaku lama (urutan templat). Baris pertama dibuang bila kolom modalnya bukan angka. */
- var r=d.slice();
- if(r.length&&isNaN(Number(String(r[0][1]||'').replace(/\./g,'').replace(',','.'))))r.shift();
- return{rows:r,format:'urutan',salah:null,kosong:'Urutan kolom: nama, modal, biaya tambahan, packing, target. Atau pakai "Unduh template impor".'}}
+ var r=d.slice(),awal=1;
+ if(r.length&&isNaN(Number(String(r[0][1]||'').replace(/\./g,'').replace(',','.')))){r.shift();awal=2}
+ return saring(r,awal,'urutan','Urutan kolom: nama, modal, biaya tambahan, packing, target. Atau pakai "Unduh template impor".')}
+
+/* Buang baris contoh; catat nomor baris di file asli (awal = nomor baris data pertama) supaya pesan bisa menyebut baris mana yang bermasalah. */
+function saring(rows,awal,format,kosong){var out=[],baris=[],contoh=0;
+ rows.forEach(function(x,i){if(barisContoh(x[0])){contoh++;return}out.push(x);baris.push(awal+i)});
+ return{rows:out,baris:baris,contoh:contoh,format:format,salah:null,kosong:kosong}}
+
+/* Nomor baris (di file asli) yang modalnya kosong atau 0, untuk pesan dialog. */
+export function barisModalKosong(rd,num){var o=[];(rd.rows||[]).forEach(function(x,i){if(!(num(x[1])>0))o.push((rd.baris||[])[i]||i+1)});return o}
+function daftarBaris(a){var t=a.slice(0,8).join(', ');return a.length>8?t+', ...':t}
 
 /* Pisahkan baris yang SKU-nya sudah ada di aplikasi atau kembar di dalam file (SKU kosong tidak pernah dianggap kembar). */
 export function pisahKembar(rows,skuAda){
@@ -65,7 +76,8 @@ export function susunDialogImpor(o){
  if(o.format==='hasil')c.push('File ini hasil unduhan aplikasi. Yang diambil hanya data produk (nama, modal, biaya, target, stok, SKU). Hasil hitungan dan tarif tidak diimpor; tarif ikut Setelan.');
  if(o.sudahAda>0)c.push(o.sudahAda+' produk sudah ada di aplikasi (SKU sama) dan dilewati supaya tidak dobel. Untuk memperbarui modal atau stok produk yang sudah ada, pakai "Sinkron modal dan stok" di bawah.');
  if(o.kembarFile>0)c.push(o.kembarFile+' baris di file memakai SKU kembar dan dilewati.');
- if(o.dilewati>0)c.push(o.dilewati+' baris dilewati karena modalnya kosong atau 0.');
+ if(o.contohFile>0)c.push(o.contohFile+' baris contoh dari template dilewati.');
+ if(o.dilewati>0)c.push(o.dilewati+' baris dilewati karena modalnya kosong atau 0'+(o.barisLewat&&o.barisLewat.length?' (baris '+daftarBaris(o.barisLewat)+(o.format==='urutan'?'':', baris judul dihitung 1')+'; baris kosong tidak dihitung)':'')+'.');
  if(o.rendah>0)c.push(o.rendah+' baris bermodal di bawah Rp100. Periksa kolom modal sebelum melanjutkan.');
  if(o.gx&&String(o.gx).trim())c.push(String(o.gx).trim());
  if(o.melebihi>0)c.push('Batas '+o.max+' produk: hanya '+o.muat+' produk yang masuk.');

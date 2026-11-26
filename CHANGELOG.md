@@ -4,6 +4,13 @@ Aturan: SETIAP sesi yang mengubah paket menambah satu entri di paling atas (terb
 
 Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelumnya diringkas ulang dari `arsip/MIGRATION-STATUS.md` (arsip lengkap); v9.36 sampai v9.39 tidak punya bagian sendiri di arsip, jadi hanya disebut sebagai rangkaian tahap 6.
 
+## Usulan (belum dirilis, nomor versi belum dinaikkan): impor massal untuk pengguna baru
+- Kartu sambutan: tombol utama "Pilih file Excel atau CSV" (file .xlsx dibaca langsung, tidak perlu "Simpan sebagai CSV") dan "Tempel dari Excel / Google Sheet" (modul baru `js/impor-pemula.js`). Keduanya diubah menjadi teks CSV lalu diserahkan ke alur impor lama (`#xf`), jadi aturan SKU kembar, batas produk, dan dialog konfirmasi tidak berubah.
+- Template Excel (.xlsx) dibuat langsung di browser (penulis zip tanpa library di `js/impor-pemula.js`): lembar "Produk" (judul tebal, baris pertama dibekukan, kolom SKU berformat teks, satu baris contoh) dan lembar "Petunjuk". Tombolnya ada di kartu sambutan dan di bagian Impor dan ekspor CSV; template CSV lama tetap ada. Dicek terbuka di openpyxl dan LibreOffice.
+- Baris contoh bawaan template ("CONTOH - GANTI DENGAN PRODUK ANDA", "Contoh produk A") tidak lagi ikut terimpor sebagai produk sungguhan.
+- Dialog impor menyebut nomor baris yang dilewati karena modal kosong atau 0.
+- Rumus tidak berubah. Unit test lulus di sandbox sesi; E2E dan uji manual di browser BELUM dijalankan. Sebelum dirilis: naikkan nomor `paket` di `js/version.js`, pindahkan entri ini ke judul `## v...`, dan jalankan `npm run test:e2e`.
+
 ## v9.57 - Footer dari version.js, ikon ⓘ penjelas istilah, label biaya tambahan (20 Nov 2026)
 - Permintaan pemilik: (1) footer masih tertulis "versi 5.82 (29 Okt 2026)" padahal paket v9.56; (2) ikon ⓘ di tiap istilah berisi satu kalimat dan contoh angka, ganti label seperlunya; (3) footer membaca version.js, hapus "Progressive Web App" di header.
 - Footer: teks tertulis tangan dihapus dari `index.html`; `js/main.js` mengisi `<footer id="ver">` dengan `KALSARA_VERSION.paket` ("Wulfeg · versi 9.57"). Tanggal sengaja dihapus: tanggal tertulis tangan adalah sumber basinya. Nomor logika bisnis (5.82) tetap tampil di panel Pembaruan.
