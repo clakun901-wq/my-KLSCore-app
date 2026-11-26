@@ -1,0 +1,117 @@
+diff -u a/CHANGELOG.md b/CHANGELOG.md
+--- a/CHANGELOG.md	2026-11-26 04:21:48.000000000 +0000
++++ b/CHANGELOG.md	2026-11-26 05:43:32.817218638 +0000
+@@ -4,12 +4,14 @@
+ 
+ Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelumnya diringkas ulang dari `arsip/MIGRATION-STATUS.md` (arsip lengkap); v9.36 sampai v9.39 tidak punya bagian sendiri di arsip, jadi hanya disebut sebagai rangkaian tahap 6.
+ 
+-## Usulan (belum dirilis, nomor versi belum dinaikkan): impor massal untuk pengguna baru
++## v9.58 - Impor massal untuk pengguna baru (template Excel, impor .xlsx) dan perbaikan baris rincian (26 Nov 2026)
+ - Kartu sambutan: tombol utama "Pilih file Excel atau CSV" (file .xlsx dibaca langsung, tidak perlu "Simpan sebagai CSV") dan "Tempel dari Excel / Google Sheet" (modul baru `js/impor-pemula.js`). Keduanya diubah menjadi teks CSV lalu diserahkan ke alur impor lama (`#xf`), jadi aturan SKU kembar, batas produk, dan dialog konfirmasi tidak berubah.
+ - Template Excel (.xlsx) dibuat langsung di browser (penulis zip tanpa library di `js/impor-pemula.js`): lembar "Produk" (judul tebal, baris pertama dibekukan, kolom SKU berformat teks, satu baris contoh) dan lembar "Petunjuk". Tombolnya ada di kartu sambutan dan di bagian Impor dan ekspor CSV; template CSV lama tetap ada. Dicek terbuka di openpyxl dan LibreOffice.
+ - Baris contoh bawaan template ("CONTOH - GANTI DENGAN PRODUK ANDA", "Contoh produk A") tidak lagi ikut terimpor sebagai produk sungguhan.
+ - Dialog impor menyebut nomor baris yang dilewati karena modal kosong atau 0.
+-- Rumus tidak berubah. Unit test lulus di sandbox sesi; E2E dan uji manual di browser BELUM dijalankan. Sebelum dirilis: naikkan nomor `paket` di `js/version.js`, pindahkan entri ini ke judul `## v...`, dan jalankan `npm run test:e2e`.
++- Perbaikan (ditemukan dari CI): E2E `baris-rincian` gagal di runner GitHub ("Harga setelah voucher: teks pendek tetap 1 baris" pada 320px). Penyebab: ikon ⓘ v9.57 disisipkan `js/tips.js` sebagai item flex ketiga di baris `.rw`; bersama celah 14px di kedua sisinya ia menyempitkan teks sampai teks pendek jatuh ke baris kedua pada font yang lebih lebar dari font pengembangan (terbukti dengan DejaVu Sans). Perbaikan di `css/app.css`: margin ikon `.rw>.ib` dari `-4px auto -4px -10px` menjadi `-4px -10px -4px -10px` (celah ke angka tinggal 4px).
++- Tes: `tests/e2e/baris-rincian.e2e.py` kini mengukur dasar glif angka dengan Range (sama jenisnya dengan dasar glif teks) karena kotak baris angka bergantung metrik font (di Liberation Sans selisihnya 4,8px padahal tampak sejajar). Syaratnya tidak dilonggarkan. Bukti: 62 pernyataan lulus di Chromium sandbox dengan font bawaan, DejaVu Sans, Liberation Sans, dan Carlito.
++- Rumus tidak berubah. Bukti uji: unit test lulus di sandbox sesi; E2E `baris-rincian`, `tips` terkait lulus di Chromium sandbox. BELUM: GitHub Actions penuh dan uji manual di Excel/Google Sheets asli dan HP asli.
+ 
+ ## v9.57 - Footer dari version.js, ikon ⓘ penjelas istilah, label biaya tambahan (20 Nov 2026)
+ - Permintaan pemilik: (1) footer masih tertulis "versi 5.82 (29 Okt 2026)" padahal paket v9.56; (2) ikon ⓘ di tiap istilah berisi satu kalimat dan contoh angka, ganti label seperlunya; (3) footer membaca version.js, hapus "Progressive Web App" di header.
+diff -u a/LANJUT-DI-SINI.md b/LANJUT-DI-SINI.md
+--- a/LANJUT-DI-SINI.md	2026-11-20 03:16:44.000000000 +0000
++++ b/LANJUT-DI-SINI.md	2026-11-26 05:43:32.817505641 +0000
+@@ -1,4 +1,4 @@
+-# LANJUT-DI-SINI (v10) - posisi setelah v9.57 (sebelumnya v9.55 (kartu sambutan dan impor Shopee Mass Update; sebelumnya v9.54: impor CSV ramah pengguna; sebelumnya v9.53: ganti nama aplikasi menjadi Wulfeg; sebelumnya v9.52: label umum bukan khusus dropship; sebelumnya v9.51: perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
++# LANJUT-DI-SINI (v10) - posisi setelah v9.58 (sebelumnya v9.57: footer versi, ikon ⓘ, label biaya tambahan; sebelumnya v9.55 (kartu sambutan dan impor Shopee Mass Update; sebelumnya v9.54: impor CSV ramah pengguna; sebelumnya v9.53: ganti nama aplikasi menjadi Wulfeg; sebelumnya v9.52: label umum bukan khusus dropship; sebelumnya v9.51: perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
+ 
+ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat perubahan ada di `CHANGELOG.md`, peta modul/fixture/skrip/daftar periksa rilis di `docs/PANDUAN-PERAWATAN.md`. WAJIB memperbarui CHANGELOG dan dokumen ini di setiap sesi yang mengubah paket (dijaga `tests/dokumentasi.test.mjs`). Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
+ 
+@@ -7,6 +7,11 @@
+ - Sisa kinerja yang diketahui (kerjakan hanya bila HP pemilik masih berat): buka aplikasi 1.000 produk (~5 dtk pada simulasi x4), `refreshLabels()` per `upd()`, hitungan promo di `money.js` (rumus dibekukan).
+ - Tahap berikutnya BELUM ada. Langkah 3 (Hitung berhalaman) dan langkah 4 (`upd` per ketikan) hanya dikerjakan bila angka/kesan dari HP pemilik menunjukkan masih berat. Bila sudah lancar, keduanya dilewati. Jangan membuat tahap baru tanpa permintaan pemilik.
+ 
++## v9.58 - impor massal pengguna baru + perbaikan baris rincian (sesi 26 Nov 2026)
++- Fitur: kartu sambutan menerima file .xlsx/CSV dan tempel dari Excel; template Excel dibuat di browser (`js/impor-pemula.js`). Rincian di CHANGELOG v9.58.
++- Perbaikan CI: E2E `baris-rincian` gagal karena ikon ⓘ (item flex ketiga di `.rw`) menyempitkan teks pada font lebar; margin `.rw>.ib` diubah, dan tes mengukur dasar glif angka. Jangan kembalikan margin kanan `auto` pada ikon di `.rw`.
++- Status: sandbox sesi. BELUM: GitHub Actions penuh, uji manual di Excel/Google Sheets asli, HP asli.
++
+ ## v9.57 - footer versi, ikon ⓘ penjelas istilah, label biaya tambahan (sesi 20 Nov 2026)
+ - Permintaan pemilik: footer masih "versi 5.82 (29 Okt 2026)" tertulis di index.html; ikon ⓘ di tiap istilah dengan satu kalimat + contoh angka; ganti label seperlunya (Management Partner); hapus "Progressive Web App" di header.
+ - Footer kini diisi `js/main.js` dari `KALSARA_VERSION.paket` (tanpa tanggal; tanggal tertulis tangan itulah yang basi). Ikon: `js/tips.js` (kamus + popover). Label: "Biaya tambahan per pesanan (opsional)" (BUKAN "per pcs": rumus `tmod` = modal x isi paket + biaya tambahan + packing, jadi biaya ini sekali per pesanan). Judul CSV lama tetap dikenali.
+diff -u a/README.md b/README.md
+--- a/README.md	2026-11-20 03:16:44.000000000 +0000
++++ b/README.md	2026-11-26 05:43:32.816929280 +0000
+@@ -1,6 +1,6 @@
+ # Wulfeg (dulu Kalsara) - Micro-ERP e-commerce, 100% di sisi klien (basis Kalsara v5.82)
+ 
+-**Versi paket: v9.57 (footer membaca versi dari js/version.js, ikon ⓘ penjelas istilah, label "Biaya tambahan per pesanan (opsional)", tulisan "Progressive Web App" di header dihapus; di atas v9.56: tarif Gratis Ongkir XTRA 1 Des 2026 disesuaikan dengan Seller Centre: Kategori G khusus 12,5% dan promo pengguna iklan per kategori; di atas v9.55: kartu sambutan untuk aplikasi kosong dan tambah produk dari file Shopee Mass Update; di atas v9.54: impor CSV ramah pengguna: kolom dikenali dari judul, file hasil unduhan aplikasi bisa dibaca, SKU yang sudah ada tidak diduplikasi, dialog dengan bahasa awam; rumus tidak berubah; unit dan 24 E2E lulus di sandbox sesi, BELUM dijalankan di GitHub Actions pemilik). Di bawahnya v9.53 (ganti nama aplikasi menjadi Wulfeg; hanya teks tampilan, nama berkas unduhan, dan ikon; kunci penyimpanan `kalsara_*` sengaja tidak diubah supaya data lama aman; unit dan 23 E2E lulus di sandbox sesi, BELUM dijalankan di GitHub Actions pemilik). Di bawahnya v9.52 (label umum, bukan khusus dropship: "Modal supplier" jadi "Modal / HPP per pcs", "supplier" jadi "Sumber barang (opsional)", peringatan stok "Segera isi ulang stok"; rumus dan data tidak berubah; BELUM dijalankan di GitHub Actions pemilik). Di bawahnya v9.51 (perbaikan tampilan: penanda halaman Etalase rapi dan presisi; baris rincian teks panjang turun ke baris ke-2 dengan angka sejajar; di atas Tahap 9C v9.49). v9.50 lulus di GitHub Actions pemilik (npm test dan 22 E2E, `fail=0`); v9.51 juga lulus di GitHub Actions pemilik (npm test dan 23 E2E, `fail=0`).** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (23 E2E) dan uji manual lulus.
++**Versi paket: v9.58 (impor massal untuk pengguna baru: template Excel .xlsx yang dibuat langsung di browser, impor file .xlsx/CSV dan tempel dari Excel di kartu sambutan; perbaikan baris rincian agar ikon ⓘ tidak mendorong teks pendek ke baris kedua pada font lebar; rumus tidak berubah; di atas v9.57: footer membaca versi dari js/version.js, ikon ⓘ penjelas istilah, label "Biaya tambahan per pesanan (opsional)", tulisan "Progressive Web App" di header dihapus; di atas v9.56: tarif Gratis Ongkir XTRA 1 Des 2026 disesuaikan dengan Seller Centre: Kategori G khusus 12,5% dan promo pengguna iklan per kategori; di atas v9.55: kartu sambutan untuk aplikasi kosong dan tambah produk dari file Shopee Mass Update; di atas v9.54: impor CSV ramah pengguna: kolom dikenali dari judul, file hasil unduhan aplikasi bisa dibaca, SKU yang sudah ada tidak diduplikasi, dialog dengan bahasa awam; rumus tidak berubah; unit dan 24 E2E lulus di sandbox sesi, BELUM dijalankan di GitHub Actions pemilik). Di bawahnya v9.53 (ganti nama aplikasi menjadi Wulfeg; hanya teks tampilan, nama berkas unduhan, dan ikon; kunci penyimpanan `kalsara_*` sengaja tidak diubah supaya data lama aman; unit dan 23 E2E lulus di sandbox sesi, BELUM dijalankan di GitHub Actions pemilik). Di bawahnya v9.52 (label umum, bukan khusus dropship: "Modal supplier" jadi "Modal / HPP per pcs", "supplier" jadi "Sumber barang (opsional)", peringatan stok "Segera isi ulang stok"; rumus dan data tidak berubah; BELUM dijalankan di GitHub Actions pemilik). Di bawahnya v9.51 (perbaikan tampilan: penanda halaman Etalase rapi dan presisi; baris rincian teks panjang turun ke baris ke-2 dengan angka sejajar; di atas Tahap 9C v9.49). v9.50 lulus di GitHub Actions pemilik (npm test dan 22 E2E, `fail=0`); v9.51 juga lulus di GitHub Actions pemilik (npm test dan 23 E2E, `fail=0`).** Pengembangan, belum disertifikasi untuk produksi. Jangan menggantikan aplikasi toko asli sebelum GitHub Actions (23 E2E) dan uji manual lulus.
+ 
+ Aplikasi berjalan penuh di peramban: tanpa server, tanpa build tool, tanpa CDN saat berjalan. Logika bisnis dan hasil hitung identik dengan v5.82 (dibuktikan tes golden-master dan diferensial).
+ 
+diff -u a/css/app.css b/css/app.css
+--- a/css/app.css	2026-11-20 03:25:54.000000000 +0000
++++ b/css/app.css	2026-11-26 05:38:30.101053027 +0000
+@@ -427,6 +427,7 @@
+ .ib:hover,.ib[aria-expanded="true"]{color:var(--accent)}
+ .ib:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+ /* di baris rincian ikon dikecilkan dan tidak boleh menyempitkan teks (E2E baris-rincian 320px: teks pendek tetap 1 baris) */
+-.rw>.ib{width:20px;height:20px;font-size:13px;margin:-4px auto -4px -10px}
++.rw>.ib{width:20px;height:20px;font-size:13px;margin:-4px -10px -4px -10px}
++/* v9.57: ikon ⓘ adalah item flex ketiga; margin kanan negatif membuang celah 14px di sisi angka (sisa celah 4px) agar teks pendek tetap 1 baris pada font lebar. */
+ #tipb{position:fixed;z-index:1300;max-width:min(300px,calc(100vw - 16px));padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);box-shadow:var(--sh);font-size:12.5px;font-weight:400;line-height:1.5;text-align:left}
+ #tipb[hidden]{display:none}
+diff -u a/js/version.js b/js/version.js
+--- a/js/version.js	2026-11-20 03:13:22.000000000 +0000
++++ b/js/version.js	2026-11-26 05:43:32.816574080 +0000
+@@ -4,4 +4,4 @@
+  * Sengaja berupa skrip biasa (bukan export) supaya bisa dimuat dua cara dari SATU berkas:
+  *   import './version.js' di modul halaman (js/main.js) dan importScripts('./js/version.js') di sw.js.
+  * package.json dan README tidak boleh berbeda: tests/tahap8.test.mjs memeriksanya. */
+-globalThis.KALSARA_VERSION=Object.freeze({app:'5.82',paket:'9.57'});
++globalThis.KALSARA_VERSION=Object.freeze({app:'5.82',paket:'9.58'});
+diff -u a/package.json b/package.json
+--- a/package.json	2026-11-26 04:06:13.000000000 +0000
++++ b/package.json	2026-11-26 05:43:32.816756072 +0000
+@@ -8,5 +8,5 @@
+     "vendor:sqlite": "node scripts/fetch-sqlite-wasm.mjs",
+     "vendor:check": "node scripts/fetch-sqlite-wasm.mjs --check"
+   },
+-  "version": "0.9.57"
++  "version": "0.9.58"
+ }
+diff -u a/state_tracker.txt b/state_tracker.txt
+--- a/state_tracker.txt	2026-11-20 03:16:44.000000000 +0000
++++ b/state_tracker.txt	2026-11-26 05:43:32.817686947 +0000
+@@ -9,6 +9,7 @@
+   Tidak ada perubahan rumus, hasil hitung, atau fitur.
+   GitHub Actions v9.47: npm test lulus; E2E tahap8 GAGAL (salah alur tes: menunggu kartu produk padahal tanpa data; sudah diperbaiki). Dijalankan ulang di v9.48: lulus.
+   Uji manual Bagian 7 (tutup cepat, restore lalu muat ulang, >1.000 produk, offline, profil kosong): BELUM DILAKUKAN.
++v9.58: impor massal pengguna baru (template Excel .xlsx dibuat di browser, impor .xlsx/CSV/tempel) + perbaikan E2E baris-rincian (margin ikon ⓘ di .rw; tes mengukur dasar glif angka). Bukti sandbox sesi (BUKAN GitHub Actions): npm test dan E2E terkait lulus. GitHub Actions penuh, Excel/Google Sheets asli, HP asli: BELUM.
+ v9.57: footer dari version.js, hapus "Progressive Web App" di header, ikon ⓘ penjelas istilah (js/tips.js), label "Management Partner" jadi "Biaya tambahan per pesanan (opsional)". Bukti sandbox sesi (BUKAN GitHub Actions): `npm test` exit 0. E2E browser dan HP asli: BELUM dijalankan.
+ v9.56: tarif Gratis Ongkir XTRA 1 Des 2026 disesuaikan dengan Seller Centre (G khusus 12,5%; tabel promo pengguna iklan GOAD + pengaturan gai; lihat CHANGELOG v9.56). GitHub Actions pemilik: BELUM dijalankan. Bukti sandbox: `npm test` exit 0; E2E browser belum dijalankan.
+ v9.55: kartu sambutan aplikasi kosong + tambah produk dari file Shopee Mass Update (lihat CHANGELOG v9.55). GitHub Actions pemilik: BELUM dijalankan. Bukti sandbox sesi (BUKAN GitHub Actions): `npm test` exit 0 (termasuk golden-master identik, tests/impor-shopee.test.mjs 17 pernyataan) dan 25 E2E lulus di Chromium sandbox (sambutan 20 pernyataan, memakai dua file Mass Update yang sudah dianonimkan). HP asli belum diuji.
+diff -u a/tests/e2e/baris-rincian.e2e.py b/tests/e2e/baris-rincian.e2e.py
+--- a/tests/e2e/baris-rincian.e2e.py	2026-11-20 03:16:27.000000000 +0000
++++ b/tests/e2e/baris-rincian.e2e.py	2026-11-26 05:38:12.197962489 +0000
+@@ -33,7 +33,9 @@
+   const tops = []; lines.forEach(x => { if (!tops.some(t => Math.abs(t - x.top) < 3)) tops.push(x.top) });
+   const last = lines.reduce((m, x) => x.bottom > m.bottom ? x : m, lines[0]);
+   const nb = num.getBoundingClientRect(), rb = row.getBoundingClientRect();
+-  return {lines: tops.length, numTop: nb.top, numBottom: nb.bottom, numRight: nb.right, numH: nb.height, rowRight: rb.right, lastTop: last.top, lastBottom: last.bottom}
++  // dasar glif angka (Range), sama jenisnya dengan dasar glif teks: kotak baris <b>/.era bergantung metrik font, jadi tidak adil dibandingkan langsung
++  const nr = document.createRange(); nr.selectNodeContents(num); const ng = [...nr.getClientRects()].filter(x => x.width > 0).reduce((m, x) => x.bottom > m.bottom ? x : m);
++  return {lines: tops.length, numTop: nb.top, numBottom: nb.bottom, numRight: nb.right, numH: nb.height, glyphBottom: ng.bottom, rowRight: rb.right, lastTop: last.top, lastBottom: last.bottom}
+ })"""
+ try:
+     with sync_playwright() as p:
+@@ -53,7 +55,7 @@
+                 check(m['rowRight'] - m['numRight'] <= 4, tag + ': angka harus rata kanan')
+                 # angka menumpuk secara vertikal dengan baris TERAKHIR teks, bukan di baris sendiri di bawahnya
+                 check(m['numTop'] < m['lastBottom'] - 2 and m['numBottom'] > m['lastTop'] + 2, tag + ': angka harus sejajar dengan baris terakhir teks')
+-                check(abs(m['numBottom'] - m['lastBottom']) <= 4, tag + ': dasar angka = dasar baris terakhir teks')
++                check(abs(m['glyphBottom'] - m['lastBottom']) <= 4, tag + ': dasar angka = dasar baris terakhir teks')
+                 if panjang and w == 320: check(m['lines'] >= 2, tag + ': teks panjang harus turun ke 2 baris')
+                 if not panjang: check(m['lines'] == 1, tag + ': teks pendek tetap 1 baris')
+             if w == 320:  # kasus yang dikeluhkan: ada baris panjang yang benar-benar turun dan angka mengikuti baris ke-2

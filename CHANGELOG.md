@@ -4,12 +4,14 @@ Aturan: SETIAP sesi yang mengubah paket menambah satu entri di paling atas (terb
 
 Catatan kejujuran: entri v9.40 ke atas ditulis rapi saat kejadian. Entri sebelumnya diringkas ulang dari `arsip/MIGRATION-STATUS.md` (arsip lengkap); v9.36 sampai v9.39 tidak punya bagian sendiri di arsip, jadi hanya disebut sebagai rangkaian tahap 6.
 
-## Usulan (belum dirilis, nomor versi belum dinaikkan): impor massal untuk pengguna baru
+## v9.58 - Impor massal untuk pengguna baru (template Excel, impor .xlsx) dan perbaikan baris rincian (26 Nov 2026)
 - Kartu sambutan: tombol utama "Pilih file Excel atau CSV" (file .xlsx dibaca langsung, tidak perlu "Simpan sebagai CSV") dan "Tempel dari Excel / Google Sheet" (modul baru `js/impor-pemula.js`). Keduanya diubah menjadi teks CSV lalu diserahkan ke alur impor lama (`#xf`), jadi aturan SKU kembar, batas produk, dan dialog konfirmasi tidak berubah.
 - Template Excel (.xlsx) dibuat langsung di browser (penulis zip tanpa library di `js/impor-pemula.js`): lembar "Produk" (judul tebal, baris pertama dibekukan, kolom SKU berformat teks, satu baris contoh) dan lembar "Petunjuk". Tombolnya ada di kartu sambutan dan di bagian Impor dan ekspor CSV; template CSV lama tetap ada. Dicek terbuka di openpyxl dan LibreOffice.
 - Baris contoh bawaan template ("CONTOH - GANTI DENGAN PRODUK ANDA", "Contoh produk A") tidak lagi ikut terimpor sebagai produk sungguhan.
 - Dialog impor menyebut nomor baris yang dilewati karena modal kosong atau 0.
-- Rumus tidak berubah. Unit test lulus di sandbox sesi; E2E dan uji manual di browser BELUM dijalankan. Sebelum dirilis: naikkan nomor `paket` di `js/version.js`, pindahkan entri ini ke judul `## v...`, dan jalankan `npm run test:e2e`.
+- Perbaikan (ditemukan dari CI): E2E `baris-rincian` gagal di runner GitHub ("Harga setelah voucher: teks pendek tetap 1 baris" pada 320px). Penyebab: ikon ⓘ v9.57 disisipkan `js/tips.js` sebagai item flex ketiga di baris `.rw`; bersama celah 14px di kedua sisinya ia menyempitkan teks sampai teks pendek jatuh ke baris kedua pada font yang lebih lebar dari font pengembangan (terbukti dengan DejaVu Sans). Perbaikan di `css/app.css`: margin ikon `.rw>.ib` dari `-4px auto -4px -10px` menjadi `-4px -10px -4px -10px` (celah ke angka tinggal 4px).
+- Tes: `tests/e2e/baris-rincian.e2e.py` kini mengukur dasar glif angka dengan Range (sama jenisnya dengan dasar glif teks) karena kotak baris angka bergantung metrik font (di Liberation Sans selisihnya 4,8px padahal tampak sejajar). Syaratnya tidak dilonggarkan. Bukti: 62 pernyataan lulus di Chromium sandbox dengan font bawaan, DejaVu Sans, Liberation Sans, dan Carlito.
+- Rumus tidak berubah. Bukti uji: unit test lulus di sandbox sesi; E2E `baris-rincian`, `tips` terkait lulus di Chromium sandbox. BELUM: GitHub Actions penuh dan uji manual di Excel/Google Sheets asli dan HP asli.
 
 ## v9.57 - Footer dari version.js, ikon ⓘ penjelas istilah, label biaya tambahan (20 Nov 2026)
 - Permintaan pemilik: (1) footer masih tertulis "versi 5.82 (29 Okt 2026)" padahal paket v9.56; (2) ikon ⓘ di tiap istilah berisi satu kalimat dan contoh angka, ganti label seperlunya; (3) footer membaca version.js, hapus "Progressive Web App" di header.

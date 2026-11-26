@@ -1,4 +1,4 @@
-# LANJUT-DI-SINI (v10) - posisi setelah v9.57 (sebelumnya v9.55 (kartu sambutan dan impor Shopee Mass Update; sebelumnya v9.54: impor CSV ramah pengguna; sebelumnya v9.53: ganti nama aplikasi menjadi Wulfeg; sebelumnya v9.52: label umum bukan khusus dropship; sebelumnya v9.51: perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
+# LANJUT-DI-SINI (v10) - posisi setelah v9.58 (sebelumnya v9.57: footer versi, ikon ⓘ, label biaya tambahan; sebelumnya v9.55 (kartu sambutan dan impor Shopee Mass Update; sebelumnya v9.54: impor CSV ramah pengguna; sebelumnya v9.53: ganti nama aplikasi menjadi Wulfeg; sebelumnya v9.52: label umum bukan khusus dropship; sebelumnya v9.51: perbaikan tampilan penanda halaman Etalase dan baris rincian; sebelumnya Tahap 9C, v9.49)
 
 Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat perubahan ada di `CHANGELOG.md`, peta modul/fixture/skrip/daftar periksa rilis di `docs/PANDUAN-PERAWATAN.md`. WAJIB memperbarui CHANGELOG dan dokumen ini di setiap sesi yang mengubah paket (dijaga `tests/dokumentasi.test.mjs`). Jangan membaca `arsip/MIGRATION-STATUS.md` (arsip sejarah, 112 KB). Aturan pemilik di `LANJUT-DI-SINI-v2.md` dan master prompt tetap berlaku: pemilik bukan programmer, tidak ada fitur/rumus baru, jangan klaim lulus untuk tes yang tidak dijalankan.
 
@@ -6,6 +6,11 @@ Untuk AI di sesi berikutnya: baca berkas ini dan `state_tracker.txt`; riwayat pe
 - Tahap 0-8 selesai. Tahap 9A/9B (v9.48) dan 9C (v9.49, aksi tab Hitung/Promosi/Etalase lebih cepat) selesai dan LULUS di GitHub Actions pemilik (8 Nov 2026): `npm test` lulus, 21 E2E lulus, `fail=0`. Paket terbaru: v9.51 (v9.50 dan v9.51 hanya perbaikan tampilan CSS + tes + dokumentasi di atas v9.49; v9.51 juga mengubah satu baris urutan elemen di `js/etalase-halaman.js`; lihat bagian "v9.50" dan "v9.51" di bawah). v9.50 (22 E2E) dan v9.51 (23 E2E) LULUS di GitHub Actions pemilik (npm test + E2E, `fail=0`).
 - Sisa kinerja yang diketahui (kerjakan hanya bila HP pemilik masih berat): buka aplikasi 1.000 produk (~5 dtk pada simulasi x4), `refreshLabels()` per `upd()`, hitungan promo di `money.js` (rumus dibekukan).
 - Tahap berikutnya BELUM ada. Langkah 3 (Hitung berhalaman) dan langkah 4 (`upd` per ketikan) hanya dikerjakan bila angka/kesan dari HP pemilik menunjukkan masih berat. Bila sudah lancar, keduanya dilewati. Jangan membuat tahap baru tanpa permintaan pemilik.
+
+## v9.58 - impor massal pengguna baru + perbaikan baris rincian (sesi 26 Nov 2026)
+- Fitur: kartu sambutan menerima file .xlsx/CSV dan tempel dari Excel; template Excel dibuat di browser (`js/impor-pemula.js`). Rincian di CHANGELOG v9.58.
+- Perbaikan CI: E2E `baris-rincian` gagal karena ikon ⓘ (item flex ketiga di `.rw`) menyempitkan teks pada font lebar; margin `.rw>.ib` diubah, dan tes mengukur dasar glif angka. Jangan kembalikan margin kanan `auto` pada ikon di `.rw`.
+- Status: sandbox sesi. BELUM: GitHub Actions penuh, uji manual di Excel/Google Sheets asli, HP asli.
 
 ## v9.57 - footer versi, ikon ⓘ penjelas istilah, label biaya tambahan (sesi 20 Nov 2026)
 - Permintaan pemilik: footer masih "versi 5.82 (29 Okt 2026)" tertulis di index.html; ikon ⓘ di tiap istilah dengan satu kalimat + contoh angka; ganti label seperlunya (Management Partner); hapus "Progressive Web App" di header.

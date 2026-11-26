@@ -33,7 +33,9 @@ MEASURE = """() => [...document.querySelectorAll('#uji > div')].map(row => {
   const tops = []; lines.forEach(x => { if (!tops.some(t => Math.abs(t - x.top) < 3)) tops.push(x.top) });
   const last = lines.reduce((m, x) => x.bottom > m.bottom ? x : m, lines[0]);
   const nb = num.getBoundingClientRect(), rb = row.getBoundingClientRect();
-  return {lines: tops.length, numTop: nb.top, numBottom: nb.bottom, numRight: nb.right, numH: nb.height, rowRight: rb.right, lastTop: last.top, lastBottom: last.bottom}
+  // dasar glif angka (Range), sama jenisnya dengan dasar glif teks: kotak baris <b>/.era bergantung metrik font, jadi tidak adil dibandingkan langsung
+  const nr = document.createRange(); nr.selectNodeContents(num); const ng = [...nr.getClientRects()].filter(x => x.width > 0).reduce((m, x) => x.bottom > m.bottom ? x : m);
+  return {lines: tops.length, numTop: nb.top, numBottom: nb.bottom, numRight: nb.right, numH: nb.height, glyphBottom: ng.bottom, rowRight: rb.right, lastTop: last.top, lastBottom: last.bottom}
 })"""
 try:
     with sync_playwright() as p:
@@ -53,7 +55,7 @@ try:
                 check(m['rowRight'] - m['numRight'] <= 4, tag + ': angka harus rata kanan')
                 # angka menumpuk secara vertikal dengan baris TERAKHIR teks, bukan di baris sendiri di bawahnya
                 check(m['numTop'] < m['lastBottom'] - 2 and m['numBottom'] > m['lastTop'] + 2, tag + ': angka harus sejajar dengan baris terakhir teks')
-                check(abs(m['numBottom'] - m['lastBottom']) <= 4, tag + ': dasar angka = dasar baris terakhir teks')
+                check(abs(m['glyphBottom'] - m['lastBottom']) <= 4, tag + ': dasar angka = dasar baris terakhir teks')
                 if panjang and w == 320: check(m['lines'] >= 2, tag + ': teks panjang harus turun ke 2 baris')
                 if not panjang: check(m['lines'] == 1, tag + ': teks pendek tetap 1 baris')
             if w == 320:  # kasus yang dikeluhkan: ada baris panjang yang benar-benar turun dan angka mengikuti baris ke-2
